@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+          "jsx": "react",
+    "jsxFactory": "createElement",
+    "jsxFragmentFactory": "Fragment",
+      "target": "ES2018",
+      "module": "ESNext",
+      "moduleResolution": "node",
+      "strict": true,
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+          "outDir": "./dist",
+    "rootDir": "./",
+      "declaration": true,
+      "declarationMap": true,
+      "sourceMap": true,
+      "forceConsistentCasingInFileNames": true,
+      "typeRoots": ["./src/types"],
+          "paths": {
+      "@/*": ["./src/*"],
+      "@lib/*": ["./lib/*"],
+      "@core/*": ["./lib/core/*"],
+      "@types/*": ["./lib/types/*"]
+    }
+    },
+    "include": ["src/**/*", "lib/**/*"],
+    "exclude": ["dist", "node_modules", "**/*.test.ts"]
+  }
