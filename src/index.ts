@@ -1,17 +1,16 @@
-// Point d'entrée principal du mini-framework React-like
+/// <reference path="./types/global.d.ts" preserve="true" />
+
 export { createElement, createComponent, Fragment, FragmentComponent } from './core/component';
 export { render } from './core/render';
 export { useState, useEffect, useContext, createContext } from './core/hooks/index';
 
-// Import workLoop pour initialiser la boucle
 import './core/fiber/workLoop';
 
-// API publique consolidée
 import { createElement, createComponent, Fragment, FragmentComponent } from './core/component';
 import { render } from './core/render';
 import { useState, useEffect, useContext, createContext } from './core/hooks/index';
 
-const MiniReact = {
+const myReact = {
   createElement,
   createComponent,
   Fragment,
@@ -23,4 +22,4 @@ const MiniReact = {
   createContext,
 };
 
-export default MiniReact; 
+export default myReact;

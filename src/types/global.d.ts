@@ -1,4 +1,11 @@
-// Types globaux pour le mini framework React-like
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      [elemName: string]: any;
+    }
+  }
+}
+
 export type Props = {
   [key: string]: any;
   children?: Element[];
@@ -44,4 +51,4 @@ export type Context = {
   Consumer: (props: { children: (value: any) => Element }) => Element;
 };
 
- 
+export { };

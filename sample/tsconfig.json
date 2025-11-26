@@ -1,8 +1,7 @@
 {
     "compilerOptions": {
-        "rootDir": "src",
+        "rootDir": "/",
         "outDir": "./dist",
-        "baseUrl": ".",
         "jsx": "react",
         "jsxFactory": "createElement",
         "jsxFragmentFactory": "Fragment",
