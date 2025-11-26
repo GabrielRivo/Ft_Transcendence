@@ -73,7 +73,7 @@ export function createElement(type: string | Function, props: Props | null, ...c
     type,
     props: {
       ...props,
-      children: children.map(child =>
+      children: children.flat().map(child =>
         typeof child === "object" ? child : createTextElement(child)
       ),
     },
@@ -96,7 +96,7 @@ export function createDom(fiber: Fiber): Node {
     ? document.createTextNode("")
     : document.createElement(fiber.type as string);
 
-  updateDom(dom, {}, fiber.props);
+  updateDom(dom, {}, fiber.props || {});
   return dom;
 }
 

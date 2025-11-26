@@ -7,10 +7,11 @@ import { createDom } from '../component';
 export function performUnitOfWork(fiber: Fiber): Fiber | null {
   const isFunctionComponent = typeof fiber.type === 'function';
   const isFragment = typeof fiber.type === 'symbol';
+  const isContextProvider = fiber.type === 'CONTEXT_PROVIDER';
   
   if (isFunctionComponent) {
     updateFunctionComponent(fiber);
-  } else if (isFragment) {
+  } else if (isFragment || isContextProvider) {
     updateFragmentComponent(fiber);
   } else {
     updateHostComponent(fiber);
@@ -48,7 +49,7 @@ function updateFunctionComponent(fiber: Fiber): void {
 
 // Mise à jour des fragments
 function updateFragmentComponent(fiber: Fiber): void {
-  const children = fiber.props.children || [];
+  const children = fiber.props?.children || [];
   reconcileChildren(fiber, children);
 }
 
@@ -58,6 +59,6 @@ function updateHostComponent(fiber: Fiber): void {
     fiber.dom = createDom(fiber);
   }
   
-  const children = fiber.props.children || [];
+  const children = fiber.props?.children || [];
   reconcileChildren(fiber, children);
 } 

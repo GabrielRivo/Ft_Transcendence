@@ -35,6 +35,11 @@ export function reconcileChildren(wipFiber: Fiber, elements: Element[]): void {
       };
     }
     
+    // Safety check for Provider children
+    if (newFiber && newFiber.type === 'CONTEXT_PROVIDER') {
+      newFiber.dom = null; // Ensure no DOM node for Provider
+    }
+    
     if (oldFiber && !sameType) {
       oldFiber.effectTag = "DELETION";
       getDeletions().push(oldFiber);
