@@ -93,17 +93,43 @@ docker-sh:
 		docker exec -it $(s) /bin/sh; \
 	fi
 
-# ==============================================================================
-# NETTOYAGE (RESET)
-# ==============================================================================
 
-# Nettoyage COMPLET et DESTRUCTIF
-# ⚠️  ATTENTION : Cette commande supprime tout !
-#   - Arrête les conteneurs
-#   - Supprime les réseaux
-#   - Supprime les images construites (--rmi all)
-#   - Supprime les VOLUMES (-v) -> Perte définitive des données DB et Secrets Vault
-#   - Supprime les orphelins (--remove-orphans)
+# WARNING partie en plus sans docker - Maxence
+
+install-cli:
+	@curl -fsSL https://github.com/thetranscendence/transcendence-cli/raw/main/install | bash
+
+uninstall-cli:
+	@rm -rf $HOME/tcli
+	@sed -i '/tcli/d' $HOME/.bashrc
+	@sed -i '/tcli/d' $HOME/.zshrc
+	@echo "Transcendence CLI est désinstallé avec succès !!"
+
+install-pnpm:
+	@npm install -g pnpm
+	@echo "PNPM est installé avec succès !!"
+
+install-nvm:
+	@curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+	@source $HOME/.nvm/nvm.sh
+	@echo "NVM est installé avec succès !!"
+
+install-node:
+	@source $HOME/.nvm/nvm.sh
+	@nvm install 24
+	@nvm use 24
+	@nvm alias default 24
+	@echo "Node.js 24 est installé avec succès !!"
+
+install-packages:
+	@pnpm i
+	@pnpm -r build
+
+init-workspace: install-cli install-nvm install-node install-pnpm install-packages
+	@echo "Workspace initialisé avec succès !!"
+
+# WARNING-END
+
 clean:
 	@echo "Nettoyage complet (Deep Clean)..."
 	@echo "⚠️  ATTENTION : Toutes les données persistantes (DB, Vault) seront effacées."
