@@ -31,10 +31,12 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
+    "@fastify/jwt": "^10.0.0",
     "@types/supertest": "^6.0.3",
     "ajv": "^8.17.1",
     "ajv-errors": "^3.0.0",
     "better-sqlite3": "^12.2.0",
+    "dotenv": "^17.2.3",
     "fastify": "^5.4.0",
     "fastify-plugin": "^5.0.1",
     "my-class-validator": "workspace:*",

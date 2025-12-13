@@ -2,11 +2,13 @@ import Ajv from 'ajv';
 import * as ajvErrors from 'ajv-errors';
 import Fastify from 'fastify';
 import { registerValidators } from 'my-class-validator';
+import 'reflect-metadata';
 import bootstrapPlugin from './plugins/bootstrap-plugin.js';
+import jwtPlugin from './plugins/jwt-plugin.js';
 import socketPlugin from './plugins/socket-plugin.js';
 import sqlitePlugin from './plugins/sqlite-plugin.js';
 
-const app = Fastify({ logger: true, ignoreTrailingSlash: true });
+const app = Fastify({ logger: true, routerOptions: { ignoreTrailingSlash: true } });
 
 const AjvCtor: any = (Ajv as any).default ?? Ajv;
 const addAjvErrors: any = (ajvErrors as any).default ?? ajvErrors;
@@ -15,6 +17,7 @@ addAjvErrors(ajv);
 
 registerValidators(ajv);
 
+app.register(jwtPlugin);
 app.register(sqlitePlugin);
 app.register(socketPlugin);
 app.register(bootstrapPlugin);
@@ -32,7 +35,6 @@ app.setSchemaErrorFormatter((errors) => {
 	const err: any = new Error(message);
 	err.statusCode = 400;
 	err.validation = errors;
-	// On évite de pointer systématiquement sur index.ts
 	err.stack = undefined;
 
 	return err as Error;

@@ -1,6 +1,7 @@
 import { Module } from 'my-fastify-decorators';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
-	imports: [],
+	imports: [AuthModule],
 })
 export class AppModule {}
