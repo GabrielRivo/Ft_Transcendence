@@ -100,14 +100,25 @@ export class AuthService {
             body: JSON.stringify({...providers[provider].body, code}),
         });
 
+        console.log("A",tokenRes);
 		if (!tokenRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed`);
         
 		const tokenData: any = await tokenRes.json();
+        console.log("B",tokenData);
         if (tokenData.error) throw new UnauthorizedException(`${providers[provider].id} login failed`);
     
-        const userRes = await fetch(providers[provider].userInfoUrl, {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` },
-        });
+        console.log("C");
+        let userRes: Response;
+        if (tokenData.token_type=="bearer") {
+            userRes = await fetch(providers[provider].userInfoUrl, {
+                headers: { Authorization: `Bearer ${tokenData.access_token}` },
+            });
+        }
+        else {
+            throw new BadGatewayException(`${provider} - TA OUBLIER UN TRUC POUR LE PROVIDER!`);
+        }
+
+        console.log("C");
 
 		if (!userRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed`);
         
@@ -115,10 +126,13 @@ export class AuthService {
     
         let user = await this.dbExchange.getUserByProviderId(provider, String(userData.id));
         
+        console.log(user,userData);
         if (!user) {
             const info = await this.dbExchange.addUserByProviderId(provider, String(userData.id));
             user = { id: Number(info.lastInsertRowid), email: userData.email, password_hash: '' };
         }
+
+        console.log("D");
 
         return this.generateTokens(user.id, userData.email || ''); 
     }

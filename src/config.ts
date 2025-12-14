@@ -22,7 +22,8 @@ const config = {
         pepper: process.env.PEPPER || 'c3VwZXJzZWNyZXRwZXBwZXI=',
         keyLength: 64,
         saltLength: 16,
-    }
+    },
+    redirectUri: 'http://localhost:3000',
 }
 
 export default config;

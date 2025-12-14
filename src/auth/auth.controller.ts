@@ -1,8 +1,9 @@
-import { Body, BodySchema, Controller, Get, Inject, Post } from 'my-fastify-decorators';
+import { Body, BodySchema, Controller, Get, Inject, Param, Post, Query } from 'my-fastify-decorators';
 import { AuthService } from './auth.service.js';
 import { DbExchangeService } from './dbExchange.service.js';
 import { LoginDto, LoginSchema } from './dto/login.dto.js';
 import { RegisterDto, RegisterSchema } from './dto/register.dto.js';
+import type { providerKeys } from './providers.js';
 
 @Controller('/auth')
 export class AuthController {
@@ -30,5 +31,10 @@ export class AuthController {
     @Get('/users')
     async getAllUsers() {
         return this.dbExchangeService.getAllUsers();
+    }
+
+    @Get('/:provider/callback')
+    async callback(@Param('provider') provider: providerKeys, @Query('code') code: string) {
+        return this.authService.handleCallback(code, provider);
     }
 }
