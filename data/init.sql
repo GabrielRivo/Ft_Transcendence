@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE,
     email TEXT UNIQUE,
     password_hash VARCHAR(64) NOT NULL,
-    provider TEXT CHECK(provider IN ('github', 'google', 'email')), -- # Warning: check provider
+    provider TEXT CHECK(provider IN ('github', 'google', 'email', 'discord')), -- # Warning: check provider
     provider_id TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

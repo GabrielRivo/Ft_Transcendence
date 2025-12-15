@@ -4,7 +4,7 @@ import { hashPassword, verifyPassword } from '../utils/crypto.js';
 import { DbExchangeService } from './dbExchange.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
-import { providerKeys, providers } from './providers.js';
+import { ProviderBasic, ProviderKeys, providers } from './providers.js';
 
 // WARNING a rajouter dans my-fastify-decorators
 class BadGatewayException extends HttpException {
@@ -93,20 +93,37 @@ export class AuthService {
         }
     }
 
-	async handleCallback(code: string, provider: providerKeys) {
-        const tokenRes = await fetch(providers[provider].accessTokenUrl, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json', Accept: 'application/json'},
-            body: JSON.stringify({...providers[provider].body, code}),
-        });
+	async handleCallback(code: string, provider: ProviderKeys) {
 
-		if (!tokenRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed`);
+
+        let tokenRes: Response | null = null;
+        
+        if (providers[provider].contentType === 'application/json') {
+            tokenRes = await fetch(providers[provider].accessTokenUrl, {
+                method: 'POST',
+                headers: {'Content-Type': providers[provider].contentType, 'Accept': 'application/json'}, body : JSON.stringify({...providers[provider].body, code})
+            });
+        }
+        else {
+            tokenRes = await fetch(providers[provider].accessTokenUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': providers[provider as ProviderBasic].basic,
+                    'Content-Type': providers[provider].contentType,
+                },
+                body : new URLSearchParams({...providers[provider].body, code, redirect_uri: config.redirectUri + '/auth/' + provider + '/callback'}).toString()
+            });
+        }
+
+
+		if (!tokenRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed 1`);
         
 		const tokenData: any = await tokenRes.json();
-        if (tokenData.error) throw new UnauthorizedException(`${providers[provider].id} login failed`);
+        if (tokenData.error) throw new UnauthorizedException(`${providers[provider].id} login failed 1`);
     
-        let userRes: Response;
-        if (tokenData.token_type=="bearer") {
+        let userRes: Response | null = null;
+        console.log(tokenData);
+        if (tokenData.token_type.toLowerCase()=="bearer") {
             userRes = await fetch(providers[provider].userInfoUrl, {
                 headers: { Authorization: `Bearer ${tokenData.access_token}` },
             });
@@ -117,6 +134,8 @@ export class AuthService {
 
 		if (!userRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed`);
         
+
+        console.log(userRes);
 		const userData: any = await userRes.json();
     
         let user = await this.dbExchange.getUserByProviderId(provider, String(userData.id));

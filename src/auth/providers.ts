@@ -1,22 +1,37 @@
 import config from '../config.js';
 
-export type Provider = {
+export type ProviderBasic = 'discord'
+
+export type ProviderKeys = 'github' | ProviderBasic;
+
+type ProviderBase = {
     accessTokenUrl: string;
     userInfoUrl: string;
     body: Record<string, string>;
-    id: providerKeys;
-}
+};
 
-export type providerKeys = 'github';
+type DiscordProvider = ProviderBase & {
+    id: 'discord';
+    basic: string;
+    contentType: string;
+};
 
-export type Providers = Record<providerKeys, Provider>;
+type DefaultProvider = ProviderBase & {
+    id: Exclude<ProviderKeys, 'discord'>; 
+};
+
+type Provider = DiscordProvider | DefaultProvider;
+
+
+export type Providers = Record<ProviderKeys, Provider>;
 
 
 export const providers = {
     github: {
-        authorizationUrl: `https://github.com/login/oauth/authorize?client_id=${config.github.clientId}&redirect_uri=${config.redirectUri}`,
+        authorizationUrl: `https://github.com/login/oauth/authorize?client_id=${config.github.clientId}&redirect_uri=${config.redirectUri}/auth/github/callback`,
         accessTokenUrl: 'https://github.com/login/oauth/access_token',
         userInfoUrl: 'https://api.github.com/user',
+        contentType: 'application/json',
         body: {
             client_id: config.github.clientId,
             client_secret: config.github.clientSecret,
@@ -25,13 +40,13 @@ export const providers = {
         id: "github",
     },
     discord: {
-        authorizationUrl: `https://discord.com/oauth2/authorize?client_id=${config.discord.clientId}&redirect_uri=${config.redirectUri}&response_type=code&scope=&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fdiscord%2Fcallback&scope=identify+email`,
+        authorizationUrl: `https://discord.com/oauth2/authorize?client_id=${config.discord.clientId}&response_type=code&scope=&redirect_uri=${encodeURIComponent(config.redirectUri+ '/auth/discord/callback')}&scope=identify+email`,
         accessTokenUrl: 'https://discord.com/api/oauth2/token',
         userInfoUrl: 'https://discord.com/api/users/@me?scope=identify%20email',
+        contentType: 'application/x-www-form-urlencoded',
+        basic : "Basic " + Buffer.from(`${config.discord.clientId}:${config.discord.clientSecret}`).toString('base64'),
         body: {
-            client_id: config.discord.clientId,
-            client_secret: config.discord.clientSecret,
-            scope: 'identify,email'
+            grant_type: 'authorization_code'
         },
         id: "discord",
     },
