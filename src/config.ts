@@ -18,6 +18,10 @@ const config = {
         clientId: process.env.GITHUB_CLIENT_ID || '1234567890',
         clientSecret: process.env.GITHUB_CLIENT_SECRET || '1234567890',
     },
+    discord: {
+        clientId: process.env.DISCORD_CLIENT_ID || '1234567890',
+        clientSecret: process.env.DISCORD_CLIENT_SECRET || '1234567890',
+    },
     crypto: {
         pepper: process.env.PEPPER || 'c3VwZXJzZWNyZXRwZXBwZXI=',
         keyLength: 64,
