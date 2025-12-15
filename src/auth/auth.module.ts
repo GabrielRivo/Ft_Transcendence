@@ -4,7 +4,7 @@ import { AuthService } from './auth.service.js';
 import { DbExchangeService } from './dbExchange.service.js';
 
 @Module({
-    controllers: [AuthController],
-    providers: [AuthService, DbExchangeService],
+	controllers: [AuthController],
+	providers: [AuthService, DbExchangeService],
 })
 export class AuthModule {}

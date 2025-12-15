@@ -1,4 +1,11 @@
-import { AdditionalProperties, IsEmail, IsRequired, IsString, MinLength, generateSchema } from 'my-class-validator';
+import {
+	AdditionalProperties,
+	IsEmail,
+	IsRequired,
+	IsString,
+	MinLength,
+	generateSchema,
+} from 'my-class-validator';
 
 @AdditionalProperties(false)
 export class RegisterDto {

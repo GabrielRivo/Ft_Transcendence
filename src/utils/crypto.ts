@@ -1,7 +1,6 @@
 // WARNING: A mettre dans un common folder peut etre
 import config from '../config.js';
 
-
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 
 // promisify est une fonction qui permet de convertir une fonction callback en une fonction async
@@ -18,14 +17,15 @@ const scryptAsync = promisify(scrypt);
 // bcrypt like mais on depasse ou mini equivalent...
 // pour securiser plus je pourrais ajouter SCRYPT_OPTIONS qui permet de customiser encore plus scrypt pour complexifier et pas avoir les settings par defaut...
 
-
 export async function hashPassword(password: string): Promise<string> {
 	const salt = randomBytes(config.crypto.saltLength).toString('hex');
-	const derivedKey = (await scryptAsync(password+pepper, salt, config.crypto.keyLength)) as Buffer;
+	const derivedKey = (await scryptAsync(
+		password + pepper,
+		salt,
+		config.crypto.keyLength,
+	)) as Buffer;
 	return `${salt}:${derivedKey.toString('hex')}`;
 }
-
-
 
 export async function verifyPassword(password: string, storedHash: string): Promise<boolean> {
 	// prend salt generer lors du hash
@@ -36,7 +36,11 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 	// scrypt est une fonction qui permet de hasher un mot de passe
 	// qu'est ce qui si passe derriere ? password est le mot de passe en clair, salt est le sel, 64 est la longueur de la clé dérivée
 
-	const derivedKey = (await scryptAsync(password+pepper, salt, config.crypto.keyLength)) as Buffer;
+	const derivedKey = (await scryptAsync(
+		password + pepper,
+		salt,
+		config.crypto.keyLength,
+	)) as Buffer;
 
 	// timingSafeEqual est une fonction qui permet de comparer deux bzuffers de manière sécurisée
 	// en temps constant, ce qui permet d'éviter les attaques par timing attack
@@ -51,4 +55,3 @@ export async function verifyPassword(password: string, storedHash: string): Prom
 	// c plus utiliser dans une bonne pratique, l'attaque par timing attack et surtout utilisation dans la validation session / verification token...
 	return timingSafeEqual(keyBuffer, derivedKey);
 }
-

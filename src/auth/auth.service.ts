@@ -1,4 +1,10 @@
-import { HttpException, Inject, InjectPlugin, Service, UnauthorizedException } from 'my-fastify-decorators';
+import {
+	HttpException,
+	Inject,
+	InjectPlugin,
+	Service,
+	UnauthorizedException,
+} from 'my-fastify-decorators';
 import config from '../config.js';
 import { hashPassword, verifyPassword } from '../utils/crypto.js';
 import { DbExchangeService } from './dbExchange.service.js';
@@ -15,7 +21,6 @@ class BadGatewayException extends HttpException {
 
 @Service()
 export class AuthService {
-
 	@Inject(DbExchangeService)
 	private dbExchange!: DbExchangeService;
 
@@ -24,22 +29,21 @@ export class AuthService {
 
 	async register(dto: RegisterDto) {
 		const { email, password } = dto;
-		
 		const existing = await this.dbExchange.existing(email);
 		if (existing) {
 			throw new UnauthorizedException('User already exists');
 		}
 
 		const hashedPassword = await hashPassword(password);
-		
+
 		const info = await this.dbExchange.addUser(email, hashedPassword);
-		
+
 		return { id: info.lastInsertRowid, email };
 	}
 
 	async login(dto: LoginDto) {
 		const { email, password } = dto;
-		
+
 		const user = await this.dbExchange.getUserByEmail(email);
 		if (!user || !user.password_hash) {
 			throw new UnauthorizedException('Invalid credentials');
@@ -58,106 +62,108 @@ export class AuthService {
 	}
 
 	async refresh(refreshToken: string) {
-        try {
-            this.jwt.verify(refreshToken);
-        } catch (err) {
-            throw new UnauthorizedException('Invalid refresh token signature');
-    	}
+		try {
+			this.jwt.verify(refreshToken);
+		} catch (err) {
+			throw new UnauthorizedException('Invalid refresh token signature');
+		}
 
-        const storedToken = await this.dbExchange.findRefreshToken(refreshToken);
-		
-        if (!storedToken) {
-            throw new UnauthorizedException('Invalid refresh token (not found)');
-        }
+		const storedToken = await this.dbExchange.findRefreshToken(refreshToken);
 
-        if (storedToken.revoked === 1) {
-            throw new UnauthorizedException('Refresh token revoked');
-        }
+		if (!storedToken) {
+			throw new UnauthorizedException('Invalid refresh token (not found)');
+		}
 
-        if (new Date(storedToken.expires_at) < new Date()) {
-            throw new UnauthorizedException('Refresh token expired');
-        }
+		if (storedToken.revoked === 1) {
+			throw new UnauthorizedException('Refresh token revoked');
+		}
 
-        const user = await this.dbExchange.getUserById(storedToken.user_id);
-        if (!user) throw new UnauthorizedException('User not found');
+		if (new Date(storedToken.expires_at) < new Date()) {
+			throw new UnauthorizedException('Refresh token expired');
+		}
 
-        await this.dbExchange.revokeRefreshToken(refreshToken);
-        return this.generateTokens(user.id, user.email);
-    }
+		const user = await this.dbExchange.getUserById(storedToken.user_id);
+		if (!user) throw new UnauthorizedException('User not found');
 
-    async logout(refreshToken: string) {
-        const storedToken = await this.dbExchange.findRefreshToken(refreshToken);
-        
-        if (storedToken) {
-            await this.dbExchange.revokeRefreshToken(refreshToken);
-        }
-    }
+		await this.dbExchange.revokeRefreshToken(refreshToken);
+		return this.generateTokens(user.id, user.email);
+	}
+
+	async logout(refreshToken: string) {
+		const storedToken = await this.dbExchange.findRefreshToken(refreshToken);
+
+		if (storedToken) {
+			await this.dbExchange.revokeRefreshToken(refreshToken);
+		}
+	}
 
 	async handleCallback(code: string, provider: ProviderKeys) {
+		let tokenRes: Response | null = null;
 
-
-        let tokenRes: Response | null = null;
-        
-        if (providers[provider].contentType === 'application/json') {
-            tokenRes = await fetch(providers[provider].accessTokenUrl, {
-                method: 'POST',
-                headers: {'Content-Type': providers[provider].contentType, 'Accept': 'application/json'}, body : JSON.stringify({...providers[provider].body, code})
-            });
-        }
-        else {
-            tokenRes = await fetch(providers[provider].accessTokenUrl, {
-                method: 'POST',
-                headers: {
-                    'Authorization': providers[provider as ProviderBasic].basic,
-                    'Content-Type': providers[provider].contentType,
-                },
-                body : new URLSearchParams({...providers[provider].body, code, redirect_uri: config.redirectUri + '/auth/' + provider + '/callback'}).toString()
-            });
-        }
-
+		if (providers[provider].contentType === 'application/json') {
+			tokenRes = await fetch(providers[provider].accessTokenUrl, {
+				method: 'POST',
+				headers: { 'Content-Type': providers[provider].contentType, Accept: 'application/json' },
+				body: JSON.stringify({ ...providers[provider].body, code }),
+			});
+		} else {
+			tokenRes = await fetch(providers[provider].accessTokenUrl, {
+				method: 'POST',
+				headers: {
+					Authorization: providers[provider as ProviderBasic].basic,
+					'Content-Type': providers[provider].contentType,
+				},
+				body: new URLSearchParams({
+					...providers[provider].body,
+					code,
+					redirect_uri: config.redirectUri + '/auth/' + provider + '/callback',
+				}).toString(),
+			});
+		}
 
 		if (!tokenRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed 1`);
-        
+
 		const tokenData: any = await tokenRes.json();
-        if (tokenData.error) throw new UnauthorizedException(`${providers[provider].id} login failed 1`);
-    
-        let userRes: Response | null = null;
-        console.log(tokenData);
-        if (tokenData.token_type.toLowerCase()=="bearer") {
-            userRes = await fetch(providers[provider].userInfoUrl, {
-                headers: { Authorization: `Bearer ${tokenData.access_token}` },
-            });
-        }
-        else {
-            throw new BadGatewayException(`${provider} - TA OUBLIER UN TRUC POUR LE PROVIDER!`);
-        }
+		if (tokenData.error)
+			throw new UnauthorizedException(`${providers[provider].id} login failed 1`);
+
+		let userRes: Response | null = null;
+		console.log(tokenData);
+		if (tokenData.token_type.toLowerCase() == 'bearer') {
+			userRes = await fetch(providers[provider].userInfoUrl, {
+				headers: { Authorization: `Bearer ${tokenData.access_token}` },
+			});
+		} else {
+			throw new BadGatewayException(`${provider} - TA OUBLIER UN TRUC POUR LE PROVIDER!`);
+		}
 
 		if (!userRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed`);
-        
 
-        console.log(userRes);
+		console.log(userRes);
 		const userData: any = await userRes.json();
-    
-        let user = await this.dbExchange.getUserByProviderId(provider, String(userData.id));
-        
-        if (!user) {
-            const info = await this.dbExchange.addUserByProviderId(provider, String(userData.id));
-            user = { id: Number(info.lastInsertRowid), email: userData.email, password_hash: '' };
-        }
 
-        return this.generateTokens(user.id, userData.email || ''); 
-    }
+		let user = await this.dbExchange.getUserByProviderId(provider, String(userData.id));
 
-    private async generateTokens(userId: number, email: string) {
-        const accessToken = this.jwt.sign({ sub: userId, email }, { expiresIn: config.jwt.expiresIn });
-        
-        const refreshToken = this.jwt.sign({ sub: userId, type: 'refresh' }, { expiresIn: config.jwt.refreshTokenExpiresIn });
+		if (!user) {
+			const info = await this.dbExchange.addUserByProviderId(provider, String(userData.id));
+			user = { id: Number(info.lastInsertRowid), email: userData.email, password_hash: '' };
+		}
 
-        const expiresAt = new Date(Date.now() + config.jwt.refreshTokenRotation).toISOString();
+		return this.generateTokens(user.id, userData.email || '');
+	}
 
-        await this.dbExchange.storeRefreshToken(userId, refreshToken, expiresAt);
+	private async generateTokens(userId: number, email: string) {
+		const accessToken = this.jwt.sign({ sub: userId, email }, { expiresIn: config.jwt.expiresIn });
 
-        return { accessToken, refreshToken };
-    }
+		const refreshToken = this.jwt.sign(
+			{ sub: userId, type: 'refresh' },
+			{ expiresIn: config.jwt.refreshTokenExpiresIn },
+		);
+
+		const expiresAt = new Date(Date.now() + config.jwt.refreshTokenRotation).toISOString();
+
+		await this.dbExchange.storeRefreshToken(userId, refreshToken, expiresAt);
+
+		return { accessToken, refreshToken };
+	}
 }
-

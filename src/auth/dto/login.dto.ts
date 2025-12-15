@@ -6,7 +6,7 @@ export class LoginDto {
 	@IsEmail()
 	email: string;
 
-    @IsRequired()
+	@IsRequired()
 	@IsString()
 	@MinLength(8)
 	password: string;
