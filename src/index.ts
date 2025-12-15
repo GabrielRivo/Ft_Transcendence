@@ -52,7 +52,7 @@ app.setSchemaErrorFormatter((errors) => {
 	err.statusCode = 400;
 	err.code = 'DTO_VALIDATION_ERROR';
 	err.validation = errors;
-	err.stack = undefined;
+	err.stack = undefined as never;
 
 	return err;
 });
