@@ -16,8 +16,9 @@ declare module 'fastify' {
 
 const __dirname = path.resolve();
 
-async function dbConnector(fastify: FastifyInstance) {
-	const db = new Database('./data/db.sqlite', opts);
+async function dbConnector(fastify: FastifyInstance, options: { dbPath?: string } = {}) {
+	const dbPath = options.dbPath || './data/db.sqlite';
+	const db = new Database(dbPath, opts);
 
 	const initSql = fs.readFileSync(path.join(__dirname, './data/init.sql'), 'utf8');
 	db.exec(initSql);
