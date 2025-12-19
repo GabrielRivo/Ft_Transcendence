@@ -2,16 +2,18 @@ import type { Fiber, Element } from '../types';
 import { setWipFiber, setHookIndex } from '../component';
 import { reconcileChildren } from './reconciliation';
 import { createDom } from '../component';
+import { PORTAL_TYPE } from '../portal';
 
-// Exécution d'une unité de travail
+// Execution d'une unité de travail
 export function performUnitOfWork(fiber: Fiber): Fiber | null {
   const isFunctionComponent = typeof fiber.type === 'function';
   const isFragment = typeof fiber.type === 'symbol';
   const isContextProvider = fiber.type === 'CONTEXT_PROVIDER';
+  const isPortal = fiber.type === PORTAL_TYPE;
   
   if (isFunctionComponent) {
     updateFunctionComponent(fiber);
-  } else if (isFragment || isContextProvider) {
+  } else if (isFragment || isContextProvider || isPortal) {
     updateFragmentComponent(fiber);
   } else {
     updateHostComponent(fiber);
@@ -32,7 +34,7 @@ export function performUnitOfWork(fiber: Fiber): Fiber | null {
   return null;
 }
 
-// Mise à jour des composants fonction
+// Update des composants fonction
 function updateFunctionComponent(fiber: Fiber): void {
   setWipFiber(fiber);
   setHookIndex(0);
@@ -47,13 +49,13 @@ function updateFunctionComponent(fiber: Fiber): void {
   reconcileChildren(fiber, children as Element[]);
 }
 
-// Mise à jour des fragments
+// Update des fragments
 function updateFragmentComponent(fiber: Fiber): void {
   const children = fiber.props?.children || [];
   reconcileChildren(fiber, children);
 }
 
-// Mise à jour des composants hôtes
+// Update des composants hosts
 function updateHostComponent(fiber: Fiber): void {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);

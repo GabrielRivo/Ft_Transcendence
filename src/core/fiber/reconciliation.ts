@@ -3,30 +3,47 @@ import { getDeletions } from '../component';
 
 // Réconciliation des enfants
 export function reconcileChildren(wipFiber: Fiber, elements: Element[]): void {
-  let index = 0;
   let oldFiber = wipFiber.alternate && wipFiber.alternate.child;
   let prevSibling: Fiber | null = null;
 
-  while (index < elements.length || oldFiber != null) {
-    const element = elements[index];
+  // 1. Indexer les anciens fibers par key (ou index si pas de key)
+  const oldFibersMap = new Map<string | number, Fiber>();
+  let tempOldFiber = oldFiber;
+  let index = 0;
+  
+  while (tempOldFiber) {
+    const key = tempOldFiber.props.key !== undefined ? tempOldFiber.props.key : index;
+    oldFibersMap.set(key, tempOldFiber);
+    tempOldFiber = tempOldFiber.sibling;
+    index++;
+  }
+
+  // 2. Parcourir les nouveaux elements et reconcilie
+  index = 0;
+  for (const element of elements) {
     let newFiber: Fiber | null = null;
+    
+    // Key de l'element actuel
+    const key = element.props.key !== undefined ? element.props.key : index;
+    
+    // Chercher une correspondance dans les anciens fibers
+    const matchedFiber = oldFibersMap.get(key);
+    const sameType = matchedFiber && matchedFiber.type === element.type;
 
-    const sameType = oldFiber && element && element.type === oldFiber.type && element.props.key === oldFiber.props.key;
-
-    // on update le fiber existant
-    if (sameType && oldFiber) {
+    if (sameType && matchedFiber) {
+      // UPDATE: On a trouve un fiber correspondant, on le met a jour
       newFiber = {
-        type: oldFiber.type,
+        type: matchedFiber.type,
         props: element.props,
-        dom: oldFiber.dom,
+        dom: matchedFiber.dom,
         parent: wipFiber,
-        alternate: oldFiber,
+        alternate: matchedFiber,
         effectTag: "UPDATE",
       };
-    }
-    
-    // on creer un nouveau fiber
-    if (element && !sameType) {
+      // On retire le fiber utilise de la map pour ne pas le supprimer plus tard
+      oldFibersMap.delete(key);
+    } else {
+      // PLACEMENT: Pas de match ou type different, on creer un nouveau
       newFiber = {
         type: element.type,
         props: element.props,
@@ -35,40 +52,31 @@ export function reconcileChildren(wipFiber: Fiber, elements: Element[]): void {
         alternate: null,
         effectTag: "PLACEMENT",
       };
+      
+      // Si on avait un match de key mais pas de type, l'ancien est invalide
+      // Il restera dans la map et sera supprime a la fin, ou on peut le supprimer tout de suite si on veut etre strict sur la key unique.
+      // Ici on laisse la map gérer les suppressions restantes.
     }
-    
-    // on verifie que le fiber est un provider "securite"
-    if (newFiber && newFiber.type === 'CONTEXT_PROVIDER') {
+
+    // Securite pour les Providers/Portals
+    if (newFiber && (newFiber.type === 'CONTEXT_PROVIDER' || newFiber.type === 'PORTAL')) {
       newFiber.dom = null;
     }
-    
-    // on supprime le fiber existant
-    if (oldFiber && !sameType) {
-      oldFiber.effectTag = "DELETION";
-      getDeletions().push(oldFiber);
-    }
 
-    if (oldFiber) {
-      oldFiber = oldFiber.sibling;
-    }
-
-    // if (index === 0) {
-    //   wipFiber.child = newFiber || undefined;
-    // } else if (element && prevSibling) {
-    //   prevSibling.sibling = newFiber || undefined;
-    // }
-
-    // amelioration chainage parent enfant
-    if (newFiber) {
-      if (!prevSibling) {
-        wipFiber.child = newFiber;
-      } else {
-        prevSibling.sibling = newFiber;
-      }
-      prevSibling = newFiber;
+    // Chaining des freres
+    if (index === 0) {
+      wipFiber.child = newFiber || undefined;
+    } else if (prevSibling) {
+      prevSibling.sibling = newFiber || undefined;
     }
 
     prevSibling = newFiber;
     index++;
   }
-} 
+
+  // 3. Supprimer les anciens fibers restants (ceux qui n'ont pas ete reutilises)
+  oldFibersMap.forEach((fiber) => {
+    fiber.effectTag = "DELETION";
+    getDeletions().push(fiber);
+  });
+}
