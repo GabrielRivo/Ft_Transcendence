@@ -43,9 +43,10 @@ export function useParams() {
   return params;
 }
 
-interface Route {
+interface Route{
   path: string;
   component: () => Element;
+  data?: Record<string, any>;
 }
 
 interface RouteGroup {
@@ -114,7 +115,7 @@ export function Router({ groups, NoFound }: { groups: RouteGroup[], NoFound?: El
     ? (
         (() => {
             const Page = matchedRoute.component;
-            const page = <Page />;
+            const page = <Page {...matchedRoute.data} />;
             return Layout ? <Layout>{page}</Layout> : page;
         })()
       )
