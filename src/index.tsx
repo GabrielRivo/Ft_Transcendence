@@ -49,7 +49,7 @@ interface Route{
   data?: Record<string, any>;
 }
 
-interface RouteGroup {
+export interface RouteGroup {
   layout?: (props: { children?: any }) => Element;
   routes: Route[];
 }
