@@ -43,14 +43,15 @@ export function useParams() {
   return params;
 }
 
-interface Route{
+export interface Route {
   path: string;
-  component: () => Element;
-  data?: Record<string, any>;
+  component: (props: any) => Element;
+  data?: any;
+  name?: string;
 }
 
 export interface RouteGroup {
-  layout?: (props: { children?: any }) => Element;
+  layout?: (props: any) => Element;
   routes: Route[];
 }
 
@@ -115,7 +116,7 @@ export function Router({ groups, NoFound }: { groups: RouteGroup[], NoFound?: El
     ? (
         (() => {
             const Page = matchedRoute.component;
-            const page = <Page {...matchedRoute.data} />;
+            const page = <Page {...matchedRoute.data} key={currentPath} />;
             return Layout ? <Layout>{page}</Layout> : page;
         })()
       )
