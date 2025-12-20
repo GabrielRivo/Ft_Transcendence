@@ -1,0 +1,17 @@
+Si pas Oauth :
+	Ajouter mot de passe oublier
+	Ajouter verification de mail
+	Ajout peut etre du Magic Code
+	Ajouter double identification via OTP (enable / disable) => bien donner 2 recovery code en cas de perte...
+
+[verifier si probleme avec pseudo]
+
+Faire les workders pour mot de passe oublier et verification de mail
+Faire la communication avec rabbitMQ fastify to worker en fire and forget
+
+Faire un decorators qui permet de recuperer les values des JWT mais qui n'a pas a verifier les signatures car /auth/check aura deja valider ou pas le jwt...
+
+Voir pour faire une micro partie du user management (
+	renome pseudo,
+	changer de mail
+)
