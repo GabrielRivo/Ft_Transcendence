@@ -71,11 +71,14 @@ export function createComponent(type: string | Function, props: Props | null, ..
 // Création d'éléments (équivalent à React.createElement)
 export function createElement(type: string | Function, props: Props | null, ...children: any[]): Element {
   // console.log('createElement', type, props, children);
+
+  // essayer de voir pour le retirer car lourd
+  // .filter(child => child != null && child !== false && child !== true)
   return {
     type,
     props: {
       ...props,
-      children: children.flat().map(child =>
+      children: children.flat().filter(child => child != null && child !== false && child !== true).map(child =>
         typeof child === "object" ? child : createTextElement(child)
       ),
     },
