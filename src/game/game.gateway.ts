@@ -5,7 +5,7 @@ import {
 	SubscribeMessage,
 	WebSocketGateway,
 } from 'my-fastify-decorators';
-import type { Socket } from 'socket.io';
+import { Socket } from 'socket.io';
 import { GameService } from './game.service.js';
 
 //strucuture : client affiche le jeu, se lie au game updater, sur un click il demande le lancement d'une game de pong
@@ -29,26 +29,40 @@ export class GameGateway {
 	@Inject(GameService)
 	private gameService!: GameService;
 
+	private playerSockets: Map<string, Socket> = new Map();
 	private count = 0;
 
 	@SubscribeConnection()
 	handleConnection(client: Socket) {
-		console.log(`Client connected: ${client.id}`);
+		const userId = client.handshake.auth.userId;
+		client.data.userId = userId;
+		console.log(`Client connected: ${client.id} with userId: ${userId}`);
 		this.count++;
-		console.log(`Total connected clients: ${this.count}`);
-		client.data.username = `User${this.count}`;
-		client.join("hub");
+		/*console.log(`Total connected clients: ${this.count}`);
+		client.data.username = `id${this.count}`;*/
+		client.emit("connection", `Welcome ${client.data.username}! You are connected to the Pong game server.`);
+		if (this.playerSockets.has(userId)) {
+			const oldClient = this.playerSockets.get(userId)!;
+			oldClient.disconnect();
+			console.log(`Disconnected old client for userId: ${userId}`);
+		}
+		this.playerSockets.set(userId, client);
+		this.gameService.connectPlayer(client);
 	}
 
 	@SubscribeDisconnection()
 	handleDisconnect(client: Socket) {
-		console.log(`Client disconnected: ${client.id}`);
+		this.gameService.disconnectPlayer(client);
+		this.count--;
+		console.log(`Client disconnected: ${client.handshake.auth.userId}`);
+		// if (client.data.gameId) {
+		console.log(`Total connected clients: ${this.count}`);
 	}
 
 	@SubscribeMessage('gameUpdate')
 	handleGameUpdate(client: Socket, data: any) {
 		console.log(`Received game update from client ${client.id}:`, data);
-		this.gameService.processGameUpdate(data);
+		// this.gameService.processGameUpdate(data);
 		client.emit("gameUpdate", "You are linked with the game server updater");
 	}
 }
