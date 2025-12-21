@@ -123,7 +123,7 @@ export function createDom(fiber: Fiber): Node {
 // Mise à jour des propriétés DOM
 export function updateDom(dom: any, prevProps: Props, nextProps: Props, isNotText: boolean = false): void {
   const isEvent = (key: string): boolean => key.startsWith("on");
-  const isProperty = (key: string): boolean => key !== "children" && !isEvent(key);
+  const isProperty = (key: string): boolean => key !== "children" && key !== "ref" && key !== "key" && !isEvent(key);
   const isNew = (prev: Props, next: Props) => (key: string): boolean => prev[key] !== next[key];
   const isGone = (prev: Props, next: Props) => (key: string): boolean => !(key in next);
   
