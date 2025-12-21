@@ -37,7 +37,11 @@ export interface Fiber {
   hooks?: Hook[];
 }
 
-export interface RefObject<T> {
+// export interface RefObject<T> {
+//   current: T | null;
+// }
+
+export type RefObject<T> = {
   current: T | null;
 }
 
