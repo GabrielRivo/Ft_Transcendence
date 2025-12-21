@@ -1,0 +1,91 @@
+
+import {Vector3, Mesh, MeshBuilder, StandardMaterial, Color3, Color4 } from "@babylonjs/core";
+import Game from "./Game/Game.js";
+import DeathBar from "./DeathBar.js";
+import Paddle from "./Paddle.js";
+import { OwnedMesh } from "./globalType.js";
+import Services from "./Services/Services.js";
+
+let idDefault = 0;
+
+enum Movement {
+    LEFT = "left",
+    RIGHT = "right",
+    UP = "up",
+    DOWN = "down"
+}
+
+export const { LEFT, RIGHT, UP, DOWN } = Movement;
+
+type input = {
+    left: boolean,
+    right: boolean,
+    up: boolean,
+    down: boolean
+}
+
+class Player {
+    private services: Services;
+    
+    id: string;
+    paddle: Paddle;
+    deathBar: DeathBar;
+    direction: Vector3 = new Vector3(0, 0, 0);
+    input: input = {left: false, right: false, up: false, down: false};
+    speed : number = 7;
+    score: number = 0;
+
+    constructor(services: Services, id?: string) {
+        this.services = services;
+        this.id = id ?? "player" + (idDefault++);
+        this.paddle = new Paddle(this.services, this);
+        this.paddle.owner = this;
+        this.deathBar = new DeathBar(this.services, undefined, this);
+        this.deathBar.owner = this;
+    }
+
+    setPaddleDirection(direction: Vector3) {
+        this.paddle.setDirection(direction);
+    }
+    setPaddleDirectionFromKeyboard(direction : Movement, isPressed : boolean) {
+        if (this.input[direction] === isPressed)
+            return;
+        this.input[direction] = isPressed;
+        this.direction.x = 0;
+        Object.keys(this.input).forEach(key => {
+            switch (key) {
+                case "left":
+                    this.direction.x -= this.input.left ? 1 : 0;
+                    break;
+                case "right":
+                    this.direction.x += this.input.right ? 1 : 0;
+                    break;
+            }
+        })
+        this.paddle.setDirection(this.direction);
+    }
+
+    scoreUp(value ?: number) {
+        this.score += value ?? 1;
+        console.log("Player " + this.id + " score: " + this.score);
+    }
+    scoreDown(value ?: number) {
+        this.score -= value ?? 1;
+        console.log("Player " + this.id + " score: " + this.score);
+    }
+    scoreReset() {
+        this.score = 0;
+        console.log("Player " + this.id + " score: " + this.score);
+    }
+
+    update() {
+        this.paddle.update();
+    }
+
+    dispose() {
+        this.paddle.dispose();
+        this.deathBar.dispose();
+    }
+}
+
+export default Player;

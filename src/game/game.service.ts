@@ -1,5 +1,5 @@
 import { Service } from 'my-fastify-decorators';
-import GameInstance from './gameInstance.js';
+import Pong from './pong/Game/Pong.js';
 
 import { Socket } from 'socket.io';
 import { create } from 'domain';
@@ -7,8 +7,8 @@ import { create } from 'domain';
 @Service()
 export class GameService {
     private gameCount = 0;
-    private gamesByPlayer: Map<string, GameInstance> = new Map();
-    private games: Map<string, GameInstance> = new Map();
+    private gamesByPlayer: Map<string, Pong> = new Map();
+    private games: Map<string, Pong> = new Map();
     private queue: Socket[] = [];
 
     public connectPlayer(client: Socket) {
@@ -35,12 +35,13 @@ export class GameService {
     }
 
     public createGame(id: string, player1: Socket, player2: Socket) {
-        //logic to create and start a game
-        const gameInstance = new GameInstance(id, player1, player2, this);
-        this.gamesByPlayer.set(player1.handshake.auth.userId, gameInstance);
-        this.gamesByPlayer.set(player2.handshake.auth.userId, gameInstance);
+        const gameInstance = new Pong(id, player1, player2, this);
+        this.gamesByPlayer.set(player1.data.userId, gameInstance);
+        this.gamesByPlayer.set(player2.data.userId, gameInstance);
         this.games.set(id, gameInstance);
-        console.log(`Game instance ${id} created with players ${player1.handshake.auth.userId} and ${player2.handshake.auth.userId}`);
+        gameInstance.initialize();
+        gameInstance.start();
+        console.log(`Game instance ${id} created with players ${player1.data.userId} and ${player2.data.userId}`);
     }
 
     public disconnectPlayer(client: Socket) {
@@ -57,7 +58,7 @@ export class GameService {
         }
     }
 
-    public removeGame(game: GameInstance, player1Id: string, player2Id: string) {
+    public removeGame(game: Pong, player1Id: string, player2Id: string) {
         this.gamesByPlayer.delete(player1Id);
         this.gamesByPlayer.delete(player2Id);
         this.games.delete(game.id);
