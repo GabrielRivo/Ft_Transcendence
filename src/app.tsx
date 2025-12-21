@@ -1,5 +1,6 @@
 import { render, createElement } from 'my-react';
 import App from './router';
+import './index.css';
 
 const root = document.getElementById('root');
 if (root) {

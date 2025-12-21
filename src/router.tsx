@@ -1,11 +1,10 @@
-import { createElement, Fragment, render, useState, useEffect, useContext, createContext } from 'my-react';
-import { Router, LayoutProvider, Link } from 'my-react-router';
+import { createElement } from 'my-react';
+import { Router } from 'my-react-router';
 
 import { Test } from './pages/test';
 import { NotFoundPage } from './pages/notFoundPage';
 import { Home } from './pages/home';
 import { MainLayout } from './layout/mainLayout';
-
 
 const routes = [
   {
@@ -13,21 +12,16 @@ const routes = [
     routes: [
       {
         path: '/',
-        component: Home
+        component: Home,
       },
       {
         path: '/test',
-        component: Test
-      }
-    ]
-  }
+        component: Test,
+      },
+    ],
+  },
 ];
 
 export default function App() {
-  return (
-    <Router 
-      groups={routes} 
-      NoFound={<NotFoundPage />} 
-    />
-  );
+  return <Router groups={routes} NoFound={<NotFoundPage />} />;
 }
