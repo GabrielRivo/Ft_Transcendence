@@ -1,20 +1,59 @@
 @import 'tailwindcss';
 
+@font-face {
+	font-family: 'IBM Plex Mono';
+	src: url('/font/IBM_Plex_Mono/IBMPlexMono-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'IBM Plex Mono';
+	src: url('/font/IBM_Plex_Mono/IBMPlexMono-Bold.ttf') format('truetype');
+	font-weight: 700;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Pirulen';
+	src: url('/font/pirulen/pirulen rg.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+
 @theme {
-  --color-neon-blue: #00f3ff;
-  --color-neon-pink: #ff00ff;
+	--color-primary: #030712;
+	--color-secondary: #ffffff;
 
-  --font-display: 'Oswald', sans-serif;
+	--color-neon-blue: #00f3ff;
+	--color-neon-pink: #ff00ff;
 
-  --animate-float: float 3s ease-in-out infinite;
+	--font-display: 'Oswald', sans-serif;
+	--font-mono: 'IBM Plex Mono', monospace;
+	--font-pirulen: 'Pirulen', sans-serif;
 
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
+	--animate-float: float 3s ease-in-out infinite;
+
+	@keyframes float {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+}
+
+@utility grid-area-button {
+	grid-area: button;
+}
+
+*,
+:after,
+:before {
+	box-sizing: border-box;
+}
+
+body {
+	font-family: var(--font-mono);
 }
