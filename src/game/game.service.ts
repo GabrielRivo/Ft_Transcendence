@@ -14,7 +14,7 @@ export class GameService {
     public connectPlayer(client: Socket) {
         if (this.gamesByPlayer.has(client.data.userId)) {
             const game = this.gamesByPlayer.get(client.data.userId);
-            client.join(game!.id);
+            game!.playerConnected(client);
             client.emit("gameJoined", { gameId: game!.id, message: `Rejoined game ${game!.id} successfully!` });
             console.log(`Client ${client.id} joined game ${game!.id}`);
         }
@@ -26,8 +26,6 @@ export class GameService {
                 const player2 = this.queue.shift()!;
                 const gameId = `game-${this.gameCount++}`;
                 this.createGame(gameId, player1, player2);
-                player1.join(gameId);
-                player2.join(gameId);
                 player1.emit("gameCreated", { gameId, message: `Game ${gameId} created successfully! You are Player 1.` });
                 player2.emit("gameCreated", { gameId, message: `Game ${gameId} created successfully! You are Player 2.` });
             }
@@ -40,8 +38,9 @@ export class GameService {
         this.gamesByPlayer.set(player2.data.userId, gameInstance);
         this.games.set(id, gameInstance);
         gameInstance.initialize();
-        gameInstance.start();
         console.log(`Game instance ${id} created with players ${player1.data.userId} and ${player2.data.userId}`);
+        gameInstance.playerConnected(player1);
+        gameInstance.playerConnected(player2);
     }
 
     public disconnectPlayer(client: Socket) {

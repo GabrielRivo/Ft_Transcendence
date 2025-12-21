@@ -43,8 +43,9 @@ export class GameGateway {
 	@SubscribeDisconnection()
 	handleDisconnect(client: Socket) {
 		this.gameService.disconnectPlayer(client);
+		this.playerSockets.delete(client.data.userId);
 		this.count--;
-		console.log(`Client disconnected: ${client.handshake.auth.userId}`);
+		console.log(`Client disconnected: ${client.data.userId}`);
 		// if (client.data.gameId) {
 		console.log(`Total connected clients: ${this.count}`);
 	}

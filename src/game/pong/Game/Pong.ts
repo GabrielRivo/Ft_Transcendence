@@ -28,15 +28,20 @@ class Pong extends Game {
     width: number = 7;
     height: number = 12;
 
-    constructor(id: string, player1 : Socket, player2 : Socket, gameService: GameService) {
+    private gameState : "waiting" | "playing" | null;
+    private disconnectTimeout: NodeJS.Timeout | null = null;
+
+    constructor(id: string, p1Socket : Socket, p2Socket : Socket, gameService: GameService) {
         super();
         this.id = id;
-        this.p1Socket = player1;
-        this.p2Socket = player2;
-        this.nsp = player1.nsp;
+        this.p1Socket = p1Socket;
+        this.p2Socket = p2Socket;
+        this.nsp = p1Socket.nsp;
         this.gameService = gameService;
+        this.gameState = "waiting";
 
         this.services = new Services();
+
     }
 
     initialize(): void {
@@ -71,14 +76,36 @@ class Pong extends Game {
     }
 
     public start() {
-        console.log(`Starting game instance ${this.id}`);
-        this.nsp.to(this.id).emit('gameStarted', { gameId: this.id, message: `Game ${this.id} has started!` });
-        this.renderStart();
+        
+    }
+
+    public async playerConnected(client: Socket) {
+        console.log(`Player connected: ${client.data.userId} to game ${this.id}`);
+        if (this.p1Socket.data.userId === client.data.userId) {
+            this.p1Socket = client;
+        }
+        else if (this.p2Socket.data.userId === client.data.userId) {
+            this.p2Socket = client;
+        }
+        await client.join(this.id);
+        if (this.disconnectTimeout) {
+            clearTimeout(this.disconnectTimeout);
+            this.disconnectTimeout = null;
+        }
+        this.run("Both players connected. Resuming game.");
     }
 
     public playerDisconnected(client: Socket) {
-        this.nsp.to(this.id).emit('playerDisconnected', { gameId: this.id, message: `A player has disconnected. Ending game.` });
-        this.dispose();
+        this.stop(`Player ${client.data.userId} has disconnected. Waiting for reconnection...`);
+
+        if (!this.disconnectTimeout) {
+            this.disconnectTimeout = setTimeout(() => {
+            if (this.p1Socket.disconnected || this.p2Socket.disconnected) {
+                console.log(`Timeout reached for game ${this.id}. Disposing...`);
+                this.dispose();
+            }
+        }, 15000);
+    }
     }
 
     private onDeathBarHit = (payload: DeathBarPayload) => {
@@ -92,18 +119,30 @@ class Pong extends Game {
         this.ball.setFullPos(new Vector3(0, 0.125, 0));
     }
 
-    renderStart() {
-        this.services.Engine!.stopRenderLoop();
-        this.services.Engine!.runRenderLoop(() => {
-            this.player1!.update();
-            this.player2!.update();
-            this.ball!.update();
-        });
+    run(message?: string) {
+        if (this.p1Socket.connected === false || this.p2Socket.connected === false) {
+            console.log("A player is still disconnected, cannot run the game.");
+            return;
+        }
+        if (this.gameState === "waiting" || this.gameState === null) {
+            this.gameState = "playing";
+            this.nsp.to(this.id).emit('gameStarted', { gameId: this.id, message: message || `Game ${this.id} is now running.` });
+            this.services.Engine!.stopRenderLoop();
+            this.services.Engine!.runRenderLoop(() => {
+                this.player1!.update();
+                this.player2!.update();
+                this.ball!.update();
+            });
+        }
     }
 
-    renderStop() {
-        this.services.Engine!.stopRenderLoop();
-        this.services.Engine!.runRenderLoop(() => {});
+    stop(message?: string) {
+        if (this.gameState === "playing" || this.gameState === null) {
+            this.gameState = "waiting";
+            this.nsp.to(this.id).emit('gameStopped', { gameId: this.id, message: message || `Game ${this.id} has been paused.` });
+            this.services.Engine!.stopRenderLoop();
+            this.services.Engine!.runRenderLoop(() => {});
+        }
     }
 
     dispose(): void {
