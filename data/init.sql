@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS friends (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_other_unique ON friends (userId, otherId);
+ALTER TABLE friends ADD CONSTRAINT no_self_friend CHECK (userId <> otherId);
 
 
 CREATE TABLE IF NOT EXISTS blocklist (
@@ -13,6 +14,8 @@ CREATE TABLE IF NOT EXISTS blocklist (
     otherId INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE blocklist ADD CONSTRAINT no_self_block CHECK (userId <> otherId);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_block_unique ON blocklist (userId, otherId);
 
 
 CREATE TABLE IF NOT EXISTS matchHistory (
@@ -63,5 +66,5 @@ CREATE TABLE IF NOT EXISTS tournamentChatLink(
 --     userId,
 --     msgContent
 -- FROM tournamentChatLink
--- LEFT JOIN tournamntChatHistory ON tournamentChatLink.chatId = tournamentChatLink.chatId
+-- LEFT JOIN tournamentChatHistory ON tournamentChatLink.chatId = tournamentChatLink.chatId
 -- WHERE tournamentId = 1
