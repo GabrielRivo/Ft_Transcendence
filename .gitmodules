@@ -14,3 +14,11 @@
 	path = packages/my-class-validator
 	url = git@github.com:thetranscendence/my-class-validator.git
 	branch = main
+[submodule "apps/auth"]
+	path = apps/auth
+	url = git@github.com:thetranscendence/auth.git
+	branch = main
+[submodule "apps/matchmaking"]
+	path = apps/matchmaking
+	url = git@github.com:thetranscendence/matchmaking.git
+	branch = main
