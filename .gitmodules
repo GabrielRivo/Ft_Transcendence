@@ -22,3 +22,6 @@
 	path = apps/matchmaking
 	url = git@github.com:thetranscendence/matchmaking.git
 	branch = main
+[submodule "ops"]
+	path = ops
+	url = git@github.com:thetranscendence/ft-transcendence-infra.git
