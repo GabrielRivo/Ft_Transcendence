@@ -62,6 +62,7 @@ export class GameService {
         this.gamesByPlayer.delete(player2Id);
         this.games.delete(game.id);
         console.log(`Game instance with players ${player1Id} and ${player2Id} ended and removed.`);
+		this.gameCount--;
     }
 
     public getActiveGamesCount(): number {
