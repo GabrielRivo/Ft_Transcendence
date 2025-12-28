@@ -23,9 +23,9 @@ export class BlockManagementService {
 	block_user(userId: number, otherId: number) {
 		try {
 			this.statementBlock.run({ userId, otherId });
-			return { success: true, message: "Utilisateur bloqué" };
+			return { success: true, message: "Block user" };
 		} catch (e) {
-			return { success: false, message: "Déjà bloqué ou erreur" };
+			return { success: false, message: "User already blocked" };
 		}
 	}
 

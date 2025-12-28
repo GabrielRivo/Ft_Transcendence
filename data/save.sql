@@ -1,21 +1,20 @@
-
 CREATE TABLE IF NOT EXISTS friends (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER NOT NULL,
     otherId INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT no_self_friend CHECK (userId <> otherId)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_other_unique ON friends (userId, otherId);
+ALTER TABLE friends ADD CONSTRAINT no_self_friend CHECK (userId <> otherId);
 
 
 CREATE TABLE IF NOT EXISTS blocklist (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER NOT NULL,
     otherId INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT no_self_block CHECK (userId <> otherId)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+ALTER TABLE blocklist ADD CONSTRAINT no_self_block CHECK (userId <> otherId);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_block_unique ON blocklist (userId, otherId);
 
 
@@ -60,3 +59,14 @@ CREATE TABLE IF NOT EXISTS tournamentChatLink(
     chatId INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- SELECT
+--     tournamentId,
+--     msgId,
+--     userId,
+--     msgContent
+-- FROM tournamentChatLink
+-- LEFT JOIN tournamentChatHistory ON tournamentChatLink.chatId = tournamentChatLink.chatId
+-- WHERE tournamentId = 1
+
+-- http://localhost:3000/friend-management/friend?555=555
