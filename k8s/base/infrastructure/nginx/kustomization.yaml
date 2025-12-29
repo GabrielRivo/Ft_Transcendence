@@ -4,4 +4,11 @@ kind: Kustomization
 metadata:
   name: nginx-base
 
-resources: []
+resources:
+  - serviceaccount.yaml
+  - rbac.yaml
+  - configmap.yaml
+  - configmap-modsecurity.yaml
+  - deployment.yaml
+  - service.yaml
+  - ingressclass.yaml

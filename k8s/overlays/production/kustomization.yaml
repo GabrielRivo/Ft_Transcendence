@@ -7,55 +7,72 @@ metadata:
 namespace: ft-transcendence-production
 
 resources:
-  - namespace.yaml
-  - resource-quota.yaml
-  - limit-range.yaml
-  - redis-pdb.yaml
-  - rabbitmq-pdb.yaml
+  - resources/namespace.yaml
+  - resources/resource-quota.yaml
+  - resources/limit-range.yaml
+  - resources/redis-pdb.yaml
+  - resources/rabbitmq-pdb.yaml
+  - resources/nginx-headers-configmap.yaml
   - ../../base
 
 patches:
   - target:
       kind: ConfigMap
       name: auth-config
-    path: configmap-patch-auth.yaml
+    path: patches/auth/configmap-patch-auth.yaml
   - target:
       kind: ConfigMap
       name: matchmaking-config
-    path: configmap-patch-matchmaking.yaml
+    path: patches/matchmaking/configmap-patch-matchmaking.yaml
   - target:
       kind: ConfigMap
       name: frontend-config
-    path: configmap-patch-frontend.yaml
+    path: patches/frontend/configmap-patch-frontend.yaml
   - target:
       kind: PersistentVolumeClaim
       name: auth-db-pvc
-    path: storage-patch-auth.yaml
+    path: patches/storage/storage-patch-auth.yaml
   - target:
       kind: PersistentVolumeClaim
       name: matchmaking-db-pvc
-    path: storage-patch-matchmaking.yaml
+    path: patches/storage/storage-patch-matchmaking.yaml
   - target:
       kind: StatefulSet
       name: redis
-    path: redis-patch.yaml
+    path: patches/redis/redis-patch.yaml
   - target:
       kind: Secret
       name: redis-secret
-    path: redis-secret.yaml
+    path: resources/redis-secret.yaml
   - target:
       kind: StatefulSet
       name: rabbitmq
-    path: rabbitmq-patch.yaml
+    path: patches/rabbitmq/rabbitmq-patch.yaml
   - target:
       kind: Secret
       name: rabbitmq-secret
-    path: rabbitmq-secret.yaml
+    path: resources/rabbitmq-secret.yaml
+  - target:
+      kind: Deployment
+      name: nginx-ingress-controller
+    path: patches/nginx/nginx-deployment-patch.yaml
+  - target:
+      kind: Service
+      name: nginx-ingress-controller
+    path: patches/nginx/nginx-service-patch.yaml
+  - target:
+      kind: ConfigMap
+      name: nginx-config
+    path: patches/nginx/nginx-configmap-patch.yaml
+  - target:
+      kind: ClusterRoleBinding
+      name: nginx-ingress-controller
+    path: patches/nginx/nginx-rbac-patch.yaml
 
 configMapGenerator:
   - name: redis-config
     files:
-      - redis.conf
+      - configs/redis.conf
     options:
       labels:
         app: redis
@@ -65,8 +82,8 @@ configMapGenerator:
       disableNameSuffixHash: false
   - name: rabbitmq-config
     files:
-      - rabbitmq.conf
-      - enabled_plugins
+      - configs/rabbitmq.conf
+      - configs/enabled_plugins
     options:
       labels:
         app: rabbitmq

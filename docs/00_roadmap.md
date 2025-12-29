@@ -167,11 +167,11 @@ Cette roadmap détaille la stratégie de migration de l'infrastructure Docker Co
 
 #### 2.4 Nginx Ingress Controller
 
-- [ ] Déployer le Nginx Ingress Controller
-- [ ] Configurer ModSecurity/WAF pour la sécurité
-- [ ] Créer les ConfigMaps pour la configuration Nginx
-- [ ] Configurer les annotations pour Cloudflare (production)
-- [ ] Documenter les règles Ingress par environnement
+- [x] Déployer le Nginx Ingress Controller
+- [x] Configurer ModSecurity/WAF pour la sécurité
+- [x] Créer les ConfigMaps pour la configuration Nginx
+- [x] Configurer les annotations pour Cloudflare (production)
+- [x] Documenter les règles Ingress par environnement
 
 ---
 
