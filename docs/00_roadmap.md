@@ -132,14 +132,14 @@ Cette roadmap détaille la stratégie de migration de l'infrastructure Docker Co
 
 #### 2.1 Storage pour SQLite
 
-- [ ] Créer les StorageClasses pour chaque environnement
+- [x] Créer les StorageClasses pour chaque environnement
   - `fast-ssd` pour production
   - `standard` pour dev/test
-- [ ] Configurer les PersistentVolumeClaims pour les services applicatifs
+- [x] Configurer les PersistentVolumeClaims pour les services applicatifs
   - `auth-db-pvc` pour le service auth
   - `matchmaking-db-pvc` pour le service matchmaking
-- [ ] Documenter la stratégie de backup et restauration
-- [ ] Tester la persistance des données lors des redémarrages
+- [x] Documenter la stratégie de backup et restauration
+- [x] Tester la persistance des données lors des redémarrages
 
 #### 2.2 Redis
 

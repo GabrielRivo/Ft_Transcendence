@@ -17,6 +17,7 @@ patches:
   - path: configmap-patch-auth.yaml
   - path: configmap-patch-matchmaking.yaml
   - path: configmap-patch-frontend.yaml
+  - path: storage-patch.yaml
 
 configMapGenerator: []
 

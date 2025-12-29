@@ -4,4 +4,8 @@ kind: Kustomization
 metadata:
   name: storage-base
 
-resources: []
+resources:
+  - storageclass-standard.yaml
+  - storageclass-fast-ssd.yaml
+  - pvc-auth-db.yaml
+  - pvc-matchmaking-db.yaml
