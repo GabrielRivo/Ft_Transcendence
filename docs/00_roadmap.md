@@ -143,27 +143,27 @@ Cette roadmap détaille la stratégie de migration de l'infrastructure Docker Co
 
 #### 2.2 Redis
 
-- [ ] Créer les manifests de base pour Redis
+- [x] Créer les manifests de base pour Redis
   - Deployment avec StatefulSet pour la persistance
   - Service ClusterIP
   - ConfigMap pour la configuration
-- [ ] Configurer la persistance avec PersistentVolume
-- [ ] Ajouter les health checks (liveness/readiness probes)
-- [ ] Créer les overlays pour dev/test/prod
+- [x] Configurer la persistance avec PersistentVolume
+- [x] Ajouter les health checks (liveness/readiness probes)
+- [x] Créer les overlays pour dev/test/prod
   - Dev : 1 replica, ressources réduites
   - Test/Prod : 3 replicas, ressources adaptées
-- [ ] Documenter l'accès depuis les services applicatifs
+- [x] Documenter l'accès depuis les services applicatifs
 
 #### 2.3 RabbitMQ
 
-- [ ] Créer les manifests de base pour RabbitMQ
+- [x] Créer les manifests de base pour RabbitMQ
   - StatefulSet pour la persistance
   - Service ClusterIP
   - ConfigMap pour la configuration
-- [ ] Configurer la persistance et la haute disponibilité
-- [ ] Ajouter les health checks
-- [ ] Créer les overlays pour dev/test/prod
-- [ ] Documenter la configuration des exchanges et queues
+- [x] Configurer la persistance et la haute disponibilité
+- [x] Ajouter les health checks
+- [x] Créer les overlays pour dev/test/prod
+- [x] Documenter la configuration des exchanges et queues
 
 #### 2.4 Nginx Ingress Controller
 

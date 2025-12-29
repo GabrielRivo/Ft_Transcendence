@@ -7,10 +7,10 @@ metadata:
 namespace: ft-transcendence-dev
 
 resources:
-  - ../../base
   - namespace.yaml
   - resource-quota.yaml
   - limit-range.yaml
+  - ../../base
 
 patches:
   - target:
@@ -37,9 +37,18 @@ patches:
       kind: StatefulSet
       name: redis
     path: redis-patch.yaml
-
-resources:
-  - redis-secret.yaml
+  - target:
+      kind: StatefulSet
+      name: rabbitmq
+    path: rabbitmq-patch.yaml
+  - target:
+      kind: Secret
+      name: redis-secret
+    path: redis-secret.yaml
+  - target:
+      kind: Secret
+      name: rabbitmq-secret
+    path: rabbitmq-secret.yaml
 
 configMapGenerator:
   - name: redis-config
@@ -51,6 +60,17 @@ configMapGenerator:
         app.kubernetes.io/name: ft-transcendence
         app.kubernetes.io/part-of: ft-transcendence
         app.kubernetes.io/component: redis
-      disableNameSuffixHash: false
+      disableNameSuffixHash: true
+  - name: rabbitmq-config
+    files:
+      - rabbitmq.conf
+      - enabled_plugins
+    options:
+      labels:
+        app: rabbitmq
+        app.kubernetes.io/name: ft-transcendence
+        app.kubernetes.io/part-of: ft-transcendence
+        app.kubernetes.io/component: rabbitmq
+      disableNameSuffixHash: true
 
 secretGenerator: []

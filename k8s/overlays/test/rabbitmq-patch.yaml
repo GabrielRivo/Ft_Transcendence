@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: redis
+  name: rabbitmq
 spec:
   replicas: 3
   template:
@@ -16,24 +16,14 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - redis
+                        - rabbitmq
                 topologyKey: kubernetes.io/hostname
       containers:
-        - name: redis
+        - name: rabbitmq
           resources:
             requests:
-              memory: '256Mi'
-              cpu: '250m'
-            limits:
               memory: '512Mi'
               cpu: '500m'
-  volumeClaimTemplates:
-    - metadata:
-        name: data
-      spec:
-        accessModes:
-          - ReadWriteOnce
-        storageClassName: standard
-        resources:
-          requests:
-            storage: 20Gi
+            limits:
+              memory: '1Gi'
+              cpu: '1000m'

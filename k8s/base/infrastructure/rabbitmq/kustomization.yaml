@@ -4,4 +4,10 @@ kind: Kustomization
 metadata:
   name: rabbitmq-base
 
-resources: []
+resources:
+  - statefulset.yaml
+  - service.yaml
+  - secret.yaml
+# Note: Le ConfigMap rabbitmq-config est généré dans les overlays pour chaque environnement
+# car chaque environnement a besoin de sa propre configuration RabbitMQ
+# Le ConfigMap inclut rabbitmq.conf et enabled_plugins

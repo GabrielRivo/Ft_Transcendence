@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: rabbitmq-pdb
+  labels:
+    app: rabbitmq
+    app.kubernetes.io/name: ft-transcendence
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/component: rabbitmq
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: rabbitmq
