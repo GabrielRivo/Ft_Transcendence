@@ -1,139 +1,103 @@
-# ==============================================================================
-# MAKEFILE - PILOTAGE DE L'INFRASTRUCTURE (ft_transcendence)
-# ==============================================================================
-# DESCRIPTION :
-#   Point d'entrée unique pour gérer le cycle de vie de l'application.
-#   Ce fichier encapsule les commandes Docker Compose complexes pour offrir
-#   une interface simple et standardisée.
-#
-# [Ref Subject: IV.2 Minimal technical requirement - Single command line execution]
-# ==============================================================================
+# Configuration
+ENV ?= dev
+OVERLAY = infrastructure/k8s/overlays/$(ENV)
 
-# --- CONFIGURATION ---
+# Determination du namespace en fonction de l'ENV
+ifeq ($(ENV), production)
+    NAMESPACE := ft-transcendence-production
+else ifeq ($(ENV), test)
+    NAMESPACE := ft-transcendence-test
+else
+    NAMESPACE := ft-transcendence-dev
+endif
 
-# Chemin relatif vers le fichier d'orchestration
-COMPOSE_FILE	= infrastructure/docker-compose.yml
+.PHONY: all up down clean logs status validate port-forward build re
 
-# Fichier de variables d'environnement (Secrets & Config)
-# [IV.4] Security concerns : Les secrets ne sont pas commîtés, ils sont lus ici.
-ENV_FILE			= .env
-
-# --- MOTEUR DOCKER ---
-
-# Commande de base encapsulée.
-# L'option '--env-file' est CRUCIALE ici : elle force Docker à charger le .env
-# depuis la racine (là où est le Makefile) et non depuis le dossier infrastructure/,
-# ce qui permet de partager les variables entre le Makefile et le Compose.
-DOCKER_CMD		= docker compose --env-file $(ENV_FILE) -f $(COMPOSE_FILE)
-
-# ==============================================================================
-# RÈGLES DU CYCLE DE VIE
-# ==============================================================================
-
-# Règle par défaut (Convention Make)
 all: up
 
-# Démarrage de la stack en mode détaché (Background)
-# --build : Force la reconstruction des images (utile si on modifie le code/Dockerfile).
+# Validation des manifests Kustomize
+validate:
+	@echo "Validation des manifests pour $(ENV)..."
+	@kubectl kustomize --enable-helm $(OVERLAY) > /dev/null && echo "Manifests valides" || { echo "Erreur de validation"; exit 1; }
+
+# Deploie l'environnement
 up:
-	@echo "Démarrage de l'infrastructure ft_transcendence..."
-	$(DOCKER_CMD) up -d --build
+	@echo "Deploiement de l'environnement $(ENV) dans $(NAMESPACE)..."
+	@kubectl apply -f $(OVERLAY)/resources/namespace.yaml
+	@kubectl kustomize --enable-helm $(OVERLAY) | kubectl apply -f -
+	@echo "Deploiement termine. Ressources :"
+	@kubectl get all,configmaps,ingresses -n $(NAMESPACE) 2>/dev/null | head -10
 
-# Arrêt propre des services (Graceful Shutdown)
-# NOTE : Cette commande conserve les volumes (Données BDD) et les réseaux.
+# Arrete l'environnement (supprime les ressources definies dans kustomize)
 down:
-	@echo "Arrêt des services en cours..."
-	$(DOCKER_CMD) down
+	@echo "Arret de l'environnement $(ENV)..."
+	@kubectl kustomize --enable-helm $(OVERLAY) | kubectl delete --ignore-not-found=true -f -
+	@echo "Environnement $(ENV) arrete"
 
-# Redémarrage complet (Clean + Up)
-# Utile pour remettre l'environnement à zéro et appliquer des changements majeurs.
-re: clean up
-
-# Configuration de l'environnement de développement (DX)
-# ------------------------------------------------------------------------------
-# Cette commande prépare votre machine HÔTE pour le codage (VSCode, ESLint...).
-# Elle installe Node.js, pnpm et les dépendances via un script dédié.
-#
-# NOTE :
-# Cette étape est OPTIONNELLE. L'évaluation doit se faire via 'make up' (Docker).
-# Ce setup sert uniquement à éviter les erreurs dans l'IDE du développeur.
-# ------------------------------------------------------------------------------
-dev-setup:
-	@./scripts/dev_setup.sh
-
-# ==============================================================================
-# OUTILS DE DÉBOGAGE & MAINTENANCE
-# ==============================================================================
-
-# Affichage des logs en temps réel
-# ------------------------------------------------------------------------------
-# USAGE :
-#   make logs            -> Logs de tous les services mélangés
-#   make logs s=nginx    -> Logs du service 'nginx' uniquement
-#   make logs s=vault    -> Logs du service 'vault' uniquement
-# ------------------------------------------------------------------------------
-logs:
-	@echo "Affichage des logs $(if $(s),pour le service: $(s),global)..."
-	$(DOCKER_CMD) logs -f $(s)
-
-# État des conteneurs (Status, Ports, Healthchecks)
-ps:
-	@echo "État des services :"
-	$(DOCKER_CMD) ps
-
-# Connexion shell interactive dans un conteneur
-# ------------------------------------------------------------------------------
-# USAGE : make docker-sh s=nginx
-# ------------------------------------------------------------------------------
-docker-sh:
-	@if [ -z "$(s)" ]; then \
-		echo "Erreur : Veuillez spécifier un service. Exemple : make docker-sh s=nginx"; \
+# Supprime completement le namespace
+clean:
+	@echo "Nettoyage complet de l'environnement $(ENV)..."
+	@if kubectl get namespace $(NAMESPACE) >/dev/null 2>&1; then \
+		echo "Inventaire des ressources avant suppression :"; \
+		kubectl get all,pvc,configmaps,secrets,ingresses -n $(NAMESPACE) 2>/dev/null | head -n 15 | sed 's/^/   / ' || true; \
+		echo ""; \
+		echo "Suppression du namespace $(NAMESPACE) en cours... (Veuillez patienter)"; \
+		time kubectl delete namespace $(NAMESPACE) --ignore-not-found=true; \
+		echo "Namespace supprime."; \
 	else \
-		echo "Connexion au shell du service $(s)..."; \
-		docker exec -it $(s) /bin/sh; \
+		echo "Le namespace $(NAMESPACE) n'existe pas."; \
+	fi
+	@echo "Nettoyage termine"
+
+# Affiche les logs
+# Utilise app.kubernetes.io/name pour les services Helm (Bitnami) et app.kubernetes.io/component pour les autres
+# Pour Redis, le chart Bitnami utilise component=master, donc on cherche par name=redis
+logs:
+	@if [ -z "$(SVC)" ]; then \
+		echo "Logs de tous les pods dans $(NAMESPACE)..."; \
+		kubectl logs -n $(NAMESPACE) -l app.kubernetes.io/part-of=ft-transcendence --tail=100 -f; \
+	else \
+		echo "Logs du service $(SVC) dans $(NAMESPACE)..."; \
+		if kubectl get pods -n $(NAMESPACE) -l app.kubernetes.io/name=$(SVC) --no-headers 2>/dev/null | grep -q .; then \
+			kubectl logs -n $(NAMESPACE) -l app.kubernetes.io/name=$(SVC) --tail=100 -f; \
+		else \
+			if kubectl get pods -n $(NAMESPACE) -l app.kubernetes.io/component=$(SVC) --no-headers 2>/dev/null | grep -q .; then \
+				kubectl logs -n $(NAMESPACE) -l app.kubernetes.io/component=$(SVC) --tail=100 -f; \
+			else \
+				if [ "$(SVC)" = "nginx-ingress-controller" ]; then \
+					kubectl logs -n $(NAMESPACE) -l app.kubernetes.io/name=ingress-nginx,app.kubernetes.io/component=controller --tail=100 -f 2>/dev/null || \
+					kubectl logs -n $(NAMESPACE) -l app.kubernetes.io/part-of=ingress-nginx --tail=100 -f; \
+				else \
+					kubectl logs -n $(NAMESPACE) -l app.kubernetes.io/part-of=ft-transcendence --tail=100 -f; \
+				fi; \
+			fi; \
+		fi; \
 	fi
 
+# Affiche l'etat des ressources
+status:
+	@echo "Etat des ressources dans $(NAMESPACE):"
+	@kubectl get pods,services,configmaps,ingresses,pvc -n $(NAMESPACE)
 
-# WARNING partie en plus sans docker - Maxence
+# Port-forward pour acces local
+port-forward:
+	@if [ -z "$(SVC)" ] || [ -z "$(PORT)" ]; then \
+		echo "Erreur : Veuillez specifier SVC=service PORT=port"; \
+		exit 1; \
+	fi
+	@echo "Port-forward du service $(SVC) vers localhost:$(PORT)..."
+	@kubectl port-forward -n $(NAMESPACE) service/$(SVC) $(PORT):$(PORT)
 
-install-cli:
-	@curl -fsSL https://github.com/thetranscendence/transcendence-cli/raw/main/install | bash
+# Build des images Docker
+build:
+	@if [ -z "$(SVC)" ]; then \
+		echo "Build de toutes les images..."; \
+		docker build -t ft-transcendence-auth:latest apps/auth; \
+		docker build -t ft-transcendence-matchmaking:latest apps/matchmaking; \
+	else \
+		echo "Build de l'image $(SVC)..."; \
+		docker build -t ft-transcendence-$(SVC):latest apps/$(SVC); \
+	fi
+	@echo "Build termine"
 
-uninstall-cli:
-	@rm -rf $HOME/tcli
-	@sed -i '/tcli/d' $HOME/.bashrc
-	@sed -i '/tcli/d' $HOME/.zshrc
-	@echo "Transcendence CLI est désinstallé avec succès !!"
-
-install-pnpm:
-	@npm install -g pnpm
-	@echo "PNPM est installé avec succès !!"
-
-install-nvm:
-	@curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-	@source $HOME/.nvm/nvm.sh
-	@echo "NVM est installé avec succès !!"
-
-install-node:
-	@source $HOME/.nvm/nvm.sh
-	@nvm install 24
-	@nvm use 24
-	@nvm alias default 24
-	@echo "Node.js 24 est installé avec succès !!"
-
-install-packages:
-	@pnpm i
-	@pnpm -r build
-
-init-workspace: install-cli install-nvm install-node install-pnpm install-packages
-	@echo "Workspace initialisé avec succès !!"
-
-# WARNING-END
-
-clean:
-	@echo "Nettoyage complet (Deep Clean)..."
-	@echo "⚠️  ATTENTION : Toutes les données persistantes (DB, Vault) seront effacées."
-	$(DOCKER_CMD) down -v --rmi all --remove-orphans
-
-# Protection contre les conflits de noms de fichiers
-.PHONY: all up down logs ps clean re
+re: clean up
