@@ -16,7 +16,20 @@ export class FriendManagementController {
 	@Post('/friend')
 	@BodySchema(AddFriendSchema)
 	add_friend(@Body() data: AddFriendDto) {
-		return this.friend_managementService.add_friend(data.userId, data.otherId)
+		try {
+			const blocked1 = this.blockService.is_blocked(data.userId, data.otherId);
+			const blocked2 = this.blockService.is_blocked(data.otherId, data.userId);
+			if (blocked1 || blocked2) {
+				return { 
+					success: false, 
+					message: "User blocked, can't add to friendlist" 
+				};
+			}
+		return this.friend_managementService.add_friend(data.userId, data.otherId);
+		} 
+		catch (error: any) {
+			return { success: false, message: error.message };
+		}
 	}
 
 	@Delete('/friend')

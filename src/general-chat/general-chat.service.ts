@@ -13,7 +13,7 @@ export class GeneralChatService {
 		`INSERT INTO generalChatHistory (userId, msgContent) VALUES (@userId, @msgContent)`
 		);
 		this.statementGetHistory = this.db.prepare(
-		    `SELECT * FROM generalChatHistory ORDER BY created_at ASC LIMIT 100`
+			`SELECT * FROM generalChatHistory ORDER BY created_at DESC LIMIT 50`
 		);
 	}
 

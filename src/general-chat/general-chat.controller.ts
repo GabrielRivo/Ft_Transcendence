@@ -10,6 +10,6 @@ export class GeneralChatController {
 	@Get('/history')
 	async get_history() {
 		const history = this.chatService.get_history();
-		return history;
+		return history.reverse();
 	}
 }

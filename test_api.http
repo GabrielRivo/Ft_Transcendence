@@ -1,0 +1,98 @@
+### Tester l'ajout d'un match
+POST http://localhost:3000/match-history
+Content-Type: application/json
+
+{
+  "userId1": 1,
+  "userId2": 2,
+  "scoreUser1": 10,
+  "scoreUser2": 8
+}
+
+### Tester la sécurité (jouer contre soi-même) -> Doit renvoyer une erreur
+POST http://localhost:3000/match-history
+Content-Type: application/json
+
+{
+  "userId1": 1,
+  "userId2": 1,
+  "scoreUser1": 10,
+  "scoreUser2": 8
+}
+
+### Tester la récupération de l'historique
+GET http://localhost:3000/match-history/1
+### Variables
+@baseUrl = http://localhost:3000/friend-management
+### -----------------------------------------------------------
+### GESTION DES AMIS
+### -----------------------------------------------------------
+
+### 1. Ajouter un ami (Utilisateur 1 ajoute l'utilisateur 2)
+POST {{baseUrl}}/friend
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "otherId": 2
+}
+
+### 2. Supprimer un ami
+DELETE {{baseUrl}}/friend
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "otherId": 2
+}
+
+
+### -----------------------------------------------------------
+### GESTION DES BLOCAGES
+### -----------------------------------------------------------
+
+### 3. Bloquer un utilisateur (Utilisateur 1 bloque l'utilisateur 3)
+POST {{baseUrl}}/block
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "otherId": 3
+}
+
+
+### 3. Bloquer un friend
+POST {{baseUrl}}/block
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "otherId": 2
+}
+
+### 3. delete le blocked
+DELETE  {{baseUrl}}/block
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "otherId": 2
+}
+
+### 3. Bloquer soi meme 
+POST {{baseUrl}}/block
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "otherId": 1
+}
+
+### 4. Débloquer un utilisateur
+DELETE {{baseUrl}}/block
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "otherId": 3
+}

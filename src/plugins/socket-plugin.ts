@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { Server, ServerOptions } from 'socket.io';
+import { GeneralChatService } from '../general-chat/general-chat.service.js';
 
 const opts: Partial<ServerOptions> = {
 	cors: {

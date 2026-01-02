@@ -1,5 +1,6 @@
 import Database, { Statement } from 'better-sqlite3';
-import { InjectPlugin, Service } from 'my-fastify-decorators';
+import { InjectPlugin, Service, Inject } from 'my-fastify-decorators';
+import { FriendManagementService } from '../friend-management/friend-management.service.js';
 
 const blockUserSQL = `INSERT INTO blocklist (userId, otherId) VALUES (@userId, @otherId);`;
 const unblockUserSQL = `DELETE FROM blocklist WHERE userId = @userId AND otherId = @otherId;`;
@@ -9,6 +10,9 @@ const isBlockedSQL = `SELECT 1 FROM blocklist WHERE userId = @userId AND otherId
 export class BlockManagementService {
 	@InjectPlugin('db')
 	private db !: Database.Database;
+
+	@Inject(FriendManagementService)
+	private friendService!: FriendManagementService;
 
 	private statementBlock !: Statement<{ userId: number, otherId: number }>;
 	private statementUnblock !: Statement<{ userId: number, otherId: number }>;
@@ -21,7 +25,12 @@ export class BlockManagementService {
 	}
 
 	block_user(userId: number, otherId: number) {
+		if (userId === otherId) {
+			return { success: false, message: "You cannot block yourself" };
+		}
 		try {
+			this.friendService.delete_friend(userId, otherId)
+			this.friendService.delete_friend(otherId, userId);
 			this.statementBlock.run({ userId, otherId });
 			return { success: true, message: "Block user" };
 		} catch (e) {
@@ -31,7 +40,11 @@ export class BlockManagementService {
 
 	unblock_user(userId: number, otherId: number) {
 		const result = this.statementUnblock.run({ userId, otherId });
-		return { success: result.changes > 0 };
+		if (result.changes > 0) {
+			return { success: true, message: "Unblocked user" };
+		} else {
+			return { success: false, message: "User was not blocked" };
+		}
 	}
 
 	is_blocked(userId: number, otherId: number): boolean {
