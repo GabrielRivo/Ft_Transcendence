@@ -1,0 +1,31 @@
+# ------------------------------------------------------------------------------
+# Kubernetes ResourceQuota: Monitoring (Prometheus/Grafana)
+# ------------------------------------------------------------------------------
+# Defines limits for the 'monitoring' namespace.
+#
+# Purpose:
+# - Prometheus stores time-series data in memory/disk.
+# - Grafana is lightweight.
+# - Limits prevent a runaway metric cardinality explosion from crashing the node.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: monitoring-quota
+  namespace: monitoring
+spec:
+  hard:
+    # CPU: Scrapes and rule evaluation.
+    requests.cpu: "2"
+    limits.cpu: "4"
+
+    # Memory: Prometheus TSDB buffers.
+    requests.memory: 4Gi
+    limits.memory: 8Gi
+
+    # Storage: Prometheus data persistence + Grafana dashboards
+    persistentvolumeclaims: "5"
+
+    # Pods: Prometheus, Alertmanager, Grafana, NodeExporters
+    pods: "20"

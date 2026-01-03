@@ -1,0 +1,31 @@
+# ------------------------------------------------------------------------------
+# Kubernetes ResourceQuota: Test Environment
+# ------------------------------------------------------------------------------
+# Defines the aggregate resource limits for the 'test' namespace.
+#
+# Purpose:
+# - Used for integration testing and QA pipelines.
+# - Needs more resources than dev to run full integration suites potentially
+#   simulating higher load or running more replicas.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: test-quota
+  namespace: test
+spec:
+  hard:
+    # CPU: 4 Cores total (Double that of Dev for parallel testing)
+    requests.cpu: "4"
+    limits.cpu: "8"
+
+    # Memory: 4Gi guaranteed, bursting up to 8Gi
+    requests.memory: 4Gi
+    limits.memory: 8Gi
+
+    # Storage: More PVCs allowed for test databases/artifacts
+    persistentvolumeclaims: "10"
+
+    # Pods: Allow more pods for test runners and ephemeral environments
+    pods: "30"

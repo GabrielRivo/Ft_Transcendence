@@ -1,0 +1,32 @@
+# ------------------------------------------------------------------------------
+# Kubernetes ResourceQuota: Production Environment
+# ------------------------------------------------------------------------------
+# Defines the aggregate resource limits for the 'production' namespace.
+#
+# Purpose:
+# - Ensures production services have the highest capacity.
+# - "requests" are high to guarantee reservation of resources on nodes.
+# - "limits" allow significant bursting to handle traffic spikes.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: production-quota
+  namespace: production
+spec:
+  hard:
+    # CPU: 8 Cores reserved, bursting to 16.
+    # Ensures critical services are not throttled easily.
+    requests.cpu: "8"
+    limits.cpu: "16"
+
+    # Memory: 8Gi reserved, bursting to 16Gi.
+    requests.memory: 8Gi
+    limits.memory: 16Gi
+
+    # Storage: Sufficient PVCs for all production DBs and stateful sets
+    persistentvolumeclaims: "20"
+
+    # Pods: High limit to support scaling (HPA)
+    pods: "50"
