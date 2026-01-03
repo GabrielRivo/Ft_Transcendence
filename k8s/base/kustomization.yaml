@@ -1,0 +1,46 @@
+# ------------------------------------------------------------------------------
+# Base Kustomization for ft_transcendence
+# ------------------------------------------------------------------------------
+# This file is the entry point for the "base" layer of our Kubernetes configuration.
+# It aggregates all foundational resources (Namespaces, Quotas, Limits, Storage)
+# and applies common metadata.
+#
+# Overlays (dev/test/prod) will inherit from this base.
+# ------------------------------------------------------------------------------
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Resources to be deployed as part of this base layer.
+resources:
+  # 1. Namespaces: Must be created first.
+  - namespaces.yaml
+
+  # 2. Global Resources: Storage Classes.
+  - storage-class.yaml
+
+  # 3. Resource Quotas: Hard limits on namespace consumption.
+  - resource-quotas/dev-quota.yaml
+  - resource-quotas/test-quota.yaml
+  - resource-quotas/production-quota.yaml
+  - resource-quotas/logging-quota.yaml
+  - resource-quotas/monitoring-quota.yaml
+  - resource-quotas/vault-quota.yaml
+
+  # 4. Limit Ranges: Default requests/limits for Pods.
+  - limit-ranges/dev-limits.yaml
+  - limit-ranges/test-limits.yaml
+  - limit-ranges/production-limits.yaml
+  - limit-ranges/logging-limits.yaml
+  - limit-ranges/monitoring-limits.yaml
+  - limit-ranges/vault-limits.yaml
+
+# Common Labels applied to all resources in this Kustomization.
+# Standardizes identification across the entire project.
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: ft-transcendence
+
+# Common Annotations for additional metadata.
+commonAnnotations:
+  app.kubernetes.io/version: "1.0.0"
