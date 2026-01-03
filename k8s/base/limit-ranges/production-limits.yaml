@@ -1,0 +1,31 @@
+# ------------------------------------------------------------------------------
+# Kubernetes LimitRange: Production Environment
+# ------------------------------------------------------------------------------
+# Defines default resource requests and limits for containers in the 'production' namespace.
+#
+# Purpose:
+# - Guarantees robust default resources for production workloads.
+# - Allows for larger containers (vertical scaling) via higher max limits.
+# - Ensures critical services don't start with insufficient resources.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: production-limits
+  namespace: production
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "1"
+        memory: "1Gi"
+      defaultRequest:
+        cpu: "500m"
+        memory: "512Mi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "100m"
+        memory: "128Mi"

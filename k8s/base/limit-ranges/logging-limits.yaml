@@ -1,0 +1,31 @@
+# ------------------------------------------------------------------------------
+# Kubernetes LimitRange: Logging Stack (ELK)
+# ------------------------------------------------------------------------------
+# Defines default resource requests and limits for the 'logging' namespace.
+#
+# Purpose:
+# - The ELK stack components (Elasticsearch, Logstash) are Java-based and
+#   memory-intensive.
+# - Defaults are set higher to accommodate the JVM heap requirements.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: logging-limits
+  namespace: logging
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "1"
+        memory: "2Gi"
+      defaultRequest:
+        cpu: "500m"
+        memory: "1Gi"
+      max:
+        cpu: "4"
+        memory: "8Gi"
+      min:
+        cpu: "100m"
+        memory: "256Mi"

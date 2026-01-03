@@ -1,0 +1,31 @@
+# ------------------------------------------------------------------------------
+# Kubernetes LimitRange: Monitoring Stack
+# ------------------------------------------------------------------------------
+# Defines default resource requests and limits for the 'monitoring' namespace.
+#
+# Purpose:
+# - Prometheus and Grafana have specific resource profiles.
+# - Ensures monitoring agents (exporters) are lightweight while the server
+#   components have enough headroom.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: monitoring-limits
+  namespace: monitoring
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "1Gi"
+      defaultRequest:
+        cpu: "200m"
+        memory: "512Mi"
+      max:
+        cpu: "2"
+        memory: "4Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"
