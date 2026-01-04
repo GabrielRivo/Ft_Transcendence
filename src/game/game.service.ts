@@ -15,7 +15,7 @@ export class GameService {
         if (this.gamesByPlayer.has(client.data.userId)) {
             const game = this.gamesByPlayer.get(client.data.userId);
             game!.playerConnected(client);
-            client.emit("gameJoined", { gameId: game!.id, message: `Rejoined game ${game!.id} successfully!` });
+            client.emit("gameJoined", { gameId: game!.id, message: `Joined game ${game!.id} successfully!` });
             console.log(`Client ${client.id} joined game ${game!.id}`);
         }
         else {
@@ -33,22 +33,22 @@ export class GameService {
                 const player1 = this.queue.shift()!;
                 const player2 = this.queue.shift()!;
                 const gameId = `game-${this.gameCount++}`;
-                this.createGame(gameId, player1, player2);
-                player1.emit("gameJoined", { gameId, message: `Game ${gameId} created successfully! You are Player 1.` });
-                player2.emit("gameJoined", { gameId, message: `Game ${gameId} created successfully! You are Player 2.` });
+                this.createGame(gameId, player1.data.userId, player2.data.userId);
+                this.connectPlayer(player1);
+                this.connectPlayer(player2);
+                /*player1.emit("gameJoined", { gameId, message: `Game ${gameId} created successfully! You are Player 1.` });
+                player2.emit("gameJoined", { gameId, message: `Game ${gameId} created successfully! You are Player 2.` });*/
             }
         }
     }
 
-    public createGame(id: string, player1: Socket, player2: Socket) {
-        const gameInstance = new Pong(id, player1, player2, this);
-        this.gamesByPlayer.set(player1.data.userId, gameInstance);
-        this.gamesByPlayer.set(player2.data.userId, gameInstance);
+    public createGame(id: string, player1Id: string, player2Id: string) {
+        const gameInstance = new Pong(id, player1Id, player2Id, this);
+        this.gamesByPlayer.set(player1Id, gameInstance);
+        this.gamesByPlayer.set(player2Id, gameInstance);
         this.games.set(id, gameInstance);
         gameInstance.initialize();
-        console.log(`Game instance ${id} created with players ${player1.data.userId} and ${player2.data.userId}`);
-        gameInstance.playerConnected(player1);
-        gameInstance.playerConnected(player2);
+        console.log(`Game instance ${id} created with players ${player1Id} and ${player2Id}`);
     }
 
     public disconnectPlayer(client: Socket) {
@@ -66,6 +66,7 @@ export class GameService {
     }
 
     public removeGame(game: Pong, player1Id: string, player2Id: string) {
+
         this.gamesByPlayer.delete(player1Id);
         this.gamesByPlayer.delete(player2Id);
         this.games.delete(game.id);

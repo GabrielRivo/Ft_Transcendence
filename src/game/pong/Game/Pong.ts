@@ -15,9 +15,11 @@ class Pong extends Game {
     private gameService : GameService;
     private services: Services;
 
-    private p1Socket : Socket;
-    private p2Socket : Socket;
-    private nsp : Namespace;
+    private p1Socket : Socket | null;
+    private p2Socket : Socket | null;
+    private p1Id : string;
+    private p2Id : string;
+    private nsp : Namespace | null;
     public id : string;
 
     inputManager?: InputManager;
@@ -31,12 +33,17 @@ class Pong extends Game {
     private gameState : "waiting" | "playing" | null;
     private disconnectTimeout: NodeJS.Timeout | null = null;
 
-    constructor(id: string, p1Socket : Socket, p2Socket : Socket, gameService: GameService) {
+    constructor(id: string, p1Id: string, p2Id: string, gameService: GameService) {
         super();
         this.id = id;
-        this.p1Socket = p1Socket;
+        this.p1Socket = null;
+        this.p2Socket = null;
+        this.nsp = null;
+        this.p1Id = p1Id;
+        this.p2Id = p2Id;
+        /*this.p1Socket = p1Socket;
         this.p2Socket = p2Socket;
-        this.nsp = p1Socket.nsp;
+        this.nsp = p1Socket.nsp;*/
         this.gameService = gameService;
         this.gameState = "waiting";
 
@@ -81,10 +88,14 @@ class Pong extends Game {
 
     public async playerConnected(client: Socket) {
         console.log(`Player connected: ${client.data.userId} to game ${this.id}`);
-        if (this.p1Socket.data.userId === client.data.userId) {
+        if (!this.nsp) {
+            this.nsp = client.nsp;
+        }
+
+        if (this.p1Id === client.data.userId) {
             this.p1Socket = client;
         }
-        else if (this.p2Socket.data.userId === client.data.userId) {
+        else if (this.p2Id === client.data.userId) {
             this.p2Socket = client;
         }
         await client.join(this.id);
@@ -92,7 +103,7 @@ class Pong extends Game {
             clearTimeout(this.disconnectTimeout);
             this.disconnectTimeout = null;
         }
-        this.run("Both players connected. Resuming game.");
+        this.run(`Player ${client.data.userId} has reconnected. Resuming game...`);
     }
 
     public playerDisconnected(client: Socket) {
@@ -100,7 +111,7 @@ class Pong extends Game {
 
         if (!this.disconnectTimeout) {
             this.disconnectTimeout = setTimeout(() => {
-            if (this.p1Socket.disconnected || this.p2Socket.disconnected) {
+            if (this.p1Socket?.disconnected || this.p2Socket?.disconnected) {
                 console.log(`Timeout reached for game ${this.id}. Disposing...`);
                 this.dispose();
             }
@@ -120,13 +131,13 @@ class Pong extends Game {
     }
 
     run(message?: string) {
-        if (this.p1Socket.connected === false || this.p2Socket.connected === false) {
+        if (this.p1Socket!.connected === false || this.p2Socket!.connected === false) {
             console.log("A player is still disconnected, cannot run the game.");
             return;
         }
         if (this.gameState === "waiting" || this.gameState === null) {
             this.gameState = "playing";
-            this.nsp.to(this.id).emit('gameStarted', { gameId: this.id, message: message || `Game ${this.id} is now running.` });
+            this.nsp!.to(this.id).emit('gameStarted', { gameId: this.id, message: message || `Game ${this.id} is now running.` });
             this.services.Engine!.stopRenderLoop();
             this.services.Engine!.runRenderLoop(() => {
                 this.player1!.update();
@@ -139,7 +150,7 @@ class Pong extends Game {
     stop(message?: string) {
         if (this.gameState === "playing" || this.gameState === null) {
             this.gameState = "waiting";
-            this.nsp.to(this.id).emit('gameStopped', { gameId: this.id, message: message || `Game ${this.id} has been paused.` });
+            this.nsp!.to(this.id).emit('gameStopped', { gameId: this.id, message: message || `Game ${this.id} has been paused.` });
             this.services.Engine!.stopRenderLoop();
             this.services.Engine!.runRenderLoop(() => {});
         }
@@ -158,8 +169,8 @@ class Pong extends Game {
         this.services.Scene!.dispose();
 
         console.log(`Ending game instance ${this.id}`);
-        this.nsp.to(this.id).emit('gameEnded', { gameId: this.id, message: `Game ${this.id} has ended.` });
-        this.gameService.removeGame(this, this.p1Socket.data.userId, this.p2Socket.data.userId);
+        this.nsp!.to(this.id).emit('gameEnded', { gameId: this.id, message: `Game ${this.id} has ended.` });
+        this.gameService.removeGame(this, this.p1Id, this.p2Id);
     }
 }
 
