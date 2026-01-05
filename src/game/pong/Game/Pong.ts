@@ -31,7 +31,8 @@ class Pong extends Game {
     height: number = 12;
 
     private gameState : "waiting" | "playing" | null;
-    private disconnectTimeout: NodeJS.Timeout | null = null;
+    // private disconnectTimeout: NodeJS.Timeout | null = null;
+	private disconnectTimeout : Map<string, NodeJS.Timeout | null> = new Map();
 
     constructor(id: string, p1Id: string, p2Id: string, gameService: GameService) {
         super();
@@ -99,9 +100,9 @@ class Pong extends Game {
             this.p2Socket = client;
         }
         await client.join(this.id);
-        if (this.disconnectTimeout) {
-            clearTimeout(this.disconnectTimeout);
-            this.disconnectTimeout = null;
+        if (this.disconnectTimeout.has(client.data.userId)) {
+            clearTimeout(this.disconnectTimeout.get(client.data.userId)!);
+            this.disconnectTimeout.delete(client.data.userId);
         }
         this.run(`Player ${client.data.userId} has reconnected. Resuming game...`);
     }
@@ -109,13 +110,15 @@ class Pong extends Game {
     public playerDisconnected(client: Socket) {
         this.stop(`Player ${client.data.userId} has disconnected. Waiting for reconnection...`);
 
-        if (!this.disconnectTimeout) {
-            this.disconnectTimeout = setTimeout(() => {
-            if (this.p1Socket?.disconnected || this.p2Socket?.disconnected) {
-                console.log(`Timeout reached for game ${this.id}. Disposing...`);
-                this.dispose();
-            }
-        }, 15000);
+        if (!this.disconnectTimeout.has(client.data.userId)) {
+            this.disconnectTimeout.set(client.data.userId,
+				setTimeout(() => {
+					if (this.p1Socket?.disconnected || this.p2Socket?.disconnected) {
+						console.log(`Timeout reached for client ${client.data.userId}. Disposing game ${this.id}...`);
+						this.dispose();
+					}
+        		}, 15000)
+			);
     }
     }
 
