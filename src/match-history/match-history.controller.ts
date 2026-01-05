@@ -11,20 +11,13 @@ export class MatchHistoryController {
 	@Post('/')
 	@BodySchema(AddMatchToHistorySchema)
 	add_match_to_history(@Body() data: AddMatchToHistoryDto) {
-		try {
+
 		return this.match_history_managementService.add_match_to_history(
 			data.userId1, 
 			data.userId2, 
 			data.scoreUser1, 
 			data.scoreUser2
 		);
-	} catch (error: any) {
-		return {
-			statusCode: 400,
-			error: "Bad Request",
-			message: error.message
-		};
-	}
 		// return this.match_history_managementService.add_match_to_history(data.userId1, data.userId2, 
 		// 		data.scoreUser1, data.scoreUser2)
 	}

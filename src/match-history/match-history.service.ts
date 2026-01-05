@@ -1,5 +1,5 @@
 import Database, { Statement} from 'better-sqlite3';
-import { InjectPlugin, Service } from 'my-fastify-decorators';
+import { InjectPlugin, Service, BadRequestException } from 'my-fastify-decorators';
 
 
 const addMatchHistoryStatement: string = 
@@ -36,10 +36,10 @@ export class MatchHistoryService { // m?
 	add_match_to_history(userId1 : number, userId2	: number, 
 		scoreUser1 : number, scoreUser2 : number) {
 			if (userId1 === userId2) {
-				throw new Error("Same ids");
+				throw new BadRequestException("Same ids");
 			}
 			if (scoreUser1 < 0 || scoreUser2 < 0) {
-				throw new Error("Negative scores");
+				throw new BadRequestException("Negative scores");
 			}
 			return this.statementAddMatchtoHistory.run({
 				userId1,
