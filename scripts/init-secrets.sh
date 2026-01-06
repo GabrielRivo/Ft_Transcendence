@@ -196,6 +196,21 @@ ensure_secret "secret/shared/redis" "password" "password" 32
 ensure_secret "secret/shared/rabbitmq" "password" "password" 32
 ensure_secret "secret/shared/rabbitmq" "erlang_cookie" "hex" 32
 
+log_info "--- ELK Stack Secrets ---"
+# Elasticsearch
+# Password for the 'elastic' superuser (built-in)
+ensure_secret "secret/shared/elasticsearch" "password" "password" 32
+# Password for the TLS keystore/truststore protection
+ensure_secret "secret/shared/elasticsearch" "keystore_password" "password" 32
+
+# Kibana
+# Encryption key for Kibana saved objects and session security (xpack.security.encryptionKey)
+ensure_secret "secret/shared/kibana" "encryption_key" "hex" 64
+
+# Logstash
+# Password for the 'logstash_internal' user used to push logs to Elasticsearch
+ensure_secret "secret/shared/logstash" "password" "password" 32
+
 log_info "--- Auth Service Secrets ---"
 # JWT Secrets
 ensure_secret "secret/auth/jwt" "access_secret" "hex" 64
