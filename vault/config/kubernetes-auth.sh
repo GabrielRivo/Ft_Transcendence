@@ -66,4 +66,14 @@ vault write auth/kubernetes/role/matchmaking-role \
     policies=matchmaking-policy,shared-policy \
     ttl=1h
 
+# Role: elk-role
+# Maps the 'elk-secrets-sa' ServiceAccount in 'logging' namespace to 'elk-policy'.
+# This ServiceAccount is used by External Secrets Operator's SecretStore to fetch secrets.
+echo "[*] Creating role: elk-role..."
+vault write auth/kubernetes/role/elk-role \
+    bound_service_account_names=elk-secrets-sa \
+    bound_service_account_namespaces=logging \
+    policies=elk-policy \
+    ttl=1h
+
 echo "[SUCCESS] Kubernetes Auth Method configured successfully."
