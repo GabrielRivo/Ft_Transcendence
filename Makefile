@@ -77,6 +77,7 @@ NS_VAULT := vault
 NS_LOGGING := logging
 NS_MONITORING := monitoring
 NS_PRODUCTION := production
+NS_EXTERNAL_SECRETS := external-secrets
 
 # ==============================================================================
 # 6. HELM REPOSITORIES
@@ -87,6 +88,7 @@ HELM_REPO_HASHICORP := https://helm.releases.hashicorp.com
 HELM_REPO_ELASTIC := https://helm.elastic.co
 HELM_REPO_PROMETHEUS := https://prometheus-community.github.io/helm-charts
 HELM_REPO_BITNAMI := https://charts.bitnami.com/bitnami
+HELM_REPO_EXTERNAL_SECRETS := https://charts.external-secrets.io
 
 # ==============================================================================
 # 7. TIMEOUTS AND RETRIES
@@ -136,6 +138,7 @@ _add-helm-repos:
 	@helm repo add elastic $(HELM_REPO_ELASTIC)
 	@helm repo add prometheus-community $(HELM_REPO_PROMETHEUS)
 	@helm repo add bitnami $(HELM_REPO_BITNAMI)
+	@helm repo add external-secrets $(HELM_REPO_EXTERNAL_SECRETS)
 	@helm repo update
 	@echo -e "$(SUCCESS) Helm repositories updated."
 
@@ -177,9 +180,9 @@ _clean-base:
 # Target: up
 # Description: Deploys the entire infrastructure stack in the correct order.
 # Order: Prerequisites -> Base -> Vault -> Infrastructure -> ELK -> Monitoring
-# Note: Now includes Vault Initialization and Secrets Population
+# Note: Now includes Vault Initialization and Secrets Population, and ESO.
 .PHONY: up
-up: _check-prerequisites base-up vault-up vault-init vault-secrets infra-up elk-up monitoring-up
+up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up infra-up elk-up monitoring-up
 	@echo -e "\n$(SUCCESS) $(BOLD)Infrastructure successfully deployed!$(RESET)"
 	@echo -e "You can check the status with: $(BOLD)make status$(RESET)"
 
@@ -187,7 +190,7 @@ up: _check-prerequisites base-up vault-up vault-init vault-secrets infra-up elk-
 # Description: Stops the entire infrastructure stack in reverse order.
 # Note: This does NOT delete PersistentVolumeClaims (data is preserved).
 .PHONY: down
-down: monitoring-down elk-down infra-down vault-down
+down: monitoring-down elk-down infra-down eso-down vault-down
 	@echo -e "\n$(SUCCESS) $(BOLD)Infrastructure stopped (PVCs preserved).$(RESET)"
 	@echo -e "To remove data, use: $(BOLD)make clean$(RESET)"
 
@@ -300,7 +303,33 @@ vault-down:
 	@echo -e "$(SUCCESS) Vault uninstalled."
 
 # ==============================================================================
-# 12. ELK STACK COMPONENT
+# 12. EXTERNAL SECRETS OPERATOR COMPONENT
+# ==============================================================================
+
+# Target: eso-up
+# Description: Installs External Secrets Operator using the official Helm chart.
+# Deploys into the 'external-secrets' namespace (creating it if needed).
+# Depends on base-up.
+.PHONY: eso-up
+eso-up: base-up _add-helm-repos
+	@echo -e "$(INFO) Installing External Secrets Operator in namespace $(BOLD)$(NS_EXTERNAL_SECRETS)$(RESET)..."
+	@helm upgrade --install external-secrets external-secrets/external-secrets \
+		--namespace $(NS_EXTERNAL_SECRETS) \
+		--create-namespace \
+		--values $(HELM_VALUES_DIR)/external-secrets.yaml \
+		--wait --timeout $(TIMEOUT_READY)
+	@echo -e "$(SUCCESS) External Secrets Operator installed."
+
+# Target: eso-down
+# Description: Uninstalls External Secrets Operator.
+.PHONY: eso-down
+eso-down:
+	@echo -e "$(INFO) Uninstalling External Secrets Operator..."
+	@helm uninstall external-secrets --namespace $(NS_EXTERNAL_SECRETS) --ignore-not-found
+	@echo -e "$(SUCCESS) External Secrets Operator uninstalled."
+
+# ==============================================================================
+# 13. ELK STACK COMPONENT
 # ==============================================================================
 
 # Target: elk-up
@@ -338,7 +367,7 @@ elk-down:
 	@echo -e "$(SUCCESS) ELK Stack uninstalled."
 
 # ==============================================================================
-# 13. MONITORING COMPONENT
+# 14. MONITORING COMPONENT
 # ==============================================================================
 
 # Target: monitoring-up
@@ -362,7 +391,7 @@ monitoring-down:
 	@echo -e "$(SUCCESS) Monitoring stack uninstalled."
 
 # ==============================================================================
-# 14. INFRASTRUCTURE COMPONENT (Redis/RabbitMQ)
+# 15. INFRASTRUCTURE COMPONENT (Redis/RabbitMQ)
 # ==============================================================================
 
 # Target: infra-up
@@ -393,7 +422,7 @@ infra-down:
 	@echo -e "$(SUCCESS) Infrastructure services uninstalled."
 
 # ==============================================================================
-# 15. UTILITY TARGETS
+# 16. UTILITY TARGETS
 # ==============================================================================
 
 # Target: status
@@ -409,6 +438,8 @@ status:
 	@kubectl get pods -n $(NS_MONITORING) -o wide
 	@echo -e "\n$(BOLD)==> Namespace: $(NS_PRODUCTION)$(RESET)"
 	@kubectl get pods -n $(NS_PRODUCTION) -o wide
+	@echo -e "\n$(BOLD)==> Namespace: $(NS_EXTERNAL_SECRETS)$(RESET)"
+	@kubectl get pods -n $(NS_EXTERNAL_SECRETS) -o wide
 
 # Target: logs
 # Description: Displays aggregated logs from key components.
@@ -422,6 +453,8 @@ logs:
 	@kubectl logs -n $(NS_LOGGING) -l app=kibana --tail=20 --all-containers=true 2>/dev/null || echo "No Kibana pods found"
 	@echo -e "\n$(BOLD)==> Grafana Logs:$(RESET)"
 	@kubectl logs -n $(NS_MONITORING) -l app.kubernetes.io/name=grafana --tail=20 --all-containers=true 2>/dev/null || echo "No Grafana pods found"
+	@echo -e "\n$(BOLD)==> External Secrets Logs:$(RESET)"
+	@kubectl logs -n $(NS_EXTERNAL_SECRETS) -l app.kubernetes.io/name=external-secrets --tail=20 --all-containers=true 2>/dev/null || echo "No ESO pods found"
 
 # Target: port-forward
 # Description: Exposes internal services to localhost for access.
@@ -464,6 +497,7 @@ help:
 	@echo -e "  $(CYAN)vault-init$(RESET)    Initialize and Unseal Vault"
 	@echo -e "  $(CYAN)vault-secrets$(RESET) Populate initial secrets"
 	@echo -e "  $(CYAN)vault-status$(RESET)  Show detailed Vault status"
+	@echo -e "  $(CYAN)eso-up/down$(RESET)   Manage External Secrets Operator"
 	@echo -e "  $(CYAN)elk-up/down$(RESET)   Manage ELK Stack"
 	@echo -e "  $(CYAN)infra-up/down$(RESET) Manage Redis/RabbitMQ"
 	@echo -e "  $(CYAN)monitoring-up/down$(RESET) Manage Monitoring"
