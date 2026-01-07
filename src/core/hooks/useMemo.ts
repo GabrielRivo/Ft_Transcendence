@@ -8,7 +8,7 @@ export function useMemo<T>(factory: () => T, deps: any[]): T {
   if (!wipFiber) throw new Error("useMemo called outside of component");
 
   const hookIndex = getHookIndex();
-  
+
   const oldHook = wipFiber.alternate &&
                   wipFiber.alternate.hooks &&
                   wipFiber.alternate.hooks[hookIndex] as Hook & { deps: any[], value: T };
@@ -16,10 +16,11 @@ export function useMemo<T>(factory: () => T, deps: any[]): T {
   const hasChanged = oldHook ? !deps || !deps.every((dep, i) => dep === oldHook.deps[i]) : true;
 
   // si ça a changé, on exécute la factory(). Sinon on garde l'ancienne valeur...
+  const value = hasChanged ? factory() : oldHook?.value;
   // donc par rapport à useCallback, on a pas besoin de callback et cleanup...
   const hook = {
-    deps: deps,
-    value: hasChanged ? factory() : oldHook?.value,
+    deps,
+    value
   };
 
   if (wipFiber.hooks) {
@@ -29,5 +30,5 @@ export function useMemo<T>(factory: () => T, deps: any[]): T {
   setHookIndex(hookIndex + 1);
 
   // adapte a la value par rapport au callback de useCallback...
-  return hook.value as T;
+  return value;
 }

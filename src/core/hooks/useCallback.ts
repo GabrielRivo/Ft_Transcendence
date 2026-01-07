@@ -14,9 +14,12 @@ export function useCallback<T extends Function>(callback: T, deps: any[]): T {
 
     const hasChanged = oldHook ? !deps || !deps.every((dep, i) => dep === oldHook.deps[i]) : true;
 
+
+    const callbackValue = hasChanged ? callback : oldHook?.callback as T;
+
     const hook = {
-        deps: deps,
-        callback: hasChanged ? callback : oldHook?.callback,
+        deps,
+        callback: callbackValue,
         cleanup: null,
     };
 
@@ -26,5 +29,5 @@ export function useCallback<T extends Function>(callback: T, deps: any[]): T {
 
     setHookIndex(hookIndex + 1);
 
-    return hook.callback as T;
+    return callbackValue;
 }
