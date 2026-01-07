@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, createElement, Fragment } from 'my-react';
+import { createContext, useContext, useState, useEffect, createElement, Fragment, useMemo } from 'my-react';
 import type { Element } from 'my-react';
 
 const LayoutContext = createContext<string | null>(null);
@@ -86,24 +86,30 @@ export function Router({ groups, NoFound }: { groups: RouteGroup[], NoFound?: El
     setQuery(new URLSearchParams(window.location.search));
   };
 
-  let matchedRoute: Route | null = null;
-  let matchedParams: Record<string, string> = {};
-  let Layout: any = null;
+  const matchResult = useMemo(() => {
+      let routeFound: Route | null = null;
+      let paramsFound: Record<string, string> = {};
+      let LayoutFound: any = null;
 
-  for (const group of groups) {
-    for (const route of group.routes) {
-      const match = matchPath(route.path, currentPath);
-      if (match.matches) {
-        matchedRoute = route;
-        matchedParams = match.params;
-        Layout = group.layout;
-        break;
+      for (const group of groups) {
+        for (const route of group.routes) {
+          const match = matchPath(route.path, currentPath);
+          if (match.matches) {
+            routeFound = route;
+            paramsFound = match.params;
+            LayoutFound = group.layout;
+            break;
+          }
+        }
+        if (routeFound) break;
       }
-    }
-    if (matchedRoute) break;
-  }
 
-  console.log("Matched Route:", matchedRoute ? matchedRoute.path : "None");
+      console.log("Matched Route :", routeFound ? routeFound.path : "None");
+
+      return { matchedRoute: routeFound, matchedParams: paramsFound, Layout: LayoutFound };
+  }, [currentPath, groups]);
+
+  const { matchedRoute, matchedParams, Layout } = matchResult;
 
   const routerContextValue = {
     push,
@@ -112,7 +118,7 @@ export function Router({ groups, NoFound }: { groups: RouteGroup[], NoFound?: El
     path: currentPath
   };
 
-  const content = matchedRoute 
+  const content = matchedRoute
     ? (
         (() => {
             const Page = matchedRoute.component;
