@@ -1,0 +1,35 @@
+# OpenSSL Configuration for Logstash Certificate
+# Context: ft-transcendence DevOps Module
+# Component: ELK Stack Security
+#
+# This file defines the parameters for generating the Certificate Signing Request (CSR)
+# for Logstash. It ensures the certificate includes the necessary Subject Alternative Names (SANs)
+# for proper DNS resolution within the Kubernetes cluster.
+
+[req]
+default_bits = 4096
+prompt = no
+default_md = sha256
+distinguished_name = dn
+req_extensions = req_ext
+
+[dn]
+# Common Name (CN) - typically the service name
+CN = logstash-logstash
+
+[req_ext]
+subjectAltName = @alt_names
+
+[alt_names]
+# Subject Alternative Names (SANs)
+# These are critical for secure communication (e.g. Beats -> Logstash).
+# DNS.1: Service name in the namespace
+DNS.1 = logstash-logstash
+# DNS.2: Fully Qualified Domain Name (FQDN) within the cluster
+DNS.2 = logstash-logstash.logging.svc
+# DNS.3: Full cluster FQDN
+DNS.3 = logstash-logstash.logging.svc.cluster.local
+# DNS.4: Allow localhost access (useful for port-forwarding)
+DNS.4 = localhost
+# IP.1: Local loopback IP
+IP.1 = 127.0.0.1

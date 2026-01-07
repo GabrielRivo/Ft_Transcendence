@@ -357,6 +357,9 @@ eso-down:
 # Deploys into the 'logging' namespace.
 .PHONY: elk-up
 elk-up: base-up _add-helm-repos
+	@echo -e "$(INFO) Generating ELK TLS certificates..."
+	@$(SCRIPTS_DIR)/generate-elk-certs.sh
+
 	@echo -e "$(INFO) Installing Elasticsearch in namespace $(BOLD)$(NS_LOGGING)$(RESET)..."
 	@helm upgrade --install elasticsearch elastic/elasticsearch \
 		--namespace $(NS_LOGGING) \
