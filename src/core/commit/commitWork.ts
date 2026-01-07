@@ -34,15 +34,19 @@ export function commitWork(fiber?: Fiber): void {
   }
 
   // gestion des refs
-  if (fiber.dom && fiber.props && fiber.props.ref) {
-    try {
-        if (typeof fiber.props.ref === 'function') {
-            fiber.props.ref(fiber.dom);
-        } else if (typeof fiber.props.ref === 'object' && 'current' in fiber.props.ref) {
-            fiber.props.ref.current = fiber.dom;
-        }
-    } catch (e) {
-        console.error("Error assigning ref", e);
+  const oldRef = fiber.alternate?.props?.ref;
+  const newRef = fiber.props?.ref;
+
+  if (fiber.dom && newRef && newRef !== oldRef) {
+    if (oldRef && typeof oldRef === 'function') {
+        oldRef(null);
+    } else if (oldRef && typeof oldRef === 'object' && 'current' in oldRef) {
+        oldRef.current = null;
+    }
+    if (typeof newRef === 'function') {
+        newRef(fiber.dom);
+    } else if (typeof newRef === 'object' && 'current' in newRef) {
+        newRef.current = fiber.dom;
     }
   }
 
