@@ -36,12 +36,18 @@ export type Fiber = {
 }
 
 export type Hook = {
+  // Cas useState
   state: any;
   queue: any[];
 } | {
+  // Cas useEffect / useCallback
   deps: any[];
   callback: Function | null;
   cleanup: Function | null;
+} | {
+  // --- AJOUT POUR useMemo ---
+  deps: any[];
+  value: any;
 };
 
 export type Context = {
