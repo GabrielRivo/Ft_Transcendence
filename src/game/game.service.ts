@@ -17,7 +17,6 @@ export class GameService {
         if (this.gamesByPlayer.has(client.data.userId)) {
             const game = this.gamesByPlayer.get(client.data.userId);
             game!.playerConnected(client);
-            client.emit("gameJoined", { gameId: game!.id, message: `Joined game ${game!.id} successfully!` });
             console.log(`Client ${client.id} joined game ${game!.id}`);
         }
         else {

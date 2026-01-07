@@ -10,7 +10,7 @@ import Ball from "../Ball.js";
 import Wall from "../Wall.js";
 import InputManager from "../InputManager.js";
 import Game from "./Game.js";
-import { dir } from "console";
+import { dir, timeStamp } from "console";
 
 class Pong extends Game {
     private gameService : GameService;
@@ -105,7 +105,10 @@ class Pong extends Game {
             clearTimeout(this.disconnectTimeout.get(client.data.userId)!);
             this.disconnectTimeout.delete(client.data.userId);
         }
-        this.run(`Player ${client.data.userId} has reconnected. Resuming game...`);
+        setTimeout(() => {
+            client.emit("gameJoined", { gameId: this.id, message: `Joined game ${this.id} successfully!` });
+            this.run(`Player ${client.data.userId} has reconnected. Resuming game...`);
+        }, 500);
     }
 
     public playerDisconnected(client: Socket) {
@@ -142,8 +145,10 @@ class Pong extends Game {
         if (this.gameState === "waiting" || this.gameState === null) {
             this.gameState = "playing";
             this.nsp!.to(this.id).emit('gameStarted', { gameId: this.id, message: message || `Game ${this.id} is now running.` });
+            this.services.TimeService!.update();
             this.services.Engine!.stopRenderLoop();
             this.services.Engine!.runRenderLoop(() => {
+                this.services.TimeService!.update();
                 this.player1!.update();
                 this.player2!.update();
 				this.player1!.paddle.model.computeWorldMatrix(true);
@@ -151,15 +156,14 @@ class Pong extends Game {
 
                 this.ball!.update();
 				this.nsp!.to(this.id).emit('gameUpdate', {
+                    timestamp: this.services.TimeService!.getTimestamp(),
 					p1: {
 						pos: this.player1!.paddle.getPosition(),
 						dir: this.player1!.paddle.getDirection(),
-						score: this.player1!.score
 					},
 					p2: {
 						pos: this.player2!.paddle.getPosition(),
 						dir: this.player2!.paddle.getDirection(),
-						score: this.player2!.score
 					},
 					ball: {
 						pos: this.ball!.getPosition(),

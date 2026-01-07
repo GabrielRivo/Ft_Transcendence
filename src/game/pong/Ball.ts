@@ -73,7 +73,7 @@ class Ball {
         if (!this.moving)
             return;
 
-        let deltaT : number = this.services.Engine!.getDeltaTime() / 1000;
+        let deltaT : number = this.services.TimeService!.getDeltaTime() / 1000;//this.services.Engine!.getDeltaTime() / 1000;
         let distance : number = this.speed * deltaT;
         const displacement : Vector3 = this.direction.scale(distance);
         let newPos : Vector3 = this.position.add(displacement);

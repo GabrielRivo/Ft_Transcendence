@@ -54,7 +54,7 @@ class Paddle {
 
     move() {
         const basePos : Vector3 = this.model.position.clone();
-        const deltaT : number = this.services.Engine!.getDeltaTime() / 1000;
+        const deltaT : number = this.services.TimeService!.getDeltaTime() / 1000;//this.services.Engine!.getDeltaTime() / 1000;
         const distance : number = this.speed * deltaT;
         const displacement : Vector3 = this.direction.scale(distance);
         let newPos : Vector3 = basePos.add(displacement);
