@@ -7,7 +7,7 @@ import { CardStyle1 } from '../../components/ui/card/style1';
 import { Discord } from '../../components/ui/logo/discord';
 import { Github } from '../../components/ui/logo/github';
 import { useNavigate } from 'my-react-router';
-export function Connexion() {
+export function Authentification() {
 	const [resetKey, setResetKey] = useState(0);
 
 	const navigate = useNavigate();
@@ -20,8 +20,8 @@ export function Connexion() {
 
 	return (
 		<div className="flex flex-col items-center gap-8 text-white">
-			<h1 className="text-2xl font-bold">Connexion</h1>
-			<p className="text-s">Connectez-vous à votre compte pour accéder à votre espace personnel.</p>
+			<h1 className="font-aquire text-2xl font-bold">Authentification</h1>
+			<p className="text-s font-orbitron">Connectez-vous à votre compte pour accéder à votre espace personnel.</p>
 			<div className="flex min-w-2/3 flex-col gap-2">
 				<ButtonStyle4 onClick={handleClick}>Me connecter</ButtonStyle4>
 				<ButtonStyle4 onClick={handleClick}>Me créer un compte</ButtonStyle4>

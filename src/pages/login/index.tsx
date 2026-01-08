@@ -1,9 +1,7 @@
 import { createElement, useState } from 'my-react';
-import { ButtonStyle1 } from '../../components/ui/button/style1';
-import { ButtonStyle2 } from '../../components/ui/button/style2';
-import { ButtonStyle3 } from '../../components/ui/button/style3';
 import { ButtonStyle4 } from '../../components/ui/button/style4';
 import { CardStyle2 } from '../../components/ui/card/style2';
+import { useNavigate } from 'my-react-router';
 
 function Border() {
 	return (
@@ -25,9 +23,11 @@ function Border() {
 
 export function Login() {
 	const [resetKey, setResetKey] = useState(0);
-
-	const handleClick = () => {
+	const navigate = useNavigate();
+	const handleClick = (e: MouseEvent): void => {
+		e.preventDefault();
 		console.log('clicked');
+		navigate('/dashboard');
 		setResetKey(resetKey + 1);
 	};
 

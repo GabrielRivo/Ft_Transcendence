@@ -10,7 +10,7 @@ export function Home() {
 
 	const handleClick = () => {
 		toast(`Oops tu n'es pas encore connecté ! 💩`, 'error');
-		navigate('/login');
+		navigate('/authentification');
 	};
 
 	return (

@@ -9,7 +9,9 @@ import { MainLayout } from './layout/mainLayout';
 import { ConnexionLayout } from './layout/connexionLayout';
 import { Login } from './pages/login';
 import { Register } from './pages/register';
-import { Connexion } from './pages/connexion';
+import { Authentification } from './pages/authentification';
+import { DashboardLayout } from './layout/dashboardLayout';
+import { Dashboard } from './pages/dashboard';
 
 const routes = [
 	{
@@ -31,8 +33,17 @@ const routes = [
 						component: Register,
 					},
 					{
-						path: '/connexion',
-						component: Connexion,
+						path: '/authentification',
+						component: Authentification,
+					},
+				],
+			},
+			{
+				layout: DashboardLayout,
+				routes: [
+					{
+						path: '/dashboard',
+						component: Dashboard,
 					},
 				],
 			},
