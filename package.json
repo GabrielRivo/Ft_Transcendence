@@ -28,9 +28,11 @@
 	},
 	"dependencies": {
 		"@babylonjs/core": "8.33.2",
+		"@babylonjs/loaders": "^8.45.0",
 		"@tailwindcss/vite": "^4.1.18",
 		"my-react": "workspace:*",
 		"my-react-router": "workspace:*",
+		"socket.io-client": "^4.8.3",
 		"tailwindcss": "^4.1.18"
 	}
 }

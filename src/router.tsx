@@ -15,15 +15,6 @@ const routes = [
 	{
 		layout: MainLayout,
 		routes: [
-			// {
-			// 	path: '/game',
-			// 	component: Game,
-			// },
-		],
-	},
-	{
-		layout: MainLayout,
-		routes: [
 			{
 				path: '/',
 				component: Home,
@@ -45,6 +36,10 @@ const routes = [
 					},
 				],
 			},
+			// {
+			// 	path: '/game',
+			// 	component: Game,
+			// },
 		],
 	},
 ];

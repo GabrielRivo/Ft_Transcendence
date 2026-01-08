@@ -21,12 +21,15 @@
 }
 
 @theme {
-	--color-primary: #343b65;
+	/* --color-primary: #343b65; */
+	--color-primary: #000000;
 	--color-primary-transparent: #343b65a1;
-	--color-primary-dark: #252132;
-	--color-secondary: #ffffff;
+	/* --color-primary-dark: #252132; */
+	--color-primary-dark: #000000;
+	/* --color-secondary: #ffffff; */
+	--color-secondary: #000000;
 
-	--color-neon-blue: #01dae4;
+	--color-neon-blue: #2cc1c1;
 	--color-neon-pink: #ff00ff;
 
 	--font-display: 'Oswald', sans-serif;

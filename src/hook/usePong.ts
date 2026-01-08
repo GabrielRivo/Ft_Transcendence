@@ -1,21 +1,27 @@
-// import { useEffect, useRef } from 'my-react';
+import { useEffect, useRef } from 'my-react';
 
-// // voir import type c bizarre
-// import type { RefObject } from 'my-react/src/types/global';
+// voir import type c bizarre
+import type { RefObject } from 'my-react/src/types/global';
 
-// import Game from '../libs/pong/Game';
-// import Services from '../libs/pong/Services';
+import Game from '../libs/pong/Game/index';
 
-// export const usePong = (canvasRef: RefObject<HTMLCanvasElement>): { gameRef: RefObject<Game | null> } => {
-// 	const gameRef = useRef<Game | null>(null);
+export const usePong = (): { gameRef: RefObject<HTMLCanvasElement | null>; Services: typeof Game.Services } => {
+	const gameRef = useRef<HTMLCanvasElement | null>(null);
 
-// 	useEffect(() => {
-// 		if (!canvasRef.current) return;
+	useEffect(() => {
+		console.log('usePong');
+		if (!gameRef.current) return;
 
-// 		Services.init(canvasRef.current);
-// 	}, [canvasRef]);
+		Game.Services.init(gameRef.current);
+		try {
+			Game.Services.GameService!.launchGame('PongOnline');
+		} catch (e) {
+			console.error('An error occurred during the game initialization:', e);
+		}
+	}, []);
 
-// 	return {
-// 		gameRef,
-// 	};
-// };
+	return {
+		gameRef,
+		Services: Game.Services,
+	};
+};
