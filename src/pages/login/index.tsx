@@ -1,6 +1,7 @@
 import { createElement, useState } from 'my-react';
 import { ButtonStyle4 } from '../../components/ui/button/style4';
 import { CardStyle2 } from '../../components/ui/card/style2';
+import { ButtonStyle3 } from '../../components/ui/button/style3';
 import { useNavigate } from 'my-react-router';
 
 function Border() {
@@ -28,6 +29,12 @@ export function Login() {
 		e.preventDefault();
 		console.log('clicked');
 		navigate('/dashboard');
+		setResetKey(resetKey + 1);
+	};
+
+	const handleClickReturn = (e: MouseEvent): void => {
+		e.preventDefault();
+		navigate('/authentification');
 		setResetKey(resetKey + 1);
 	};
 
@@ -68,8 +75,9 @@ export function Login() {
 									placeholder="••••••••"
 								/>
 							</div>
-							<div className="mt-4 flex justify-center">
+							<div className="mt-4 flex flex-col justify-center gap-2">
 								<ButtonStyle4 onClick={handleClick}>SE CONNECTER</ButtonStyle4>
+								<ButtonStyle3 onClick={handleClickReturn}>Retour</ButtonStyle3>
 							</div>
 						</form>
 					</div>

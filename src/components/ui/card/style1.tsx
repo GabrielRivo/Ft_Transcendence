@@ -55,21 +55,18 @@ export function CardStyle1({ children, className = '' }: CardStyle1Props) {
 
 		update();
 
-		// const observer = new ResizeObserver(() => update());
-		// observer.observe(node);
-
-		// update resize window
-
+		const observer = new ResizeObserver(() => update());
+		observer.observe(node);
 		window.addEventListener('resize', update);
 
 		const timer = setInterval(update, 100);
 		setTimeout(() => clearInterval(timer), 1000);
 
-		// return () => {
-		// 	observer.disconnect();
-		// 	clearInterval(timer);
-		// 	window.removeEventListener('resize', update);
-		// };
+		return () => {
+			observer.disconnect();
+			clearInterval(timer);
+			window.removeEventListener('resize', update);
+		};
 	}, []);
 
 	return (

@@ -14,7 +14,7 @@ export function ButtonStyle3({ children, onClick }: ButtonStyle3Props) {
 		>
 			<span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white transition-all duration-300 group-hover:w-full"></span>
 
-			<span className="tracking-[0.2em]">{children}</span>
+			<span className="text-xs tracking-[0.2em]">{children}</span>
 		</button>
 	);
 }

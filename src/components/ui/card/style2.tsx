@@ -36,7 +36,7 @@ export function CardStyle2({ children, className = '' }: CardStyle1Props) {
 			setSvgState({ d: newPath, opacity: 1 });
 		};
 
-		update();
+		// update();
 
 		const observer = new ResizeObserver(() => update());
 		observer.observe(node);
