@@ -134,11 +134,11 @@ _check-prerequisites:
 .PHONY: _add-helm-repos
 _add-helm-repos:
 	@echo -e "$(INFO) Adding/Updating Helm repositories..."
-	@helm repo add hashicorp $(HELM_REPO_HASHICORP)
-	@helm repo add elastic $(HELM_REPO_ELASTIC)
-	@helm repo add prometheus-community $(HELM_REPO_PROMETHEUS)
-	@helm repo add bitnami $(HELM_REPO_BITNAMI)
-	@helm repo add external-secrets $(HELM_REPO_EXTERNAL_SECRETS)
+	@helm repo add hashicorp $(HELM_REPO_HASHICORP) 2>/dev/null || true
+	@helm repo add elastic $(HELM_REPO_ELASTIC) 2>/dev/null || true
+	@helm repo add prometheus-community $(HELM_REPO_PROMETHEUS) 2>/dev/null || true
+	@helm repo add bitnami $(HELM_REPO_BITNAMI) 2>/dev/null || true
+	@helm repo add external-secrets $(HELM_REPO_EXTERNAL_SECRETS) 2>/dev/null || true
 	@helm repo update
 	@echo -e "$(SUCCESS) Helm repositories updated."
 
@@ -157,10 +157,10 @@ _wait-for-pods:
 .PHONY: _clean-pvcs
 _clean-pvcs:
 	@echo -e "$(WARN) Deleting all PVCs in namespaces: $(NS_VAULT), $(NS_LOGGING), $(NS_MONITORING), $(NS_PRODUCTION)..."
-	@kubectl delete pvc --all -n $(NS_VAULT) --ignore-not-found
-	@kubectl delete pvc --all -n $(NS_LOGGING) --ignore-not-found
-	@kubectl delete pvc --all -n $(NS_MONITORING) --ignore-not-found
-	@kubectl delete pvc --all -n $(NS_PRODUCTION) --ignore-not-found
+	@kubectl delete pvc --all -n $(NS_VAULT) --ignore-not-found >/dev/null 2>&1 || true
+	@kubectl delete pvc --all -n $(NS_LOGGING) --ignore-not-found >/dev/null 2>&1 || true
+	@kubectl delete pvc --all -n $(NS_MONITORING) --ignore-not-found >/dev/null 2>&1 || true
+	@kubectl delete pvc --all -n $(NS_PRODUCTION) --ignore-not-found >/dev/null 2>&1 || true
 	@echo -e "$(SUCCESS) All PVCs deleted."
 
 # Target: _clean-base
@@ -182,7 +182,8 @@ _clean-base:
 # Order: Prerequisites -> Base -> Vault -> Infrastructure -> ELK -> Monitoring
 # Note: Now includes Vault Initialization and Secrets Population, and ESO.
 .PHONY: up
-up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up eso-config infra-up elk-up monitoring-up
+up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up eso-config elk-up
+	@# infra-up monitoring-up (Commented out until configured)
 	@echo -e "\n$(SUCCESS) $(BOLD)Infrastructure successfully deployed!$(RESET)"
 	@echo -e "You can check the status with: $(BOLD)make status$(RESET)"
 
@@ -204,9 +205,9 @@ clean: down _clean-pvcs _clean-base
 	@echo -e "$(WARN) removing local vault keys..."
 	@rm -f $(INFRASTRUCTURE_DIR)/../.vault-keys
 	@echo -e "$(WARN) Cleaning up released PersistentVolumes..."
-	@kubectl get pv | grep Released | awk '{print $$1}' | xargs -r kubectl delete pv || true
+	@kubectl get pv | grep Released | awk '{print $$1}' | xargs -r kubectl delete pv >/dev/null 2>&1 || true
 	@# Ensure CRDs are gone if clean is full (optional, but cleaner)
-	@kubectl delete crd secretstores.external-secrets.io externalsecrets.external-secrets.io clustersecretstores.external-secrets.io clusterexternalsecrets.external-secrets.io pushsecrets.external-secrets.io || true
+	@kubectl delete crd secretstores.external-secrets.io externalsecrets.external-secrets.io clustersecretstores.external-secrets.io clusterexternalsecrets.external-secrets.io pushsecrets.external-secrets.io >/dev/null 2>&1 || true
 	@echo -e "\n$(SUCCESS) $(BOLD)Infrastructure completely cleaned (Data destroyed).$(RESET)"
 
 # ==============================================================================
@@ -336,16 +337,21 @@ eso-config:
 
 # Target: eso-down
 # Description: Uninstalls External Secrets Operator.
+# Handles the case where CRDs may already be deleted (during make clean).
 .PHONY: eso-down
 eso-down:
 	@echo -e "$(INFO) Uninstalling External Secrets Operator..."
-	@# First delete the SecretStore configuration and ExternalSecrets
-	@kubectl delete -f $(K8S_BASE_DIR)/external-secrets/logstash-es.yaml --ignore-not-found || true
-	@kubectl delete -f $(K8S_BASE_DIR)/external-secrets/kibana-es.yaml --ignore-not-found || true
-	@kubectl delete -f $(K8S_BASE_DIR)/external-secrets/elasticsearch-es.yaml --ignore-not-found || true
-	@kubectl delete -f $(K8S_BASE_DIR)/external-secrets/secretstore.yaml --ignore-not-found || true
-	@# Then uninstall the chart (which removes CRDs if configured to do so, causing errors if we delete CRs after)
-	@helm uninstall external-secrets --namespace $(NS_EXTERNAL_SECRETS) --ignore-not-found
+	@# First delete the SecretStore configuration and ExternalSecrets (only if CRDs exist)
+	@if kubectl api-resources --api-group=external-secrets.io 2>/dev/null | grep -q externalsecrets; then \
+		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/logstash-es.yaml --ignore-not-found 2>/dev/null || true; \
+		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/kibana-es.yaml --ignore-not-found 2>/dev/null || true; \
+		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/elasticsearch-es.yaml --ignore-not-found 2>/dev/null || true; \
+		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/secretstore.yaml --ignore-not-found 2>/dev/null || true; \
+	else \
+		echo -e "$(INFO) ESO CRDs not found, skipping ExternalSecrets cleanup."; \
+	fi
+	@# Then uninstall the chart
+	@helm uninstall external-secrets --namespace $(NS_EXTERNAL_SECRETS) --ignore-not-found 2>/dev/null || true
 	@echo -e "$(SUCCESS) External Secrets Operator uninstalled."
 
 # ==============================================================================
@@ -355,6 +361,14 @@ eso-down:
 # Target: elk-up
 # Description: Installs the ELK Stack (Elasticsearch, Logstash, Kibana).
 # Deploys into the 'logging' namespace.
+# Integrated Steps:
+# 1. Generate TLS Certificates
+# 2. Install Elasticsearch
+# 3. Wait for Elasticsearch Readiness
+# 4. Setup Kibana Token (Vault + K8s Secret)
+# 5. Install Kibana
+# 6. Setup Logstash User (Elasticsearch API)
+# 7. Install Logstash
 .PHONY: elk-up
 elk-up: base-up _add-helm-repos
 	@echo -e "$(INFO) Generating ELK TLS certificates..."
@@ -366,11 +380,20 @@ elk-up: base-up _add-helm-repos
 		--values $(HELM_VALUES_DIR)/elasticsearch.yaml \
 		--wait --timeout $(TIMEOUT_READY)
 
+	@echo -e "$(INFO) Configuring Kibana Service Token..."
+	@# This script waits for ES to be ready, generates token if needed, pushes to Vault
+	@$(SCRIPTS_DIR)/setup-kibana-token.sh
+
 	@echo -e "$(INFO) Installing Kibana in namespace $(BOLD)$(NS_LOGGING)$(RESET)..."
 	@helm upgrade --install kibana elastic/kibana \
 		--namespace $(NS_LOGGING) \
 		--values $(HELM_VALUES_DIR)/kibana.yaml \
-		--wait --timeout $(TIMEOUT_READY)
+		--wait --timeout $(TIMEOUT_READY) \
+		--no-hooks
+
+	@echo -e "$(INFO) Configuring Logstash User..."
+	@# This script creates/updates the logstash_internal user in Elasticsearch
+	@$(SCRIPTS_DIR)/setup-logstash-user.sh
 
 	@echo -e "$(INFO) Installing Logstash in namespace $(BOLD)$(NS_LOGGING)$(RESET)..."
 	@helm upgrade --install logstash elastic/logstash \
@@ -381,12 +404,26 @@ elk-up: base-up _add-helm-repos
 
 # Target: elk-down
 # Description: Uninstalls the ELK Stack.
+# Uses --no-hooks for Kibana to avoid post-delete hook failures (expects username/password
+# but we use service account token authentication).
+# Includes explicit cleanup of problematic Helm hook resources to prevent 'make clean' failures.
 .PHONY: elk-down
 elk-down:
 	@echo -e "$(INFO) Uninstalling ELK Stack..."
-	@helm uninstall logstash --namespace $(NS_LOGGING) --ignore-not-found
-	@helm uninstall kibana --namespace $(NS_LOGGING) --ignore-not-found
-	@helm uninstall elasticsearch --namespace $(NS_LOGGING) --ignore-not-found
+	@# Uninstall charts, ignoring errors if not found
+	@# Note: Kibana uses --no-hooks to skip post-delete hook that fails with service token auth
+	@helm uninstall logstash --namespace $(NS_LOGGING) --ignore-not-found 2>/dev/null || true
+	@helm uninstall kibana --namespace $(NS_LOGGING) --ignore-not-found --no-hooks 2>/dev/null || true
+	@helm uninstall elasticsearch --namespace $(NS_LOGGING) --ignore-not-found 2>/dev/null || true
+	
+	@# Explicit cleanup of Kibana helm hook resources which often cause 'already exists' errors
+	@echo -e "$(INFO) Cleaning up lingering Helm hooks and jobs..."
+	@kubectl delete job -l app=kibana -n $(NS_LOGGING) --ignore-not-found 2>/dev/null || true
+	@kubectl delete configmap kibana-kibana-helm-scripts -n $(NS_LOGGING) --ignore-not-found 2>/dev/null || true
+	@kubectl delete serviceaccount pre-install-kibana-kibana post-delete-kibana-kibana -n $(NS_LOGGING) --ignore-not-found 2>/dev/null || true
+	@kubectl delete role pre-install-kibana-kibana -n $(NS_LOGGING) --ignore-not-found 2>/dev/null || true
+	@kubectl delete rolebinding pre-install-kibana-kibana -n $(NS_LOGGING) --ignore-not-found 2>/dev/null || true
+	
 	@echo -e "$(SUCCESS) ELK Stack uninstalled."
 
 # ==============================================================================
@@ -474,6 +511,8 @@ logs:
 	@kubectl logs -n $(NS_VAULT) -l app.kubernetes.io/name=vault --tail=20 --all-containers=true 2>/dev/null || echo "No Vault pods found"
 	@echo -e "\n$(BOLD)==> Kibana Logs:$(RESET)"
 	@kubectl logs -n $(NS_LOGGING) -l app=kibana --tail=20 --all-containers=true 2>/dev/null || echo "No Kibana pods found"
+	@echo -e "\n$(BOLD)==> Logstash Logs:$(RESET)"
+	@kubectl logs -n $(NS_LOGGING) -l release=logstash --tail=20 --all-containers=true 2>/dev/null || echo "No Logstash pods found"
 	@echo -e "\n$(BOLD)==> Grafana Logs:$(RESET)"
 	@kubectl logs -n $(NS_MONITORING) -l app.kubernetes.io/name=grafana --tail=20 --all-containers=true 2>/dev/null || echo "No Grafana pods found"
 	@echo -e "\n$(BOLD)==> External Secrets Logs:$(RESET)"
@@ -487,7 +526,7 @@ logs:
 port-forward:
 	@echo -e "$(INFO) Starting port-forwarding... (Press Ctrl+C to stop)"
 	@echo -e "  - Vault:   http://localhost:8200"
-	@echo -e "  - Kibana:  http://localhost:5601"
+	@echo -e "  - Kibana:  https://localhost:5601"
 	@echo -e "  - Grafana: http://localhost:3000"
 	@trap 'kill %1 %2 %3' SIGINT; \
 	kubectl port-forward -n $(NS_VAULT) svc/vault 8200:8200 & \

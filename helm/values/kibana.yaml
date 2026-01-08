@@ -60,17 +60,15 @@ kibanaConfig:
 # ------------------------------------------------------------------------------
 # 4. Secrets & Credentials
 # ------------------------------------------------------------------------------
-# Inject sensitive environment variables from Kubernetes Secrets
-extraEnvs:
-  # Explicitly inject the token since the chart seems to miss it
-  # when certain conditions aren't met or due to version quirks.
-  - name: ELASTICSEARCH_SERVICEACCOUNTTOKEN
-    valueFrom:
-      secretKeyRef:
-        name: kibana-kibana-es-token
-        key: token
+# The chart automatically injects ELASTICSEARCH_SERVICEACCOUNTTOKEN from the
+# secret specified by elasticsearchCredentialSecret (defaults to kibana-kibana-es-token).
+# We only need to define additional environment variables here.
 
-  # Reuse the same key for all encryption requirements for simplicity
+# Point to our ESO-managed secret for the service token
+elasticsearchCredentialSecret: "kibana-kibana-es-token"
+
+extraEnvs:
+  # Encryption keys for Kibana security features
   # Reading from the same secret 'kibana-kibana-es-token'
   - name: XPACK_SECURITY_ENCRYPTIONKEY
     valueFrom:
