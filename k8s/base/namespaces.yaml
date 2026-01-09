@@ -101,7 +101,26 @@ metadata:
 ---
 # 6. Monitoring Namespace
 # Hosts Prometheus and Grafana.
-# Security: Baseline (Monitoring agents often need host access).
+#
+# Security: Special case - Privileged warn level required.
+#
+# RATIONALE:
+#   Prometheus node-exporter is a DaemonSet that REQUIRES privileged access:
+#   - hostNetwork: true (for network interface metrics)
+#   - hostPID: true (for process metrics like CPU usage per process)
+#   - hostPath volumes: /proc, /sys, / (for filesystem and system metrics)
+#
+#   These capabilities are FUNDAMENTAL to node-exporter's core functionality.
+#   Without them, we cannot collect host-level metrics (CPU, memory, disk, I/O).
+#
+#   The "baseline" PodSecurity profile prohibits all of these.
+#   The "restricted" profile is even more strict.
+#
+#   Therefore, we use:
+#   - enforce: baseline (blocks truly dangerous patterns like privileged containers)
+#   - warn: privileged (suppresses expected warnings for node-exporter)
+#
+# See: https://kubernetes.io/docs/concepts/security/pod-security-standards/
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -111,8 +130,10 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     environment: infra
     # Pod Security Standards
+    # enforce=baseline prevents truly dangerous patterns
+    # warn=privileged suppresses expected warnings for node-exporter DaemonSet
     pod-security.kubernetes.io/enforce: baseline
-    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn: privileged
   annotations:
     description: "Monitoring stack (Prometheus, Grafana)"
 

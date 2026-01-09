@@ -1,0 +1,549 @@
+# ==============================================================================
+# kube-prometheus-stack Helm Values
+# ==============================================================================
+#
+# Context: ft_transcendence DevOps Module (Minor Module: Monitoring System)
+# Chart: prometheus-community/kube-prometheus-stack
+# Version: Compatible with chart version 55.x+
+#
+# Purpose:
+#   This configuration deploys a complete monitoring stack including:
+#   - Prometheus: Metrics collection and alerting
+#   - Grafana: Visualization and dashboards
+#   - Alertmanager: Alert routing and notification
+#   - Node Exporter: Host-level metrics
+#   - Kube State Metrics: Kubernetes object metrics
+#
+# Security:
+#   - Grafana admin credentials are managed via Vault + ESO
+#   - No hardcoded passwords in this file
+#   - Pod security contexts follow best practices
+#
+# See:
+#   - https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack
+#   - https://prometheus.io/docs/
+#   - https://grafana.com/docs/grafana/latest/
+# ==============================================================================
+
+# ==============================================================================
+# GLOBAL CONFIGURATION
+# ==============================================================================
+# Common labels applied to all resources created by this chart.
+# Useful for filtering and identification.
+commonLabels:
+  project: ft-transcendence
+  module: monitoring
+
+# ==============================================================================
+# PROMETHEUS CONFIGURATION
+# ==============================================================================
+prometheus:
+  # ----------------------------------------------------------------------------
+  # Prometheus Server Specification
+  # ----------------------------------------------------------------------------
+  prometheusSpec:
+    # --------------------------------------------------------------------------
+    # Service Discovery
+    # --------------------------------------------------------------------------
+    # CRITICAL: Set to false to discover ServiceMonitors/PodMonitors from ALL
+    # namespaces, not just those matching Helm release labels.
+    # This allows monitoring of:
+    #   - Microservices in 'production' namespace
+    #   - ELK stack in 'logging' namespace
+    #   - Infrastructure in 'vault' namespace
+    # --------------------------------------------------------------------------
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+
+    # --------------------------------------------------------------------------
+    # Data Retention
+    # --------------------------------------------------------------------------
+    # How long to keep metrics data.
+    # 15 days is a good balance between storage and historical analysis.
+    # For production, consider 30d+ if storage permits.
+    retention: 15d
+
+    # Maximum size of the TSDB storage.
+    # When this limit is reached, oldest data is deleted.
+    retentionSize: "4GB"
+
+    # --------------------------------------------------------------------------
+    # Storage Configuration
+    # --------------------------------------------------------------------------
+    # Enable persistent storage to survive pod restarts.
+    # Without this, all metrics are lost on pod restart!
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ft-local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+
+    # --------------------------------------------------------------------------
+    # Resource Management
+    # --------------------------------------------------------------------------
+    # Resources adapted for K3s single-node deployment.
+    # Prometheus can be memory-intensive; adjust based on metrics volume.
+    # NOTE: Limits reduced to fit within monitoring-quota (4 CPU total).
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+    # --------------------------------------------------------------------------
+    # Security Context
+    # --------------------------------------------------------------------------
+    # Run as non-root user following security best practices.
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534 # nobody user
+      runAsGroup: 65534
+      fsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+
+    # --------------------------------------------------------------------------
+    # Scrape Configuration
+    # --------------------------------------------------------------------------
+    # Scrape interval: how often Prometheus collects metrics.
+    # 30s is the default; 15s provides more granularity at higher cost.
+    scrapeInterval: 30s
+
+    # Evaluation interval: how often rules are evaluated.
+    evaluationInterval: 30s
+
+# ==============================================================================
+# ALERTMANAGER CONFIGURATION
+# ==============================================================================
+alertmanager:
+  # Enable Alertmanager for alert routing and notification.
+  enabled: true
+
+  alertmanagerSpec:
+    # --------------------------------------------------------------------------
+    # Storage Configuration
+    # --------------------------------------------------------------------------
+    # Persist silences and notification state across restarts.
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ft-local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 1Gi
+
+    # --------------------------------------------------------------------------
+    # Resource Management
+    # --------------------------------------------------------------------------
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+
+    # --------------------------------------------------------------------------
+    # Security Context
+    # --------------------------------------------------------------------------
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+
+# ==============================================================================
+# GRAFANA CONFIGURATION
+# ==============================================================================
+grafana:
+  # ----------------------------------------------------------------------------
+  # Admin Credentials
+  # ----------------------------------------------------------------------------
+  # SECURITY: Use existing Kubernetes Secret managed by ESO/Vault.
+  # The secret 'grafana-credentials' is created by the ExternalSecret
+  # defined in infrastructure/k8s/base/external-secrets/grafana-es.yaml
+  #
+  # Expected keys in the secret:
+  #   - admin-user: Grafana admin username
+  #   - admin-password: Grafana admin password
+  # ----------------------------------------------------------------------------
+  admin:
+    existingSecret: grafana-credentials
+    userKey: admin-user
+    passwordKey: admin-password
+
+  # ----------------------------------------------------------------------------
+  # Grafana Configuration (grafana.ini)
+  # ----------------------------------------------------------------------------
+  grafana.ini:
+    # Security settings
+    security:
+      # Disable signup to prevent unauthorized account creation
+      allow_sign_up: false
+      # Use secret key from environment variable (set via extraEnvs)
+      secret_key: ${GF_SECURITY_SECRET_KEY}
+
+    # Server settings
+    server:
+      # Root URL for proper link generation in alerts and dashboards
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/grafana"
+      serve_from_sub_path: true
+
+    # Analytics settings
+    analytics:
+      # Disable telemetry for privacy
+      reporting_enabled: false
+      check_for_updates: false
+
+    # Users settings
+    users:
+      # Disable user signup
+      allow_sign_up: false
+      # Auto-assign new users to this org
+      auto_assign_org: true
+      auto_assign_org_role: Viewer
+
+    # Logging settings
+    log:
+      mode: console
+      level: info
+
+  # ----------------------------------------------------------------------------
+  # Environment Variables
+  # ----------------------------------------------------------------------------
+  # Inject the secret_key from the Vault-managed secret.
+  # This is used by Grafana for:
+  #   - Signing session cookies
+  #   - Encrypting datasource credentials
+  #   - Signing API tokens
+  # ----------------------------------------------------------------------------
+  extraSecretMounts:
+    - name: grafana-secrets
+      secretName: grafana-credentials
+      defaultMode: 0440
+      mountPath: /etc/grafana/secrets
+      readOnly: true
+
+  envFromSecret: ""
+
+  extraEnvs:
+    - name: GF_SECURITY_SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          name: grafana-credentials
+          key: secret-key
+
+  # ----------------------------------------------------------------------------
+  # Persistence
+  # ----------------------------------------------------------------------------
+  # Enable persistent storage for:
+  #   - Custom dashboards created via UI
+  #   - User preferences
+  #   - Annotations
+  # ----------------------------------------------------------------------------
+  persistence:
+    enabled: true
+    type: pvc
+    storageClassName: ft-local-path
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+    finalizers:
+      - kubernetes.io/pvc-protection
+
+  # ----------------------------------------------------------------------------
+  # Init Container Configuration
+  # ----------------------------------------------------------------------------
+  # Disable the init-chown-data container that tries to chown the volume.
+  # This fails with restricted PodSecurityStandards because:
+  #   - The container runs as root (runAsUser=0)
+  #   - It requires privilege escalation
+  # Instead, we rely on fsGroup in securityContext to set proper permissions.
+  # ----------------------------------------------------------------------------
+  initChownData:
+    enabled: false
+
+  # ----------------------------------------------------------------------------
+  # Resource Management
+  # ----------------------------------------------------------------------------
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # ----------------------------------------------------------------------------
+  # Sidecar Configuration for Dashboards & Datasources
+  # ----------------------------------------------------------------------------
+  # The sidecar container watches for ConfigMaps with specific labels and
+  # automatically loads them as dashboards or datasources.
+  #
+  # To add custom dashboards:
+  #   1. Create a ConfigMap with label: grafana_dashboard: "1"
+  #   2. Add dashboard JSON files as data keys
+  #   3. The sidecar will auto-discover and load them
+  #
+  # This is the ONLY method used for dashboard provisioning to avoid conflicts.
+  # Do NOT use dashboardProviders or dashboardsConfigMaps as they conflict.
+  # ----------------------------------------------------------------------------
+  sidecar:
+    dashboards:
+      enabled: true
+      # Label to identify dashboard ConfigMaps
+      label: grafana_dashboard
+      # Value the label must have (optional, empty means any value)
+      labelValue: "1"
+      # Folder in Grafana UI where dashboards will appear
+      folder: /var/lib/grafana/dashboards
+      # Create a subfolder per ConfigMap for organization
+      folderAnnotation: grafana_folder
+      # Search all namespaces for dashboard ConfigMaps
+      searchNamespace: ALL
+      # Watch for changes and auto-reload
+      watchMethod: WATCH
+      # Default provider settings
+      provider:
+        name: sidecarProvider
+        orgId: 1
+        folder: "ft-transcendence"
+        folderUid: "ft-transcendence-folder"
+        type: file
+        disableDeletion: false
+        allowUiUpdates: true
+
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+      searchNamespace: ALL
+
+  # ----------------------------------------------------------------------------
+  # Default Datasource
+  # ----------------------------------------------------------------------------
+  # Configure Prometheus as the default datasource.
+  # This is auto-configured by the chart but we make it explicit.
+  # ----------------------------------------------------------------------------
+  additionalDataSources: []
+  # Note: Prometheus datasource is automatically added by the chart
+
+  # ----------------------------------------------------------------------------
+  # Service Configuration
+  # ----------------------------------------------------------------------------
+  service:
+    type: ClusterIP
+    port: 80
+
+  # ----------------------------------------------------------------------------
+  # Security Context
+  # ----------------------------------------------------------------------------
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 472
+    runAsGroup: 472
+    fsGroup: 472
+    seccompProfile:
+      type: RuntimeDefault
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: false
+
+# ==============================================================================
+# COMPONENT CONFIGURATION
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Prometheus Operator
+# ------------------------------------------------------------------------------
+# The operator manages Prometheus, Alertmanager, and related CRDs.
+prometheusOperator:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Security context for the operator
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
+
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+
+# ------------------------------------------------------------------------------
+# Node Exporter
+# ------------------------------------------------------------------------------
+# Collects host-level metrics (CPU, memory, disk, network).
+# Essential for infrastructure monitoring.
+#
+# SECURITY NOTE:
+#   Node Exporter REQUIRES privileged access to host resources:
+#   - hostNetwork: true (for network interface metrics)
+#   - hostPID: true (for process metrics)
+#   - hostPath volumes (for /proc, /sys, /root filesystem metrics)
+#   These are fundamental requirements and cannot be disabled without
+#   losing core functionality. The PodSecurity warning is expected.
+#
+#   However, we configure the following security best practices:
+#   - Drop all capabilities except what's needed
+#   - Set allowPrivilegeEscalation to false
+#   - Use seccompProfile RuntimeDefault
+# ------------------------------------------------------------------------------
+prometheus-node-exporter:
+  enabled: true
+
+  # Resources adjusted for LimitRange constraints (min memory: 64Mi)
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+  # Security context for the container
+  # We maximize security while keeping required host access
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+      # SYS_TIME is needed for accurate time-based metrics
+      # If not needed, remove this 'add' section entirely
+      add: []
+
+  # Pod-level security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    fsGroup: 65534
+    seccompProfile:
+      type: RuntimeDefault
+
+  # Tolerations to run on all nodes including control plane
+  tolerations:
+    - operator: Exists
+
+# ------------------------------------------------------------------------------
+# Kube State Metrics
+# ------------------------------------------------------------------------------
+# Exposes metrics about Kubernetes objects (pods, deployments, etc.).
+# Essential for cluster-level monitoring.
+kube-state-metrics:
+  enabled: true
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+
+# ------------------------------------------------------------------------------
+# Pushgateway
+# ------------------------------------------------------------------------------
+# Disabled: Not needed for our use case (we use pull-based scraping).
+# Enable if you need to push metrics from batch jobs.
+prometheus-pushgateway:
+  enabled: false
+
+# ==============================================================================
+# KUBERNETES COMPONENT MONITORING
+# ==============================================================================
+# Configuration for monitoring Kubernetes control plane components.
+# Some are disabled because K3s handles them differently.
+
+# API Server metrics
+kubeApiServer:
+  enabled: true
+
+# Controller Manager metrics (K3s bundles this)
+kubeControllerManager:
+  enabled: false
+
+# Scheduler metrics (K3s bundles this)
+kubeScheduler:
+  enabled: false
+
+# Etcd metrics (K3s uses embedded etcd or SQLite)
+kubeEtcd:
+  enabled: false
+
+# Proxy metrics
+kubeProxy:
+  enabled: true
+
+# CoreDNS metrics
+coreDns:
+  enabled: true
+
+# Kubelet metrics
+kubelet:
+  enabled: true
+  serviceMonitor:
+    # Use HTTPS for kubelet metrics
+    https: true
+
+# ==============================================================================
+# DEFAULT RULES AND ALERTS
+# ==============================================================================
+# Enable default Prometheus rules for common alerts.
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: false # Disabled for K3s
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubeControllerManager: false # Disabled for K3s
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeSchedulerAlerting: false # Disabled for K3s
+    kubeSchedulerRecording: false # Disabled for K3s
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
