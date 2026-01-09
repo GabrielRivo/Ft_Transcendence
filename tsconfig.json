@@ -4,7 +4,7 @@
 		"outDir": "./dist",
 		"jsx": "react",
 		"jsxFactory": "createElement",
-		"jsxFragmentFactory": "Fragment",
+		"jsxFragmentFactory": "FragmentComponent",
 		"target": "ES2022",
 		"module": "ESNext",
 		"moduleResolution": "node",

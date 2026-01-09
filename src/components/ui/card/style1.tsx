@@ -1,4 +1,4 @@
-import { createElement, useState, useCallback } from 'my-react';
+import { createElement, useState, useEffect, useRef } from 'my-react';
 import type { Element } from 'my-react';
 
 interface CardStyle1Props {
@@ -23,13 +23,15 @@ function Bracket({ position }: { position: 'top' | 'bottom' }) {
 
 export function CardStyle1({ children, className = '' }: CardStyle1Props) {
 	const [svgState, setSvgState] = useState({ d: '', opacity: 0 });
+	const containerRef = useRef<HTMLDivElement | null>(null);
 
-	const measureRef = useCallback((node: HTMLDivElement | null) => {
-		console.log('measureRef', node);
+	useEffect(() => {
+		const node = containerRef.current;
 		if (!node) return;
 
 		const update = () => {
-			console.log('update');
+			if (!node) return;
+
 			const rect = node.getBoundingClientRect();
 
 			if (rect.width === 0 || rect.height === 0) return;
@@ -70,7 +72,7 @@ export function CardStyle1({ children, className = '' }: CardStyle1Props) {
 	}, []);
 
 	return (
-		<div ref={measureRef} className={`relative w-fit ${className}`}>
+		<div ref={containerRef} className={`relative w-fit ${className}`}>
 			<svg
 				className="pointer-events-none absolute inset-0 z-0 h-full w-full"
 				style={`opacity: ${svgState.opacity}; transition: opacity 0.2s ease-in;`}

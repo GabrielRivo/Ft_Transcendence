@@ -2,7 +2,7 @@ import { createElement, useState, useEffect } from 'my-react';
 import type { Element } from 'my-react';
 interface ButtonStyle1Props {
 	children?: Element;
-	onClick?: () => void;
+	onClick?: (e: MouseEvent) => void | (() => void);
 	duration?: number;
 	resetKey?: number;
 }
@@ -27,7 +27,7 @@ export function ButtonStyle1({ children, onClick, duration = 400, resetKey }: Bu
 
 			setIsAnimating(true);
 			setTimeout(() => {
-				onClick();
+				onClick(e);
 			}, duration);
 		}
 	};

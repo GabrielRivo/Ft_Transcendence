@@ -27,6 +27,21 @@ import Game from './Game';
 
 import { socket } from '../../../socket';
 
+interface GameUpdatePayload {
+	p1: {
+		pos: Vector3;
+		dir: Vector3;
+	};
+	p2: {
+		pos: Vector3;
+		dir: Vector3;
+	};
+	ball: {
+		pos: Vector3;
+		dir: Vector3;
+	};
+}
+
 class PongOnline extends Game {
 	inputManager?: InputManager;
 	player1?: Player;
@@ -177,7 +192,12 @@ class PongOnline extends Game {
 		console.log('Lost connection to server, attempting to reconnect...');
 		this.serverState = 'disconnected';
 		this.processGameState();
-		let connectionTimeout: number;
+
+		const connectionTimeout = setTimeout(() => {
+			unsubscribe();
+			alert('Connection to server lost. The game will now stop.');
+			this.endGame();
+		}, 10000);
 
 		const unsubscribe = Services.EventBus!.once('Server:Connected', () => {
 			console.log('Reconnected to server, resuming game.');
@@ -190,39 +210,34 @@ class PongOnline extends Game {
 			this.serverState = 'connected';
 			this.processGameState();
 		});
-		connectionTimeout = setTimeout(() => {
-			unsubscribe();
-			alert('Connection to server lost. The game will now stop.');
-			this.endGame();
-		}, 10000);
 	};
 
-	private onGameJoined = (payload: any): void => {
+	private onGameJoined = (payload: unknown): void => {
 		this.gameJoined = true;
 		console.log('Game joined with payload:', payload);
 	};
 
-	private onGameStopped = (payload: any): void => {
+	private onGameStopped = (): void => {
 		this.gameState = 'waiting';
 		this.processGameState();
 	};
 
-	private onGameStarted = (payload: any): void => {
+	private onGameStarted = (): void => {
 		this.gameState = 'playing';
 		Services.TimeService!.update();
 		this.processGameState();
 	};
 
-	private onGameEnded = (payload: any): void => {
+	private onGameEnded = (payload: unknown): void => {
 		console.log('Game ended by server:', payload);
 		this.endGame();
 	};
 
-	private onServerLog = (event: string, ...args: any[]): void => {
+	private onServerLog = (event: string, ...args: unknown[]): void => {
 		//console.log(`LOG SOCKET FROM SERVER: ${event}`, ...args);
 	};
 
-	private onGameUpdate = (payload: any): void => {
+	private onGameUpdate = (payload: GameUpdatePayload): void => {
 		// Update player 1
 		this.player1?.paddle.setPosition(new Vector3(payload.p1.pos._x, payload.p1.pos._y, payload.p1.pos._z));
 		this.player1?.paddle.setDirection(new Vector3(payload.p1.dir._x, payload.p1.dir._y, payload.p1.dir._z));

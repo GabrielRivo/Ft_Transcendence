@@ -1,18 +1,22 @@
-import { createElement, useState, useCallback } from 'my-react';
+import { createElement, useState, useEffect, useRef } from 'my-react';
 import type { Element } from 'my-react';
 
-interface CardStyle1Props {
+interface CardStyle2Props {
 	children?: Element | Element[];
 	className?: string;
 }
 
-export function CardStyle2({ children, className = '' }: CardStyle1Props) {
+export function CardStyle2({ children, className = '' }: CardStyle2Props) {
 	const [svgState, setSvgState] = useState({ d: '', opacity: 0 });
+	const containerRef = useRef<HTMLDivElement | null>(null);
 
-	const measureRef = useCallback((node: HTMLDivElement | null) => {
+	useEffect(() => {
+		const node = containerRef.current;
 		if (!node) return;
 
 		const update = () => {
+			if (!node) return;
+
 			const rect = node.getBoundingClientRect();
 
 			if (rect.width === 0 || rect.height === 0) return;
@@ -36,17 +40,25 @@ export function CardStyle2({ children, className = '' }: CardStyle1Props) {
 			setSvgState({ d: newPath, opacity: 1 });
 		};
 
-		// update();
+		update();
 
 		const observer = new ResizeObserver(() => update());
 		observer.observe(node);
+		window.addEventListener('resize', update);
 
 		const timer = setInterval(update, 100);
-		setTimeout(() => clearInterval(timer), 1000);
+		const timeoutTimer = setTimeout(() => clearInterval(timer), 1000);
+
+		return () => {
+			observer.disconnect();
+			clearInterval(timer);
+			clearTimeout(timeoutTimer);
+			window.removeEventListener('resize', update);
+		};
 	}, []);
 
 	return (
-		<div ref={measureRef} className={`relative w-fit ${className}`}>
+		<div ref={containerRef} className={`relative w-fit ${className}`}>
 			<svg
 				className="pointer-events-none absolute inset-0 z-0 h-full w-full"
 				style={`opacity: ${svgState.opacity}; transition: opacity 0.2s ease-in;`}

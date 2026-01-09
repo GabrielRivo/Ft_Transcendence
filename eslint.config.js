@@ -25,7 +25,7 @@ export default tseslint.config(
 				'warn',
 				{
 					argsIgnorePattern: '^_',
-					varsIgnorePattern: '^(createElement|Fragment)$',
+					varsIgnorePattern: '^(createElement|FragmentComponent)$',
 				},
 			],
 		},

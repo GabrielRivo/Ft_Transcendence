@@ -79,7 +79,7 @@ export const ToastProvider = ({ children }: { children?: Element }) => {
 		<ToastContext.Provider value={{ toast: addToast }}>
 			{children}
 			{createPortal(
-				<>
+				<FragmentComponent>
 					<style>{`
             @keyframes toastSlideUp {
               from {
@@ -101,7 +101,7 @@ export const ToastProvider = ({ children }: { children?: Element }) => {
 							<ToastItem key={t.id} toast={t} onClose={removeToast} />
 						))}
 					</div>
-				</>,
+				</FragmentComponent>,
 				document.body,
 			)}
 		</ToastContext.Provider>

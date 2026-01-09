@@ -2,7 +2,7 @@ import { createElement } from 'my-react';
 import type { Element } from 'my-react';
 interface ButtonStyle2Props {
 	children?: Element;
-	onClick?: () => void;
+	onClick?: (e: MouseEvent) => void | (() => void);
 	color?: string; // ex: 'bg-cyan-500'
 }
 
@@ -17,7 +17,7 @@ export function ButtonStyle2({ children, onClick, color = 'bg-transparent' }: Bu
 		// setTimeout(() => setIsClicked(false), 150);
 
 		if (onClick) {
-			setTimeout(() => onClick(), 200);
+			setTimeout(() => onClick(e), 200);
 		}
 	};
 

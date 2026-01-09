@@ -3,7 +3,7 @@ import type { Element } from 'my-react';
 
 interface ButtonStyle3Props {
 	children?: Element;
-	onClick?: () => void;
+	onClick?: (e: MouseEvent) => void | (() => void);
 }
 
 export function ButtonStyle3({ children, onClick }: ButtonStyle3Props) {

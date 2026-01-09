@@ -2,25 +2,7 @@ import { createElement, useState } from 'my-react';
 import { ButtonStyle4 } from '../../components/ui/button/style4';
 import { CardStyle2 } from '../../components/ui/card/style2';
 import { ButtonStyle3 } from '../../components/ui/button/style3';
-import { useNavigate } from 'my-react-router';
-
-function Border() {
-	return (
-		<svg
-			className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
-			viewBox="0 0 829 576"
-			preserveAspectRatio="none"
-		>
-			<path
-				d="M 40 0 L 788.8125 0 L 828.8125 40 L 828.8125 536 L 788.8125 576 L 40 576 L 0 536 L 0 40 Z"
-				stroke="rgba(255, 255, 255, 0.02)"
-				stroke-width="10"
-				fill="none"
-				vector-effect="non-scaling-stroke"
-			></path>
-		</svg>
-	);
-}
+import { Link, useNavigate } from 'my-react-router';
 
 export function Login() {
 	const [resetKey, setResetKey] = useState(0);
@@ -76,6 +58,9 @@ export function Login() {
 								/>
 							</div>
 							<div className="mt-4 flex flex-col justify-center gap-2">
+								<Link to="/forgot-password" className="text-secondary hover:text-neon-blue">
+									Mot de passe oublié ?
+								</Link>
 								<ButtonStyle4 onClick={handleClick}>SE CONNECTER</ButtonStyle4>
 								<ButtonStyle3 onClick={handleClickReturn}>Retour</ButtonStyle3>
 							</div>
