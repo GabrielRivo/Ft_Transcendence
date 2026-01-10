@@ -36,7 +36,7 @@ services:
     container_name: transcendence-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     volumes:
       # Mount custom NGINX configuration
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
@@ -271,6 +271,7 @@ services:
       # Frontend uses my-react and my-react-router packages
       - ./packages/my-react:/app/packages/my-react
       - ./packages/my-react-router:/app/packages/my-react-router
+      - ./packages/my-class-validator:/app/packages/my-class-validator
       - frontend-node-modules:/app/node_modules
     networks:
       - transcendence-network
