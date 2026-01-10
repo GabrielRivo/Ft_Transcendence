@@ -52,9 +52,9 @@ class Paddle {
 		return this.model.position;
 	}
 
-    move() {
+    move(deltaT: number) {
+        deltaT = deltaT / 1000;
         const basePos : Vector3 = this.model.position.clone();
-        const deltaT : number = this.services.TimeService!.getDeltaTime() / 1000;//this.services.Engine!.getDeltaTime() / 1000;
         const distance : number = this.speed * deltaT;
         const displacement : Vector3 = this.direction.scale(distance);
         let newPos : Vector3 = basePos.add(displacement);
@@ -92,8 +92,8 @@ class Paddle {
         ball.owner = this.owner;
     }
 
-    update() {
-        this.move();
+    update(deltaT: number) {
+        this.move(deltaT);
     }
 
     dispose() {

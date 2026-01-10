@@ -31,6 +31,11 @@ class Pong extends Game {
     width: number = 7;
     height: number = 12;
 
+    private fps : number;
+    private frameDuration : number;
+    private lastFrameTime: number;
+    private deltaT: number;
+
     private gameState : "waiting" | "playing" | null;
     // private disconnectTimeout: NodeJS.Timeout | null = null;
 	private disconnectTimeout : Map<string, NodeJS.Timeout | null> = new Map();
@@ -51,6 +56,11 @@ class Pong extends Game {
 
         this.services = new Services();
 
+        this.fps = 30;
+        this.frameDuration = Math.floor(1000 / this.fps);
+        this.lastFrameTime = 0;
+        this.deltaT = 0;
+        
     }
 
     initialize(): void {
@@ -145,31 +155,41 @@ class Pong extends Game {
         if (this.gameState === "waiting" || this.gameState === null) {
             this.gameState = "playing";
             this.nsp!.to(this.id).emit('gameStarted', { gameId: this.id, message: message || `Game ${this.id} is now running.` });
+            
             this.services.TimeService!.update();
+            this.lastFrameTime = this.services.TimeService!.getTimestamp();
+
             this.services.Engine!.stopRenderLoop();
             this.services.Engine!.runRenderLoop(() => {
                 this.services.TimeService!.update();
-                this.player1!.update();
-                this.player2!.update();
-				this.player1!.paddle.model.computeWorldMatrix(true);
-    			this.player2!.paddle.model.computeWorldMatrix(true);
+                let time = this.services.TimeService!.getTimestamp();
+                
+                this.deltaT = time - this.lastFrameTime;
+                if (this.deltaT >= this.frameDuration) {
+                    this.lastFrameTime = time;
+                    this.player1!.update(this.deltaT);
+                    this.player2!.update(this.deltaT);
+                    this.player1!.paddle.model.computeWorldMatrix(true);
+                    this.player2!.paddle.model.computeWorldMatrix(true);
 
-                this.ball!.update();
-				this.nsp!.to(this.id).emit('gameUpdate', {
-                    timestamp: this.services.TimeService!.getTimestamp(),
-					p1: {
-						pos: this.player1!.paddle.getPosition(),
-						dir: this.player1!.paddle.getDirection(),
-					},
-					p2: {
-						pos: this.player2!.paddle.getPosition(),
-						dir: this.player2!.paddle.getDirection(),
-					},
-					ball: {
-						pos: this.ball!.getPosition(),
-						dir: this.ball!.getDirection()
-					}
-				});
+                    this.ball!.update(this.deltaT);
+                    this.nsp!.to(this.id).emit('gameUpdate', {
+                        timestamp: this.services.TimeService!.getTimestamp(),
+                        p1: {
+                            pos: this.player1!.paddle.getPosition(),
+                            dir: this.player1!.paddle.getDirection(),
+                        },
+                        p2: {
+                            pos: this.player2!.paddle.getPosition(),
+                            dir: this.player2!.paddle.getDirection(),
+                        },
+                        ball: {
+                            pos: this.ball!.getPosition(),
+                            dir: this.ball!.getDirection(),
+                            speed: this.ball!.getSpeed(),
+                        }
+                    });
+                }
             });
         }
     }

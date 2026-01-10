@@ -63,17 +63,22 @@ class Ball {
         if (this.speed < this.maxSpeed)
             this.speed *= this.acceleration;
     }
+    getSpeed() : number {
+        return this.speed;
+    }
+    setSpeed(speed: number) {
+        this.speed = speed;
+    }
 
     startDirection() {
         let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4);
         this.setFullDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
     }
 
-    move() {
+    move(deltaT: number) {
         if (!this.moving)
             return;
-
-        let deltaT : number = this.services.TimeService!.getDeltaTime() / 1000;//this.services.Engine!.getDeltaTime() / 1000;
+        deltaT = deltaT / 1000;
         let distance : number = this.speed * deltaT;
         const displacement : Vector3 = this.direction.scale(distance);
         let newPos : Vector3 = this.position.add(displacement);
@@ -176,8 +181,8 @@ class Ball {
             this.setDir(MathUtils.reflectVector(this.direction, normal));
     }
 
-    update() {
-        this.move();
+    update(deltaT: number) {
+        this.move(deltaT);
     }
 
     dispose() {

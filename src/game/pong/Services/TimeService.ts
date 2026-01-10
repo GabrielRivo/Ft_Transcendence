@@ -17,6 +17,13 @@ class TimeService {
         this.timeScale = 1;
     }
 
+    public initialize(): void {
+        this.deltaTime = 0;
+        this.timestamp = 0;
+        this.t0 = performance.now();
+        this.tLast = this.t0;
+    }
+
     public update(): void {
         const t1 = performance.now();
         this.deltaTime = (t1 - this.tLast) * this.timeScale;

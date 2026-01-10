@@ -78,8 +78,8 @@ class Player {
         console.log("Player " + this.id + " score: " + this.score);
     }
 
-    update() {
-        this.paddle.update();
+    update(deltaT: number) {
+        this.paddle.update(deltaT);
     }
 
     dispose() {

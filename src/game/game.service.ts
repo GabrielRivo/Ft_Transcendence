@@ -38,8 +38,6 @@ export class GameService {
                     this.connectPlayer(player1);
                     this.connectPlayer(player2);
                 }
-                /*player1.emit("gameJoined", { gameId, message: `Game ${gameId} created successfully! You are Player 1.` });
-                player2.emit("gameJoined", { gameId, message: `Game ${gameId} created successfully! You are Player 2.` });*/
             }
         }
     }
@@ -49,6 +47,10 @@ export class GameService {
 			console.log(`One of the players is already in a game. Cannot create new game ${id}.`);
 			return false;
 		}
+        if (this.games.has(id)) {
+            console.log(`Game with id ${id} already exists.`);
+            return false;
+        }
         const gameInstance = new Pong(id, player1Id, player2Id, this);
         this.gamesByPlayer.set(player1Id, gameInstance);
         this.gamesByPlayer.set(player2Id, gameInstance);
