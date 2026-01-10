@@ -1,0 +1,102 @@
+# =============================================================================
+# Dockerfile.dev - Frontend Application (Development)
+# =============================================================================
+#
+# This Dockerfile is optimized for local development with Vite HMR (Hot Module
+# Replacement) support. It is designed to work with docker-compose.yaml where
+# source code is mounted as volumes, enabling live code changes without
+# rebuilding the container.
+#
+# Architecture: pnpm monorepo workspace
+# Framework: Custom React implementation (my-react, my-react-router)
+# Build tool: Vite with Tailwind CSS
+# 3D Engine: Babylon.js for Pong game rendering
+#
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Base Image
+# -----------------------------------------------------------------------------
+# Using Node.js 24 on Alpine for a minimal footprint
+# No native addons required for frontend, so no build tools needed
+# Node 24+ is required by the project's package.json engine constraints
+FROM node:24-alpine
+
+# -----------------------------------------------------------------------------
+# Metadata Labels (OCI standard)
+# -----------------------------------------------------------------------------
+LABEL org.opencontainers.image.title="ft_transcendence Frontend (Dev)"
+LABEL org.opencontainers.image.description="Single-page application with custom React, Babylon.js 3D Pong, and Tailwind CSS"
+LABEL org.opencontainers.image.authors="ft_transcendence team"
+LABEL org.opencontainers.image.source="https://github.com/thetranscendence/front"
+
+# -----------------------------------------------------------------------------
+# Install System Dependencies
+# -----------------------------------------------------------------------------
+# Minimal dependencies for frontend development
+# - git: Required for some npm packages that fetch from git repositories
+RUN apk add --no-cache git
+
+# -----------------------------------------------------------------------------
+# Install pnpm Package Manager
+# -----------------------------------------------------------------------------
+# pnpm is required for monorepo workspace management
+# Using corepack (built into Node.js) for version management
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# -----------------------------------------------------------------------------
+# Set Working Directory
+# -----------------------------------------------------------------------------
+# All paths in docker-compose volumes are relative to /app
+# The monorepo structure will be mounted here:
+#   /app/package.json
+#   /app/pnpm-workspace.yaml
+#   /app/pnpm-lock.yaml
+#   /app/apps/frontend/...
+#   /app/packages/...
+WORKDIR /app
+
+# -----------------------------------------------------------------------------
+# Environment Variables
+# -----------------------------------------------------------------------------
+# NODE_ENV: Development mode for Vite dev server
+# PNPM_HOME: pnpm global bin directory
+# PATH: Include pnpm binaries in PATH
+ENV NODE_ENV=development
+ENV PNPM_HOME=/root/.local/share/pnpm
+ENV PATH="${PNPM_HOME}:${PATH}"
+
+# -----------------------------------------------------------------------------
+# Expose Vite Dev Server Port
+# -----------------------------------------------------------------------------
+# Vite development server runs on port 5173 by default
+# NGINX reverse proxy will route / requests to this container
+# HMR (Hot Module Replacement) WebSocket also uses this port
+EXPOSE 5173
+
+# -----------------------------------------------------------------------------
+# Health Check
+# -----------------------------------------------------------------------------
+# Check if Vite dev server is responding
+# Vite serves on root path, so we check the main page
+# Longer start period because Vite needs time to build the initial bundle
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5173/ || exit 1
+
+# -----------------------------------------------------------------------------
+# Startup Command
+# -----------------------------------------------------------------------------
+# 1. Install dependencies with --frozen-lockfile to prevent lock file conflicts
+#    Multiple containers share the same pnpm-lock.yaml, so we must not modify it
+#    This includes workspace packages: my-react, my-react-router
+# 2. Run the Vite dev server with HMR enabled
+#
+# Vite configuration (vite.config.ts) already sets:
+# - server.host: true (listen on all interfaces for Docker)
+# - server.port: 5173
+#
+# The source code is mounted via docker-compose volumes, so:
+# - File changes trigger instant HMR updates in the browser
+# - No page reload needed for most changes
+# - No container rebuild needed for code changes
+CMD ["sh", "-c", "pnpm install --frozen-lockfile && pnpm --filter frontend run dev"]
