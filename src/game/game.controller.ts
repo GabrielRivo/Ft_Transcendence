@@ -3,7 +3,7 @@ import { GameService } from '@/game/game.service.js';
 import { CreateGameSchema } from './game.dto.js';
 
 @Controller('/game/pong')
-export class GestionController {
+export class GameController {
 
 	@Inject(GameService)
 	private gameService!: GameService;
