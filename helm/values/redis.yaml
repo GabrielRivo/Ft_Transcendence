@@ -1,0 +1,409 @@
+# ==============================================================================
+# Redis Helm Chart Configuration
+# ==============================================================================
+#
+# Context: ft_transcendence DevOps Module
+# Chart: bitnami/redis
+# Documentation: https://github.com/bitnami/charts/tree/main/bitnami/redis
+#
+# Purpose:
+#   This configuration deploys Redis as an in-memory data store for the
+#   ft_transcendence microservices architecture. Redis is used for:
+#   - Session storage (user sessions across services)
+#   - Caching (frequently accessed data)
+#   - Pub/Sub messaging (real-time notifications)
+#   - Rate limiting (API throttling)
+#
+# Security:
+#   - Authentication is enabled and managed via External Secrets Operator
+#   - Password is stored in HashiCorp Vault at: secret/shared/redis
+#   - Pod Security Standards: restricted (non-root, read-only filesystem)
+#
+# Usage:
+#   helm upgrade --install redis bitnami/redis \
+#     --namespace production \
+#     --values redis.yaml
+#
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Global Configuration
+# ------------------------------------------------------------------------------
+# Global settings that apply to all components of the Redis deployment.
+
+global:
+  # Use our custom StorageClass for persistent volumes
+  # This ensures data persists across pod restarts with 'Retain' reclaim policy
+  storageClass: "ft-local-path"
+
+# ------------------------------------------------------------------------------
+# 2. Architecture
+# ------------------------------------------------------------------------------
+# Redis can be deployed in different architectures:
+#   - standalone: Single master node (simpler, sufficient for dev/small scale)
+#   - replication: Master + replicas (read scaling, basic HA)
+#
+# Decision: Standalone mode
+# Justification:
+#   - ft_transcendence is a project-scale application, not enterprise
+#   - Avoids complexity of Sentinel for automatic failover
+#   - Reduces resource consumption (no replica pods)
+#   - Sufficient for session storage and caching use cases
+#   - Can be upgraded to replication later if needed
+
+architecture: standalone
+
+# ------------------------------------------------------------------------------
+# 3. Authentication
+# ------------------------------------------------------------------------------
+# Redis authentication configuration.
+#
+# SECURITY: Authentication is MANDATORY in production.
+# We use an existing Kubernetes Secret created by External Secrets Operator,
+# which syncs the password from HashiCorp Vault.
+#
+# Vault Path: secret/shared/redis
+# Secret Key: password
+# K8s Secret: redis-credentials (created by ESO)
+
+auth:
+  # Enable password authentication for all Redis connections
+  enabled: true
+
+  # Reference to an existing Kubernetes Secret containing the Redis password
+  # This secret is created by ExternalSecret 'redis-credentials' in production namespace
+  existingSecret: "redis-credentials"
+
+  # Key within the secret that contains the password value
+  existingSecretPasswordKey: "password"
+
+  # Disable default password generation since we use Vault-managed secrets
+  # password: "" # Not needed when using existingSecret
+
+# ------------------------------------------------------------------------------
+# 4. Master Configuration
+# ------------------------------------------------------------------------------
+# Configuration for the Redis master (primary) node.
+# In standalone mode, this is the only Redis instance.
+
+master:
+  # --------------------------------------------------------------------------
+  # 4.1 Resource Management
+  # --------------------------------------------------------------------------
+  # Define CPU and memory requests/limits for the Redis master container.
+  #
+  # These values are tuned for the production namespace LimitRange:
+  #   - min: cpu=100m, memory=128Mi
+  #   - max: cpu=4, memory=8Gi
+  #   - default: cpu=1, memory=1Gi
+  #
+  # Redis is memory-efficient for typical session/cache workloads.
+  # 512Mi limit provides headroom for caching while staying conservative.
+
+  resources:
+    requests:
+      # Guaranteed minimum CPU allocation
+      cpu: "100m"
+      # Guaranteed minimum memory (matches LimitRange minimum)
+      memory: "128Mi"
+    limits:
+      # Maximum CPU burst capacity
+      cpu: "500m"
+      # Maximum memory (OOM kill if exceeded)
+      # Redis will evict keys before hitting this if maxmemory is set
+      memory: "512Mi"
+
+  # --------------------------------------------------------------------------
+  # 4.2 Persistence
+  # --------------------------------------------------------------------------
+  # Configure persistent storage for Redis data (RDB snapshots, AOF logs).
+  #
+  # Why persistence?
+  #   - Survives pod restarts without data loss
+  #   - Enables session recovery after crashes
+  #   - Required for AOF (Append Only File) durability
+  #
+  # Storage: 1Gi is sufficient for session data and small caches.
+  # Can be increased via PVC resize if needed (K8s 1.24+).
+
+  persistence:
+    # Enable persistent volume for data durability
+    enabled: true
+
+    # Use our custom StorageClass with 'Retain' reclaim policy
+    # Prevents accidental data loss if PVC is deleted
+    storageClass: "ft-local-path"
+
+    # Access mode: ReadWriteOnce (single node access)
+    # Redis master is a single pod, so RWO is appropriate
+    accessModes:
+      - ReadWriteOnce
+
+    # Storage size for Redis data
+    # 1Gi is generous for session/cache storage in this project scale
+    size: "1Gi"
+
+  # --------------------------------------------------------------------------
+  # 4.3 Service Configuration
+  # --------------------------------------------------------------------------
+  # Kubernetes Service configuration for the Redis master.
+
+  service:
+    # Service type: ClusterIP (internal access only)
+    # Redis should NOT be exposed externally
+    type: ClusterIP
+
+    # Standard Redis port
+    ports:
+      redis: 6379
+
+  # --------------------------------------------------------------------------
+  # 4.4 Pod Security Context
+  # --------------------------------------------------------------------------
+  # Security settings at the pod level.
+  # These comply with Kubernetes Pod Security Standards (PSS) 'restricted' profile.
+  #
+  # Note: The 'production' namespace enforces 'restricted' PSS, so these
+  # settings are mandatory for pods to be scheduled.
+
+  podSecurityContext:
+    # Run all containers as non-root user
+    # Bitnami Redis image runs as UID 1001 by default
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+
+    # Set filesystem group for volume mounts
+    # Ensures the Redis process can write to persistent volumes
+    fsGroup: 1001
+
+    # Use seccomp profile for additional syscall filtering
+    seccompProfile:
+      type: RuntimeDefault
+
+  # --------------------------------------------------------------------------
+  # 4.5 Container Security Context
+  # --------------------------------------------------------------------------
+  # Security settings at the container level.
+  # Implements defense-in-depth security principles.
+
+  containerSecurityContext:
+    # Run as non-root (redundant with pod level, but explicit)
+    runAsNonRoot: true
+    runAsUser: 1001
+
+    # Prevent privilege escalation via setuid/setgid binaries
+    allowPrivilegeEscalation: false
+
+    # Use read-only root filesystem
+    # Redis writes to /data which is mounted as a volume
+    readOnlyRootFilesystem: true
+
+    # Drop all Linux capabilities
+    # Redis doesn't need any special kernel capabilities
+    capabilities:
+      drop:
+        - ALL
+
+    # Seccomp profile for syscall filtering
+    seccompProfile:
+      type: RuntimeDefault
+
+# ------------------------------------------------------------------------------
+# 5. Replica Configuration (Disabled)
+# ------------------------------------------------------------------------------
+# In standalone mode, replicas are not deployed.
+# This section is included for documentation and future reference.
+
+replica:
+  # Replicas are disabled in standalone architecture
+  replicaCount: 0
+
+# ------------------------------------------------------------------------------
+# 6. Metrics & Monitoring
+# ------------------------------------------------------------------------------
+# Prometheus metrics exporter configuration.
+#
+# The Redis Exporter sidecar exposes Redis metrics in Prometheus format,
+# enabling monitoring via the kube-prometheus-stack deployed in the
+# 'monitoring' namespace.
+#
+# Metrics available:
+#   - redis_connected_clients
+#   - redis_memory_used_bytes
+#   - redis_commands_processed_total
+#   - redis_keyspace_hits/misses
+#   - And many more...
+
+metrics:
+  # Enable the Prometheus metrics exporter sidecar
+  enabled: true
+
+  # Resource limits for the metrics exporter container
+  # The exporter is lightweight and doesn't need much resources
+  resources:
+    requests:
+      cpu: "10m"
+      memory: "32Mi"
+    limits:
+      cpu: "100m"
+      memory: "64Mi"
+
+  # --------------------------------------------------------------------------
+  # 6.1 ServiceMonitor
+  # --------------------------------------------------------------------------
+  # Prometheus Operator ServiceMonitor for automatic scrape discovery.
+  # The kube-prometheus-stack will automatically discover and scrape this.
+
+  serviceMonitor:
+    # Enable ServiceMonitor creation
+    enabled: true
+
+    # Namespace where the ServiceMonitor will be created
+    # Should match the Redis deployment namespace
+    namespace: "production"
+
+    # Scrape interval (how often Prometheus collects metrics)
+    interval: "30s"
+
+    # Scrape timeout (must be less than interval)
+    scrapeTimeout: "10s"
+
+    # Labels to add to the ServiceMonitor
+    # These help identify the metrics source in Grafana dashboards
+    labels:
+      app.kubernetes.io/part-of: ft-transcendence
+      monitoring: prometheus
+
+  # Container security context for the metrics exporter
+  # Must comply with 'restricted' PSS like the main container
+  containerSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+    seccompProfile:
+      type: RuntimeDefault
+
+# ------------------------------------------------------------------------------
+# 7. Redis Configuration
+# ------------------------------------------------------------------------------
+# Custom Redis server configuration.
+# These settings override the default redis.conf values.
+
+commonConfiguration: |-
+  # --------------------------------------------------------------------------
+  # Memory Management
+  # --------------------------------------------------------------------------
+  # Set maximum memory limit for Redis
+  # This should be less than the container memory limit to avoid OOM kills
+  # 400MB gives ~100MB headroom for Redis overhead, buffers, and fragmentation
+  maxmemory 400mb
+
+  # Eviction policy when maxmemory is reached
+  # allkeys-lru: Remove least recently used keys (good for caching)
+  # Other options: volatile-lru, allkeys-random, volatile-ttl, noeviction
+  maxmemory-policy allkeys-lru
+
+  # --------------------------------------------------------------------------
+  # Persistence Configuration
+  # --------------------------------------------------------------------------
+  # RDB Snapshots: Save dataset to disk at intervals
+  # Format: save <seconds> <changes>
+  # - Save after 900 seconds (15 min) if at least 1 key changed
+  # - Save after 300 seconds (5 min) if at least 10 keys changed
+  # - Save after 60 seconds (1 min) if at least 10000 keys changed
+  save 900 1
+  save 300 10
+  save 60 10000
+
+  # Append Only File: Log every write operation for durability
+  # Trade-off: Better durability vs. larger files and slightly slower writes
+  appendonly yes
+
+  # AOF sync policy
+  # everysec: Sync every second (good balance of durability and performance)
+  appendfsync everysec
+
+  # --------------------------------------------------------------------------
+  # Connection Settings
+  # --------------------------------------------------------------------------
+  # Maximum number of simultaneous client connections
+  # Default is 10000, which is more than enough for this project
+  maxclients 1000
+
+  # Close connection after client is idle for N seconds (0 = disabled)
+  # 300 seconds = 5 minutes of idle time before disconnection
+  timeout 300
+
+  # TCP keepalive for detecting dead connections
+  tcp-keepalive 60
+
+  # --------------------------------------------------------------------------
+  # Security Hardening
+  # --------------------------------------------------------------------------
+  # Disable dangerous commands that could be exploited
+  # These commands are renamed to empty string (effectively disabled)
+  # Note: Some of these may already be disabled by Bitnami image
+  rename-command FLUSHDB ""
+  rename-command FLUSHALL ""
+  rename-command DEBUG ""
+
+# ------------------------------------------------------------------------------
+# 8. Network Policy
+# ------------------------------------------------------------------------------
+# Kubernetes NetworkPolicy to restrict traffic to/from Redis.
+#
+# By default, Redis should only be accessible from:
+#   - Pods in the same namespace (microservices)
+#   - Prometheus (for metrics scraping)
+
+networkPolicy:
+  # Enable NetworkPolicy creation
+  enabled: true
+
+  # Allow ingress from pods in the same namespace
+  allowExternal: false
+
+  # Extra ingress rules for Prometheus metrics scraping
+  # This allows the monitoring namespace to scrape metrics
+  extraIngress:
+    - ports:
+        - port: 9121
+          protocol: TCP
+      from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+
+# ------------------------------------------------------------------------------
+# 9. Pod Disruption Budget
+# ------------------------------------------------------------------------------
+# PDB ensures a minimum number of pods remain available during
+# voluntary disruptions (node upgrades, deployments, etc.).
+#
+# In standalone mode with 1 replica, we can't guarantee availability
+# during disruptions, but this documents the intent for future scaling.
+
+pdb:
+  # Enable PodDisruptionBudget
+  create: true
+
+  # Minimum available pods during disruption
+  # For standalone: 0 means the single pod can be evicted
+  # For replication: Set to 1 to ensure at least one replica is available
+  minAvailable: 0
+
+# ------------------------------------------------------------------------------
+# 10. Labels and Annotations
+# ------------------------------------------------------------------------------
+# Common labels applied to all resources.
+# These help with resource identification, filtering, and Grafana dashboards.
+
+commonLabels:
+  app.kubernetes.io/part-of: ft-transcendence
+  app.kubernetes.io/component: cache
+  environment: production
