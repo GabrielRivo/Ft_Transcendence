@@ -92,7 +92,7 @@
 	--animate-toast-slide-up: toastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	/* Background Image background.png */
 
-	--background-image: url('./background.png') no-repeat center center fixed;
+	/* --background-image: url('./backgroundv2.svg') no-repeat center center fixed; */
 
 	@keyframes float {
 		0%,
@@ -130,7 +130,6 @@
 }
 
 @layer components {
-	/* Chamfer est une class pour avoir des coins cut droit, non obtenable avec border-radius  --cut modifiable via [--cut:<value>px]*/
 	.chamfer {
 		--cut: 20px;
 
@@ -146,9 +145,7 @@
 		);
 
 		transform: translateZ(0);
-		/* Améliore la netteté des bords coupés */
 		-webkit-font-smoothing: antialiased;
-		/* Évite que le fond ne "bave" */
 		background-clip: padding-box;
 		perspective: 1000px;
 	}
@@ -178,6 +175,74 @@
 	box-sizing: border-box;
 }
 
-body {
+body,
+html {
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
 	font-family: var(--font-mono);
+}
+
+#root {
+	width: 100%;
+	height: 100%;
+}
+
+html {
+	scrollbar-width: thin;
+	scrollbar-width: none;
+}
+
+@keyframes ffDashboardPanelEnter {
+	from {
+		opacity: 0;
+		transform: translate3d(90px, 0, 0);
+		filter: blur(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+		filter: blur(0);
+	}
+}
+
+.ff-dashboard-panel-enter {
+	opacity: 0;
+	transform: translate3d(90px, 0, 0);
+	animation: ffDashboardPanelEnter 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	will-change: transform, opacity, filter;
+}
+
+.ff-dashboard-panel-enter--delay-0 {
+	animation-delay: 0ms;
+}
+
+.ff-dashboard-panel-enter--delay-1 {
+	animation-delay: 150ms;
+}
+
+.ff-dashboard-panel-enter--delay-2 {
+	animation-delay: 300ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ff-dashboard-panel-enter {
+		animation: none !important;
+		opacity: 1 !important;
+		transform: none !important;
+		filter: none !important;
+	}
+}
+
+@supports (-moz-appearance: none) {
+	.ff-dashboard-chat-safe {
+		transform: none !important;
+		transform-style: flat !important;
+	}
+
+	.ff-dashboard-perspective {
+		perspective: none !important;
+	}
 }
