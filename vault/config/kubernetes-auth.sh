@@ -182,8 +182,48 @@ vault write auth/kubernetes/role/monitoring-role \
     policies=monitoring-policy \
     ttl=1h
 
+# ------------------------------------------------------------------------------
+# Role: infra-role
+# ------------------------------------------------------------------------------
+# Service:   Infrastructure Services (Redis, RabbitMQ)
+# Namespace: dev, production (multi-environment support)
+# Purpose:   Sync shared infrastructure secrets to application namespaces
+#
+# Used by:   External Secrets Operator (SecretStore in dev and production namespaces)
+# SA Name:   infra-secrets-sa (created by infrastructure/k8s/base/external-secrets/infra-secretstore.yaml)
+#
+# Policies:
+#   - shared-policy: Access to secret/shared/* (Redis password, RabbitMQ credentials)
+#
+# Multi-Namespace Binding:
+#   This role is unique because it accepts ServiceAccounts from MULTIPLE namespaces.
+#   Both 'dev' and 'production' namespaces need access to the same shared secrets
+#   (Redis, RabbitMQ) to allow microservices to connect to these infrastructure services.
+#
+# Secrets Accessible:
+#   - secret/shared/redis     -> password
+#   - secret/shared/rabbitmq  -> password, erlang_cookie
+#
+# Security Notes:
+#   - The same credentials are used in dev and production for simplicity
+#   - In a more complex setup, consider separate secrets per environment
+#   - The shared-policy only grants READ access (no write/delete)
+#
+# See:
+#   - infrastructure/vault/policies/shared-policy.hcl
+#   - infrastructure/k8s/base/external-secrets/infra-secretstore.yaml
+#   - infrastructure/k8s/base/external-secrets/redis-es.yaml
+#   - infrastructure/k8s/base/external-secrets/rabbitmq-es.yaml
+# ------------------------------------------------------------------------------
+echo "[*] Creating role: infra-role..."
+vault write auth/kubernetes/role/infra-role \
+    bound_service_account_names=infra-secrets-sa \
+    bound_service_account_namespaces=dev,production \
+    policies=shared-policy \
+    ttl=1h
+
 # ==============================================================================
 # Completion
 # ==============================================================================
 echo "[SUCCESS] Kubernetes Auth Method configured successfully."
-echo "[INFO] Roles created: auth-role, matchmaking-role, elk-role, monitoring-role"
+echo "[INFO] Roles created: auth-role, matchmaking-role, elk-role, monitoring-role, infra-role"
