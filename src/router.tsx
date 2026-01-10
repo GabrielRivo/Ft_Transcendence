@@ -12,6 +12,8 @@ import { Register } from './pages/register';
 import { Authentification } from './pages/authentification';
 import { DashboardLayout } from './layout/dashboardLayout';
 import { Dashboard } from './pages/dashboard';
+import { GuestLayout } from './layout/GuestLayout';
+import { AuthenticatedLayout } from './layout/AuthenticatedLayout';
 
 const routes = [
 	{
@@ -21,29 +23,41 @@ const routes = [
 				path: '/',
 				component: Home,
 			},
+			// Guest-only routes (login, register, etc.)
 			{
-				layout: ConnexionLayout,
+				layout: GuestLayout,
 				routes: [
 					{
-						path: '/login',
-						component: Login,
-					},
-					{
-						path: '/register',
-						component: Register,
-					},
-					{
-						path: '/authentification',
-						component: Authentification,
+						layout: ConnexionLayout,
+						routes: [
+							{
+								path: '/login',
+								component: Login,
+							},
+							{
+								path: '/register',
+								component: Register,
+							},
+							{
+								path: '/authentification',
+								component: Authentification,
+							},
+						],
 					},
 				],
 			},
+			// Authenticated routes
 			{
-				layout: DashboardLayout,
+				layout: AuthenticatedLayout,
 				routes: [
 					{
-						path: '/dashboard',
-						component: Dashboard,
+						layout: DashboardLayout,
+						routes: [
+							{
+								path: '/dashboard',
+								component: Dashboard,
+							},
+						],
 					},
 				],
 			},

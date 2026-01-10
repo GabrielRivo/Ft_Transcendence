@@ -4,13 +4,18 @@ import type { Element } from 'my-react';
 interface ButtonStyle3Props {
 	children?: Element;
 	onClick?: (e: MouseEvent) => void | (() => void);
+	type?: 'button' | 'submit' | 'reset';
+	disabled?: boolean;
 }
 
-export function ButtonStyle3({ children, onClick }: ButtonStyle3Props) {
+export function ButtonStyle3({ children, onClick, type = 'button', disabled = false }: ButtonStyle3Props) {
 	return (
 		<button
+			type={type}
 			onClick={onClick}
-			className={`group font-pirulen relative cursor-pointer border-cyan-400 bg-transparent px-8 py-3 text-cyan-400 transition-all duration-300 select-none hover:bg-cyan-400/10 hover:text-white`}
+			// disabled={disabled}
+			
+			className={`group font-pirulen relative cursor-pointer border-cyan-400 bg-transparent px-8 py-3 text-cyan-400 transition-all duration-300 select-none hover:bg-cyan-400/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50`}
 		>
 			<span className="absolute bottom-0 left-0 h-[2px] w-0 bg-white transition-all duration-300 group-hover:w-full"></span>
 
