@@ -80,8 +80,13 @@ ENVIRONMENT ?= dev
 NS_VAULT := vault
 NS_LOGGING := logging
 NS_MONITORING := monitoring
+NS_DEV := dev
 NS_PRODUCTION := production
 NS_EXTERNAL_SECRETS := external-secrets
+
+# Infrastructure namespace for Redis/RabbitMQ deployment
+# Can be overridden: make infra-up NS_INFRA=production
+NS_INFRA ?= dev
 
 # ==============================================================================
 # 6. HELM REPOSITORIES
@@ -161,10 +166,11 @@ _wait-for-pods:
 # WARNING: This destroys persistent data.
 .PHONY: _clean-pvcs
 _clean-pvcs:
-	@echo -e "$(WARN) Deleting all PVCs in namespaces: $(NS_VAULT), $(NS_LOGGING), $(NS_MONITORING), $(NS_PRODUCTION)..."
+	@echo -e "$(WARN) Deleting all PVCs in namespaces: $(NS_VAULT), $(NS_LOGGING), $(NS_MONITORING), $(NS_DEV), $(NS_PRODUCTION)..."
 	@kubectl delete pvc --all -n $(NS_VAULT) --ignore-not-found >/dev/null 2>&1 || true
 	@kubectl delete pvc --all -n $(NS_LOGGING) --ignore-not-found >/dev/null 2>&1 || true
 	@kubectl delete pvc --all -n $(NS_MONITORING) --ignore-not-found >/dev/null 2>&1 || true
+	@kubectl delete pvc --all -n $(NS_DEV) --ignore-not-found >/dev/null 2>&1 || true
 	@kubectl delete pvc --all -n $(NS_PRODUCTION) --ignore-not-found >/dev/null 2>&1 || true
 	@echo -e "$(SUCCESS) All PVCs deleted."
 
@@ -184,7 +190,7 @@ _clean-base:
 
 # Target: up
 # Description: Deploys the entire infrastructure stack in the correct order.
-# Order: Prerequisites -> Base -> Vault -> ESO -> ELK -> Monitoring
+# Order: Prerequisites -> Base -> Vault -> ESO -> ELK -> Monitoring -> Infra
 #
 # Deployment Order Rationale:
 #   1. base-up:       Creates namespaces, storage classes, quotas, limit ranges
@@ -195,10 +201,11 @@ _clean-base:
 #   6. eso-config:    Creates SecretStores and ExternalSecrets for all namespaces
 #   7. elk-up:        Installs Elasticsearch, Logstash, Kibana for logging
 #   8. monitoring-up: Installs Prometheus, Grafana, Alertmanager with dashboards
+#   9. infra-up-all:  Installs Redis and RabbitMQ in dev and production namespaces
 #
-# Note: infra-up (Redis/RabbitMQ) is NOT included by default. Run separately if needed.
+# This target deploys EVERYTHING needed for the ft_transcendence project.
 .PHONY: up
-up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up eso-config elk-up monitoring-up
+up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up eso-config elk-up monitoring-up infra-up-all
 	@echo -e "\n$(SUCCESS) $(BOLD)Infrastructure successfully deployed!$(RESET)"
 	@echo -e "You can check the status with: $(BOLD)make status$(RESET)"
 	@echo -e "Access UIs with: $(BOLD)make port-forward$(RESET)"
@@ -206,8 +213,9 @@ up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up eso-co
 # Target: down
 # Description: Stops the entire infrastructure stack in reverse order.
 # Note: This does NOT delete PersistentVolumeClaims (data is preserved).
+# Note: infra-down-all removes Redis/RabbitMQ from both dev and production.
 .PHONY: down
-down: monitoring-down elk-down infra-down eso-down vault-down
+down: monitoring-down elk-down infra-down-all eso-down vault-down
 	@echo -e "\n$(SUCCESS) $(BOLD)Infrastructure stopped (PVCs preserved).$(RESET)"
 	@echo -e "To remove data, use: $(BOLD)make clean$(RESET)"
 
@@ -346,23 +354,48 @@ eso-up: base-up _add-helm-repos
 # This target applies the following resources:
 #   - SecretStore (logging namespace): Connects to Vault for ELK secrets
 #   - SecretStore (monitoring namespace): Connects to Vault for Grafana secrets
+#   - SecretStore (dev namespace): Connects to Vault for Redis/RabbitMQ secrets
+#   - SecretStore (production namespace): Connects to Vault for Redis/RabbitMQ secrets
 #   - ExternalSecrets for Elasticsearch, Kibana, Logstash credentials
 #   - ExternalSecrets for Grafana admin credentials
+#   - ExternalSecrets for Redis and RabbitMQ credentials (dev and production)
 #
 # After applying, ESO will automatically sync secrets from Vault to K8s Secrets.
 .PHONY: eso-config
 eso-config:
 	@echo -e "$(INFO) Configuring External Secrets Operator (SecretStore, ExternalSecrets)..."
+	@# -------------------------------------------------------------------------
 	@# Logging namespace - ELK Stack secrets
+	@# -------------------------------------------------------------------------
 	@echo -e "$(INFO)   Applying logging namespace ESO resources..."
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/secretstore.yaml
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/elasticsearch-es.yaml
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/kibana-es.yaml
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/logstash-es.yaml
+	@# -------------------------------------------------------------------------
 	@# Monitoring namespace - Grafana secrets
+	@# -------------------------------------------------------------------------
 	@echo -e "$(INFO)   Applying monitoring namespace ESO resources..."
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/grafana-es.yaml
-	@# Wait for secrets to be synced (ESO needs a few seconds to process)
+	@# -------------------------------------------------------------------------
+	@# Dev namespace - Redis/RabbitMQ secrets
+	@# -------------------------------------------------------------------------
+	@# The infra-secretstore.yaml, redis-es.yaml, and rabbitmq-es.yaml files are
+	@# templates with {{NAMESPACE}} placeholder. We use sed to replace it.
+	@echo -e "$(INFO)   Applying dev namespace ESO resources (Redis/RabbitMQ)..."
+	@sed 's/{{NAMESPACE}}/$(NS_DEV)/g' $(K8S_BASE_DIR)/external-secrets/infra-secretstore.yaml | kubectl apply -f -
+	@sed 's/{{NAMESPACE}}/$(NS_DEV)/g' $(K8S_BASE_DIR)/external-secrets/redis-es.yaml | kubectl apply -f -
+	@sed 's/{{NAMESPACE}}/$(NS_DEV)/g' $(K8S_BASE_DIR)/external-secrets/rabbitmq-es.yaml | kubectl apply -f -
+	@# -------------------------------------------------------------------------
+	@# Production namespace - Redis/RabbitMQ secrets
+	@# -------------------------------------------------------------------------
+	@echo -e "$(INFO)   Applying production namespace ESO resources (Redis/RabbitMQ)..."
+	@sed 's/{{NAMESPACE}}/$(NS_PRODUCTION)/g' $(K8S_BASE_DIR)/external-secrets/infra-secretstore.yaml | kubectl apply -f -
+	@sed 's/{{NAMESPACE}}/$(NS_PRODUCTION)/g' $(K8S_BASE_DIR)/external-secrets/redis-es.yaml | kubectl apply -f -
+	@sed 's/{{NAMESPACE}}/$(NS_PRODUCTION)/g' $(K8S_BASE_DIR)/external-secrets/rabbitmq-es.yaml | kubectl apply -f -
+	@# -------------------------------------------------------------------------
+	@# Wait for secrets to be synced
+	@# -------------------------------------------------------------------------
 	@echo -e "$(INFO)   Waiting for ExternalSecrets to sync..."
 	@sleep 5
 	@# Verify that secrets were created
@@ -371,6 +404,16 @@ eso-config:
 	else \
 		echo -e "$(WARN) Grafana credentials not yet synced. Check ESO logs if issue persists."; \
 	fi
+	@if kubectl get secret redis-credentials -n $(NS_DEV) >/dev/null 2>&1; then \
+		echo -e "$(SUCCESS) Redis credentials synced to dev namespace."; \
+	else \
+		echo -e "$(WARN) Redis credentials not yet synced to dev. Check ESO logs if issue persists."; \
+	fi
+	@if kubectl get secret redis-credentials -n $(NS_PRODUCTION) >/dev/null 2>&1; then \
+		echo -e "$(SUCCESS) Redis credentials synced to production namespace."; \
+	else \
+		echo -e "$(WARN) Redis credentials not yet synced to production. Check ESO logs if issue persists."; \
+	fi
 	@echo -e "$(SUCCESS) External Secrets Operator configured."
 
 # Target: eso-down
@@ -378,7 +421,7 @@ eso-config:
 # Handles the case where CRDs may already be deleted (during make clean).
 #
 # Cleanup Order:
-#   1. Delete ExternalSecrets and SecretStores (if CRDs exist)
+#   1. Delete ExternalSecrets and SecretStores from all namespaces (if CRDs exist)
 #   2. Uninstall the ESO Helm chart
 #
 # Note: We check if ESO CRDs exist before attempting to delete resources to avoid
@@ -395,6 +438,14 @@ eso-down:
 		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/secretstore.yaml --ignore-not-found 2>/dev/null || true; \
 		echo -e "$(INFO)   Cleaning up monitoring namespace ESO resources..."; \
 		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/grafana-es.yaml --ignore-not-found 2>/dev/null || true; \
+		echo -e "$(INFO)   Cleaning up dev namespace ESO resources..."; \
+		sed 's/{{NAMESPACE}}/$(NS_DEV)/g' $(K8S_BASE_DIR)/external-secrets/rabbitmq-es.yaml | kubectl delete -f - --ignore-not-found 2>/dev/null || true; \
+		sed 's/{{NAMESPACE}}/$(NS_DEV)/g' $(K8S_BASE_DIR)/external-secrets/redis-es.yaml | kubectl delete -f - --ignore-not-found 2>/dev/null || true; \
+		sed 's/{{NAMESPACE}}/$(NS_DEV)/g' $(K8S_BASE_DIR)/external-secrets/infra-secretstore.yaml | kubectl delete -f - --ignore-not-found 2>/dev/null || true; \
+		echo -e "$(INFO)   Cleaning up production namespace ESO resources..."; \
+		sed 's/{{NAMESPACE}}/$(NS_PRODUCTION)/g' $(K8S_BASE_DIR)/external-secrets/rabbitmq-es.yaml | kubectl delete -f - --ignore-not-found 2>/dev/null || true; \
+		sed 's/{{NAMESPACE}}/$(NS_PRODUCTION)/g' $(K8S_BASE_DIR)/external-secrets/redis-es.yaml | kubectl delete -f - --ignore-not-found 2>/dev/null || true; \
+		sed 's/{{NAMESPACE}}/$(NS_PRODUCTION)/g' $(K8S_BASE_DIR)/external-secrets/infra-secretstore.yaml | kubectl delete -f - --ignore-not-found 2>/dev/null || true; \
 	else \
 		echo -e "$(INFO) ESO CRDs not found, skipping ExternalSecrets cleanup."; \
 	fi
@@ -571,33 +622,100 @@ monitoring-down: dashboards-down
 # ==============================================================================
 # 15. INFRASTRUCTURE COMPONENT (Redis/RabbitMQ)
 # ==============================================================================
+#
+# Redis and RabbitMQ are deployed as shared infrastructure services.
+# They can be deployed to multiple namespaces (dev, production) using the
+# NS_INFRA variable.
+#
+# Usage:
+#   make infra-up                    # Deploy to dev namespace (default)
+#   make infra-up NS_INFRA=production  # Deploy to production namespace
+#   make infra-up-all                # Deploy to both dev and production
+#
+# Prerequisites:
+#   - eso-config must have been run to create the secrets in the target namespace
+#   - base-up must have been run to create the namespaces
+#
+# The same Helm values files are used for both environments. The environment
+# label is set dynamically via --set to differentiate between deployments.
+# ==============================================================================
 
 # Target: infra-up
-# Description: Installs infrastructure services (Redis, RabbitMQ).
-# Deploys into the 'production' namespace.
+# Description: Installs infrastructure services (Redis, RabbitMQ) in the target namespace.
+# The target namespace is controlled by NS_INFRA variable (default: dev).
+#
+# Example:
+#   make infra-up                      # Install in dev namespace
+#   make infra-up NS_INFRA=production  # Install in production namespace
 .PHONY: infra-up
 infra-up: base-up _add-helm-repos
-	@echo -e "$(INFO) Installing Redis in namespace $(BOLD)$(NS_PRODUCTION)$(RESET)..."
+	@echo -e "$(INFO) Installing Redis in namespace $(BOLD)$(NS_INFRA)$(RESET)..."
+	@# Verify that Redis credentials exist (created by ESO via eso-config)
+	@if ! kubectl get secret redis-credentials -n $(NS_INFRA) >/dev/null 2>&1; then \
+		echo -e "$(WARN) redis-credentials secret not found in $(NS_INFRA). Run 'make eso-config' first."; \
+		echo -e "$(INFO) Continuing anyway - Redis will fail to start without credentials."; \
+	fi
 	@helm upgrade --install redis bitnami/redis \
-		--namespace $(NS_PRODUCTION) \
+		--namespace $(NS_INFRA) \
 		--values $(HELM_VALUES_DIR)/redis.yaml \
+		--set commonLabels.environment=$(NS_INFRA) \
 		--wait --timeout $(TIMEOUT_READY)
 
-	@echo -e "$(INFO) Installing RabbitMQ in namespace $(BOLD)$(NS_PRODUCTION)$(RESET)..."
+	@echo -e "$(INFO) Installing RabbitMQ in namespace $(BOLD)$(NS_INFRA)$(RESET)..."
+	@# Verify that RabbitMQ credentials exist (created by ESO via eso-config)
+	@if ! kubectl get secret rabbitmq-credentials -n $(NS_INFRA) >/dev/null 2>&1; then \
+		echo -e "$(WARN) rabbitmq-credentials secret not found in $(NS_INFRA). Run 'make eso-config' first."; \
+		echo -e "$(INFO) Continuing anyway - RabbitMQ will fail to start without credentials."; \
+	fi
 	@helm upgrade --install rabbitmq bitnami/rabbitmq \
-		--namespace $(NS_PRODUCTION) \
+		--namespace $(NS_INFRA) \
 		--values $(HELM_VALUES_DIR)/rabbitmq.yaml \
+		--set commonLabels.environment=$(NS_INFRA) \
 		--wait --timeout $(TIMEOUT_READY)
-	@echo -e "$(SUCCESS) Infrastructure services installed."
+	@echo -e "$(SUCCESS) Infrastructure services installed in $(BOLD)$(NS_INFRA)$(RESET)."
+
+# Target: infra-up-all
+# Description: Installs infrastructure services in BOTH dev and production namespaces.
+# This is useful for initial cluster setup or when you need both environments running.
+.PHONY: infra-up-all
+infra-up-all:
+	@echo -e "$(INFO) Installing infrastructure services in all namespaces..."
+	@$(MAKE) infra-up NS_INFRA=$(NS_DEV)
+	@$(MAKE) infra-up NS_INFRA=$(NS_PRODUCTION)
+	@echo -e "$(SUCCESS) Infrastructure services installed in dev and production."
 
 # Target: infra-down
-# Description: Uninstalls infrastructure services.
+# Description: Uninstalls infrastructure services from the target namespace.
+# The target namespace is controlled by NS_INFRA variable (default: dev).
+#
+# Example:
+#   make infra-down                      # Uninstall from dev namespace
+#   make infra-down NS_INFRA=production  # Uninstall from production namespace
 .PHONY: infra-down
 infra-down:
-	@echo -e "$(INFO) Uninstalling Infrastructure services..."
-	@helm uninstall redis --namespace $(NS_PRODUCTION) --ignore-not-found
-	@helm uninstall rabbitmq --namespace $(NS_PRODUCTION) --ignore-not-found
-	@echo -e "$(SUCCESS) Infrastructure services uninstalled."
+	@echo -e "$(INFO) Uninstalling Infrastructure services from $(BOLD)$(NS_INFRA)$(RESET)..."
+	@helm uninstall redis --namespace $(NS_INFRA) --ignore-not-found 2>/dev/null || true
+	@helm uninstall rabbitmq --namespace $(NS_INFRA) --ignore-not-found 2>/dev/null || true
+	@echo -e "$(SUCCESS) Infrastructure services uninstalled from $(NS_INFRA)."
+
+# Target: infra-down-all
+# Description: Uninstalls infrastructure services from BOTH dev and production namespaces.
+.PHONY: infra-down-all
+infra-down-all:
+	@echo -e "$(INFO) Uninstalling infrastructure services from all namespaces..."
+	@$(MAKE) infra-down NS_INFRA=$(NS_DEV)
+	@$(MAKE) infra-down NS_INFRA=$(NS_PRODUCTION)
+	@echo -e "$(SUCCESS) Infrastructure services uninstalled from dev and production."
+
+# Target: infra-status
+# Description: Shows the status of Redis and RabbitMQ in the target namespace.
+.PHONY: infra-status
+infra-status:
+	@echo -e "$(INFO) Infrastructure Status in $(BOLD)$(NS_INFRA)$(RESET):"
+	@echo -e "\n$(BOLD)==> Redis:$(RESET)"
+	@kubectl get pods -n $(NS_INFRA) -l app.kubernetes.io/name=redis -o wide 2>/dev/null || echo "  No Redis pods found"
+	@echo -e "\n$(BOLD)==> RabbitMQ:$(RESET)"
+	@kubectl get pods -n $(NS_INFRA) -l app.kubernetes.io/name=rabbitmq -o wide 2>/dev/null || echo "  No RabbitMQ pods found"
 
 # ==============================================================================
 # 16. UTILITY TARGETS
@@ -614,6 +732,8 @@ status:
 	@kubectl get pods -n $(NS_LOGGING) -o wide
 	@echo -e "\n$(BOLD)==> Namespace: $(NS_MONITORING)$(RESET)"
 	@kubectl get pods -n $(NS_MONITORING) -o wide
+	@echo -e "\n$(BOLD)==> Namespace: $(NS_DEV)$(RESET)"
+	@kubectl get pods -n $(NS_DEV) -o wide
 	@echo -e "\n$(BOLD)==> Namespace: $(NS_PRODUCTION)$(RESET)"
 	@kubectl get pods -n $(NS_PRODUCTION) -o wide
 	@echo -e "\n$(BOLD)==> Namespace: $(NS_EXTERNAL_SECRETS)$(RESET)"
@@ -698,9 +818,12 @@ help:
 	@echo -e "  $(CYAN)dashboards-up$(RESET)   Create Grafana dashboards ConfigMap"
 	@echo -e "  $(CYAN)dashboards-down$(RESET) Remove Grafana dashboards ConfigMap"
 	@echo -e ""
-	@echo -e "$(BOLD)Infrastructure Services:$(RESET)"
-	@echo -e "  $(CYAN)infra-up$(RESET)        Install Redis and RabbitMQ"
-	@echo -e "  $(CYAN)infra-down$(RESET)      Uninstall Redis and RabbitMQ"
+	@echo -e "$(BOLD)Infrastructure Services (Redis/RabbitMQ):$(RESET)"
+	@echo -e "  $(CYAN)infra-up$(RESET)        Install Redis and RabbitMQ (NS_INFRA=dev by default)"
+	@echo -e "  $(CYAN)infra-up-all$(RESET)    Install Redis and RabbitMQ in both dev and production"
+	@echo -e "  $(CYAN)infra-down$(RESET)      Uninstall Redis and RabbitMQ (NS_INFRA=dev by default)"
+	@echo -e "  $(CYAN)infra-down-all$(RESET)  Uninstall Redis and RabbitMQ from both namespaces"
+	@echo -e "  $(CYAN)infra-status$(RESET)    Show Redis/RabbitMQ status in target namespace"
 	@echo -e ""
 	@echo -e "$(BOLD)Utility Targets:$(RESET)"
 	@echo -e "  $(CYAN)status$(RESET)          Show pod status across all namespaces"
@@ -708,9 +831,16 @@ help:
 	@echo -e "  $(CYAN)port-forward$(RESET)    Expose UIs to localhost (Vault:8200, Kibana:5601, Grafana:3000)"
 	@echo -e "  $(CYAN)health$(RESET)          Check infrastructure health status"
 	@echo -e ""
+	@echo -e "$(BOLD)Variables:$(RESET)"
+	@echo -e "  $(CYAN)ENVIRONMENT$(RESET)     Target environment for base manifests (dev|test|production)"
+	@echo -e "  $(CYAN)NS_INFRA$(RESET)        Target namespace for Redis/RabbitMQ (dev|production)"
+	@echo -e ""
 	@echo -e "$(BOLD)Examples:$(RESET)"
-	@echo -e "  make up                    # Deploy everything"
-	@echo -e "  make monitoring-up         # Deploy only monitoring stack"
-	@echo -e "  make status                # Check all pods status"
-	@echo -e "  make port-forward          # Access UIs locally"
-	@echo -e "  make clean ENVIRONMENT=dev # Destroy dev environment"
+	@echo -e "  make up                         # Deploy everything"
+	@echo -e "  make infra-up                   # Install Redis/RabbitMQ in dev"
+	@echo -e "  make infra-up NS_INFRA=production  # Install Redis/RabbitMQ in production"
+	@echo -e "  make infra-up-all               # Install in both dev and production"
+	@echo -e "  make status                     # Check all pods status"
+	@echo -e "  make infra-status               # Check Redis/RabbitMQ in dev"
+	@echo -e "  make port-forward               # Access UIs locally"
+	@echo -e "  make clean ENVIRONMENT=dev      # Destroy dev environment"
