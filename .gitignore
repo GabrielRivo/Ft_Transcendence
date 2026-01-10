@@ -7,6 +7,11 @@
 *.env
 .env.*
 
+# Vault keys (security)
+.vault-keys
+*.key
+*.token
+
 # On autorise les exemples pour aider les autres développeurs
 !.env.example
 
@@ -44,3 +49,9 @@ Thumbs.db
 *.swo
 
 pnpm-lock.yaml
+
+# Cursor IDE
+.cursor/
+.cursorrules
+.cursorignore
+.cursorindexignore
