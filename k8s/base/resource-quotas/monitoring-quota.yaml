@@ -17,12 +17,13 @@ metadata:
 spec:
   hard:
     # CPU: Scrapes and rule evaluation.
-    requests.cpu: "2"
-    limits.cpu: "4"
+    # Increased to accommodate admission webhooks jobs during Helm install/upgrade.
+    requests.cpu: "3"
+    limits.cpu: "6"
 
     # Memory: Prometheus TSDB buffers.
     requests.memory: 4Gi
-    limits.memory: 8Gi
+    limits.memory: 10Gi
 
     # Storage: Prometheus data persistence + Grafana dashboards
     persistentvolumeclaims: "5"

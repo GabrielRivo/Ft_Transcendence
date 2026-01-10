@@ -18,11 +18,12 @@ spec:
   limits:
     - type: Container
       default:
-        cpu: "500m"
-        memory: "1Gi"
-      defaultRequest:
+        # Reduced to allow more pods (admission webhooks, etc.)
         cpu: "200m"
         memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "256Mi"
       max:
         cpu: "2"
         memory: "4Gi"

@@ -60,6 +60,10 @@ HELM_VALUES_DIR := $(INFRASTRUCTURE_DIR)/helm/values
 # Scripts path
 SCRIPTS_DIR := $(INFRASTRUCTURE_DIR)/scripts
 
+# Dashboards path
+# Contains Grafana dashboard JSON files that will be loaded as ConfigMaps
+DASHBOARDS_DIR := $(INFRASTRUCTURE_DIR)/dashboards/grafana
+
 # ==============================================================================
 # 4. ENVIRONMENT CONFIGURATION
 # ==============================================================================
@@ -95,7 +99,8 @@ HELM_REPO_EXTERNAL_SECRETS := https://charts.external-secrets.io
 # ==============================================================================
 
 # Default timeout for waiting for resources to become ready
-TIMEOUT_READY := 300s
+# Increased to 600s to accommodate slower deployments (monitoring stack, etc.)
+TIMEOUT_READY := 600s
 
 # ==============================================================================
 # 8. INTERNAL TARGETS (Prerequisites & Setup)
@@ -179,13 +184,24 @@ _clean-base:
 
 # Target: up
 # Description: Deploys the entire infrastructure stack in the correct order.
-# Order: Prerequisites -> Base -> Vault -> Infrastructure -> ELK -> Monitoring
-# Note: Now includes Vault Initialization and Secrets Population, and ESO.
+# Order: Prerequisites -> Base -> Vault -> ESO -> ELK -> Monitoring
+#
+# Deployment Order Rationale:
+#   1. base-up:       Creates namespaces, storage classes, quotas, limit ranges
+#   2. vault-up:      Installs HashiCorp Vault for secrets management
+#   3. vault-init:    Initializes and unseals Vault, configures auth methods
+#   4. vault-secrets: Populates initial secrets (Redis, RabbitMQ, Grafana, etc.)
+#   5. eso-up:        Installs External Secrets Operator for K8s secret sync
+#   6. eso-config:    Creates SecretStores and ExternalSecrets for all namespaces
+#   7. elk-up:        Installs Elasticsearch, Logstash, Kibana for logging
+#   8. monitoring-up: Installs Prometheus, Grafana, Alertmanager with dashboards
+#
+# Note: infra-up (Redis/RabbitMQ) is NOT included by default. Run separately if needed.
 .PHONY: up
-up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up eso-config elk-up
-	@# infra-up monitoring-up (Commented out until configured)
+up: _check-prerequisites base-up vault-up vault-init vault-secrets eso-up eso-config elk-up monitoring-up
 	@echo -e "\n$(SUCCESS) $(BOLD)Infrastructure successfully deployed!$(RESET)"
 	@echo -e "You can check the status with: $(BOLD)make status$(RESET)"
+	@echo -e "Access UIs with: $(BOLD)make port-forward$(RESET)"
 
 # Target: down
 # Description: Stops the entire infrastructure stack in reverse order.
@@ -326,27 +342,59 @@ eso-up: base-up _add-helm-repos
 # Target: eso-config
 # Description: Applies ESO specific configurations like SecretStore and ExternalSecrets.
 # Must be run AFTER eso-up so that CRDs are present.
+#
+# This target applies the following resources:
+#   - SecretStore (logging namespace): Connects to Vault for ELK secrets
+#   - SecretStore (monitoring namespace): Connects to Vault for Grafana secrets
+#   - ExternalSecrets for Elasticsearch, Kibana, Logstash credentials
+#   - ExternalSecrets for Grafana admin credentials
+#
+# After applying, ESO will automatically sync secrets from Vault to K8s Secrets.
 .PHONY: eso-config
 eso-config:
-	@echo -e "$(INFO) Configuring External Secrets Operator (SecretStore, etc.)..."
+	@echo -e "$(INFO) Configuring External Secrets Operator (SecretStore, ExternalSecrets)..."
+	@# Logging namespace - ELK Stack secrets
+	@echo -e "$(INFO)   Applying logging namespace ESO resources..."
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/secretstore.yaml
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/elasticsearch-es.yaml
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/kibana-es.yaml
 	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/logstash-es.yaml
+	@# Monitoring namespace - Grafana secrets
+	@echo -e "$(INFO)   Applying monitoring namespace ESO resources..."
+	@kubectl apply -f $(K8S_BASE_DIR)/external-secrets/grafana-es.yaml
+	@# Wait for secrets to be synced (ESO needs a few seconds to process)
+	@echo -e "$(INFO)   Waiting for ExternalSecrets to sync..."
+	@sleep 5
+	@# Verify that secrets were created
+	@if kubectl get secret grafana-credentials -n $(NS_MONITORING) >/dev/null 2>&1; then \
+		echo -e "$(SUCCESS) Grafana credentials synced successfully."; \
+	else \
+		echo -e "$(WARN) Grafana credentials not yet synced. Check ESO logs if issue persists."; \
+	fi
 	@echo -e "$(SUCCESS) External Secrets Operator configured."
 
 # Target: eso-down
-# Description: Uninstalls External Secrets Operator.
+# Description: Uninstalls External Secrets Operator and all related resources.
 # Handles the case where CRDs may already be deleted (during make clean).
+#
+# Cleanup Order:
+#   1. Delete ExternalSecrets and SecretStores (if CRDs exist)
+#   2. Uninstall the ESO Helm chart
+#
+# Note: We check if ESO CRDs exist before attempting to delete resources to avoid
+#       errors when running 'make clean' after CRDs are already removed.
 .PHONY: eso-down
 eso-down:
 	@echo -e "$(INFO) Uninstalling External Secrets Operator..."
 	@# First delete the SecretStore configuration and ExternalSecrets (only if CRDs exist)
 	@if kubectl api-resources --api-group=external-secrets.io 2>/dev/null | grep -q externalsecrets; then \
+		echo -e "$(INFO)   Cleaning up logging namespace ESO resources..."; \
 		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/logstash-es.yaml --ignore-not-found 2>/dev/null || true; \
 		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/kibana-es.yaml --ignore-not-found 2>/dev/null || true; \
 		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/elasticsearch-es.yaml --ignore-not-found 2>/dev/null || true; \
 		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/secretstore.yaml --ignore-not-found 2>/dev/null || true; \
+		echo -e "$(INFO)   Cleaning up monitoring namespace ESO resources..."; \
+		kubectl delete -f $(K8S_BASE_DIR)/external-secrets/grafana-es.yaml --ignore-not-found 2>/dev/null || true; \
 	else \
 		echo -e "$(INFO) ESO CRDs not found, skipping ExternalSecrets cleanup."; \
 	fi
@@ -427,27 +475,97 @@ elk-down:
 	@echo -e "$(SUCCESS) ELK Stack uninstalled."
 
 # ==============================================================================
-# 14. MONITORING COMPONENT
+# 14. MONITORING COMPONENT (Prometheus, Grafana, Alertmanager)
 # ==============================================================================
 
+# Target: dashboards-up
+# Description: Creates a ConfigMap containing all Grafana dashboard JSON files.
+# The Grafana sidecar will automatically detect and load these dashboards.
+#
+# Dashboard files are located in $(DASHBOARDS_DIR) and must have .json extension.
+# Each dashboard should have:
+#   - Unique UID (e.g., "ft-auth-service")
+#   - Unique title
+#   - Tag "ft-transcendence" for filtering
+#
+# The ConfigMap is labeled with "grafana_dashboard: 1" so the Grafana sidecar
+# can auto-discover it and load the dashboards without pod restart.
+.PHONY: dashboards-up
+dashboards-up:
+	@echo -e "$(INFO) Creating Grafana dashboards ConfigMap..."
+	@# Check if dashboard files exist
+	@if [ ! -d "$(DASHBOARDS_DIR)" ] || [ -z "$$(ls -A $(DASHBOARDS_DIR)/*.json 2>/dev/null)" ]; then \
+		echo -e "$(WARN) No dashboard JSON files found in $(DASHBOARDS_DIR)"; \
+		exit 0; \
+	fi
+	@# Create ConfigMap from all JSON files in the dashboards directory
+	@# The --from-file option creates a key for each file (filename = key, content = value)
+	@kubectl create configmap grafana-dashboards-ft-transcendence \
+		--namespace $(NS_MONITORING) \
+		--from-file=$(DASHBOARDS_DIR) \
+		--dry-run=client -o yaml | \
+		kubectl label --local -f - grafana_dashboard=1 -o yaml | \
+		kubectl apply -f -
+	@echo -e "$(SUCCESS) Grafana dashboards ConfigMap created."
+	@echo -e "$(INFO) Dashboards will be auto-loaded by Grafana sidecar."
+
+# Target: dashboards-down
+# Description: Removes the Grafana dashboards ConfigMap.
+.PHONY: dashboards-down
+dashboards-down:
+	@echo -e "$(INFO) Removing Grafana dashboards ConfigMap..."
+	@kubectl delete configmap grafana-dashboards-ft-transcendence \
+		--namespace $(NS_MONITORING) \
+		--ignore-not-found
+	@echo -e "$(SUCCESS) Grafana dashboards ConfigMap removed."
+
 # Target: monitoring-up
-# Description: Installs Prometheus and Grafana via kube-prometheus-stack.
+# Description: Installs the complete monitoring stack (Prometheus, Grafana, Alertmanager).
 # Deploys into the 'monitoring' namespace.
+#
+# Prerequisites:
+#   - base-up: Namespaces and storage classes must exist
+#   - eso-config: Grafana credentials must be synced from Vault
+#   - dashboards-up: Custom dashboards ConfigMap must be created
+#
+# Components installed:
+#   - Prometheus: Metrics collection and storage
+#   - Grafana: Visualization and dashboards
+#   - Alertmanager: Alert routing and notification
+#   - Prometheus Operator: CRD-based configuration
+#   - Kube State Metrics: Kubernetes object metrics
+#   - Node Exporter: Host-level metrics (requires privileged access)
+#
+# After installation, access Grafana at: http://localhost:3000 (via make port-forward)
+# Default admin credentials are stored in Vault at secret/shared/grafana
 .PHONY: monitoring-up
-monitoring-up: base-up _add-helm-repos
+monitoring-up: base-up _add-helm-repos dashboards-up
 	@echo -e "$(INFO) Installing kube-prometheus-stack in namespace $(BOLD)$(NS_MONITORING)$(RESET)..."
-	@helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+	@# Verify that Grafana credentials exist (created by ESO)
+	@if ! kubectl get secret grafana-credentials -n $(NS_MONITORING) >/dev/null 2>&1; then \
+		echo -e "$(WARN) grafana-credentials secret not found. Run 'make eso-config' first."; \
+		echo -e "$(INFO) Continuing anyway - Grafana will use default credentials."; \
+	fi
+	@helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
 		--namespace $(NS_MONITORING) \
 		--values $(HELM_VALUES_DIR)/prometheus.yaml \
 		--wait --timeout $(TIMEOUT_READY)
 	@echo -e "$(SUCCESS) Monitoring stack installed."
+	@echo -e "$(INFO) Access Grafana: make port-forward, then http://localhost:3000"
 
 # Target: monitoring-down
-# Description: Uninstalls the Monitoring stack.
+# Description: Uninstalls the Monitoring stack and cleans up related resources.
+# Removes: Helm release, dashboards ConfigMap, orphan secrets.
+#
+# Note: Prometheus CRDs are NOT removed as they may be used by other components.
+#       To fully remove CRDs, use 'make clean'.
 .PHONY: monitoring-down
-monitoring-down:
+monitoring-down: dashboards-down
 	@echo -e "$(INFO) Uninstalling Monitoring stack..."
-	@helm uninstall prometheus --namespace $(NS_MONITORING) --ignore-not-found
+	@helm uninstall kube-prometheus-stack --namespace $(NS_MONITORING) --ignore-not-found 2>/dev/null || true
+	@# Clean up orphan secrets that may persist after uninstall
+	@echo -e "$(INFO) Cleaning up orphan secrets..."
+	@kubectl delete secret -n $(NS_MONITORING) -l app.kubernetes.io/managed-by=Helm --ignore-not-found 2>/dev/null || true
 	@echo -e "$(SUCCESS) Monitoring stack uninstalled."
 
 # ==============================================================================
@@ -531,7 +649,7 @@ port-forward:
 	@trap 'kill %1 %2 %3' SIGINT; \
 	kubectl port-forward -n $(NS_VAULT) svc/vault 8200:8200 & \
 	kubectl port-forward -n $(NS_LOGGING) svc/kibana-kibana 5601:5601 & \
-	kubectl port-forward -n $(NS_MONITORING) svc/prometheus-grafana 3000:80 & \
+	kubectl port-forward -n $(NS_MONITORING) svc/kube-prometheus-stack-grafana 3000:80 & \
 	wait
 
 # Target: health
@@ -544,28 +662,55 @@ health:
 	@kubectl get pods -A --field-selector=status.phase!=Running,status.phase!=Succeeded --no-headers 2>/dev/null | grep -v "No resources found" || echo -e "$(SUCCESS) All pods are running."
 
 # Target: help
-# Description: Displays this help message.
+# Description: Displays this help message with all available targets.
 .PHONY: help
 help:
 	@echo -e "$(BOLD)Infrastructure Makefile Helper$(RESET)"
 	@echo -e "Usage: make [target] [ENVIRONMENT=dev|test|production]"
-	@echo -e "\n$(BOLD)Lifecycle Targets:$(RESET)"
-	@echo -e "  $(CYAN)up$(RESET)            Deploy full infrastructure"
-	@echo -e "  $(CYAN)down$(RESET)          Stop infrastructure (keep data)"
-	@echo -e "  $(CYAN)clean$(RESET)         Destroy infrastructure (DELETE DATA)"
-	@echo -e "\n$(BOLD)Component Targets:$(RESET)"
-	@echo -e "  $(CYAN)base-up$(RESET)       Apply base manifests"
-	@echo -e "  $(CYAN)vault-up/down$(RESET) Manage Vault"
-	@echo -e "  $(CYAN)vault-init$(RESET)    Initialize and Unseal Vault"
-	@echo -e "  $(CYAN)vault-secrets$(RESET) Populate initial secrets"
-	@echo -e "  $(CYAN)vault-status$(RESET)  Show detailed Vault status"
-	@echo -e "  $(CYAN)eso-up/down$(RESET)   Manage External Secrets Operator"
-	@echo -e "  $(CYAN)eso-config$(RESET)    Configure ESO (SecretStore)"
-	@echo -e "  $(CYAN)elk-up/down$(RESET)   Manage ELK Stack"
-	@echo -e "  $(CYAN)infra-up/down$(RESET) Manage Redis/RabbitMQ"
-	@echo -e "  $(CYAN)monitoring-up/down$(RESET) Manage Monitoring"
-	@echo -e "\n$(BOLD)Utility Targets:$(RESET)"
-	@echo -e "  $(CYAN)status$(RESET)        Show pod status"
-	@echo -e "  $(CYAN)logs$(RESET)          Show recent logs"
-	@echo -e "  $(CYAN)port-forward$(RESET)  Expose UIs to localhost"
-	@echo -e "  $(CYAN)health$(RESET)        Check health status"
+	@echo -e ""
+	@echo -e "$(BOLD)Lifecycle Targets:$(RESET)"
+	@echo -e "  $(CYAN)up$(RESET)              Deploy full infrastructure (Vault, ESO, ELK, Monitoring)"
+	@echo -e "  $(CYAN)down$(RESET)            Stop infrastructure (keep data)"
+	@echo -e "  $(CYAN)clean$(RESET)           Destroy infrastructure ($(RED)DELETE DATA$(RESET))"
+	@echo -e ""
+	@echo -e "$(BOLD)Base Component:$(RESET)"
+	@echo -e "  $(CYAN)base-up$(RESET)         Apply base manifests (namespaces, quotas, storage)"
+	@echo -e ""
+	@echo -e "$(BOLD)Vault Component:$(RESET)"
+	@echo -e "  $(CYAN)vault-up$(RESET)        Install Vault"
+	@echo -e "  $(CYAN)vault-down$(RESET)      Uninstall Vault"
+	@echo -e "  $(CYAN)vault-init$(RESET)      Initialize, unseal, and configure Vault"
+	@echo -e "  $(CYAN)vault-secrets$(RESET)   Populate initial secrets in Vault"
+	@echo -e "  $(CYAN)vault-status$(RESET)    Show detailed Vault status"
+	@echo -e ""
+	@echo -e "$(BOLD)External Secrets Operator:$(RESET)"
+	@echo -e "  $(CYAN)eso-up$(RESET)          Install External Secrets Operator"
+	@echo -e "  $(CYAN)eso-down$(RESET)        Uninstall External Secrets Operator"
+	@echo -e "  $(CYAN)eso-config$(RESET)      Configure SecretStores and ExternalSecrets"
+	@echo -e ""
+	@echo -e "$(BOLD)ELK Stack (Logging):$(RESET)"
+	@echo -e "  $(CYAN)elk-up$(RESET)          Install Elasticsearch, Kibana, Logstash"
+	@echo -e "  $(CYAN)elk-down$(RESET)        Uninstall ELK Stack"
+	@echo -e ""
+	@echo -e "$(BOLD)Monitoring Stack:$(RESET)"
+	@echo -e "  $(CYAN)monitoring-up$(RESET)   Install Prometheus, Grafana, Alertmanager"
+	@echo -e "  $(CYAN)monitoring-down$(RESET) Uninstall Monitoring stack"
+	@echo -e "  $(CYAN)dashboards-up$(RESET)   Create Grafana dashboards ConfigMap"
+	@echo -e "  $(CYAN)dashboards-down$(RESET) Remove Grafana dashboards ConfigMap"
+	@echo -e ""
+	@echo -e "$(BOLD)Infrastructure Services:$(RESET)"
+	@echo -e "  $(CYAN)infra-up$(RESET)        Install Redis and RabbitMQ"
+	@echo -e "  $(CYAN)infra-down$(RESET)      Uninstall Redis and RabbitMQ"
+	@echo -e ""
+	@echo -e "$(BOLD)Utility Targets:$(RESET)"
+	@echo -e "  $(CYAN)status$(RESET)          Show pod status across all namespaces"
+	@echo -e "  $(CYAN)logs$(RESET)            Show recent logs from key components"
+	@echo -e "  $(CYAN)port-forward$(RESET)    Expose UIs to localhost (Vault:8200, Kibana:5601, Grafana:3000)"
+	@echo -e "  $(CYAN)health$(RESET)          Check infrastructure health status"
+	@echo -e ""
+	@echo -e "$(BOLD)Examples:$(RESET)"
+	@echo -e "  make up                    # Deploy everything"
+	@echo -e "  make monitoring-up         # Deploy only monitoring stack"
+	@echo -e "  make status                # Check all pods status"
+	@echo -e "  make port-forward          # Access UIs locally"
+	@echo -e "  make clean ENVIRONMENT=dev # Destroy dev environment"

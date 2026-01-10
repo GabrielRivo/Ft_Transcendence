@@ -102,23 +102,28 @@ metadata:
 # 6. Monitoring Namespace
 # Hosts Prometheus and Grafana.
 #
-# Security: Special case - Privileged warn level required.
+# Security: Privileged enforcement required for Node Exporter.
 #
 # RATIONALE:
 #   Prometheus node-exporter is a DaemonSet that REQUIRES privileged access:
 #   - hostNetwork: true (for network interface metrics)
 #   - hostPID: true (for process metrics like CPU usage per process)
 #   - hostPath volumes: /proc, /sys, / (for filesystem and system metrics)
+#   - hostPort: 9100 (for exposing metrics on the node)
 #
 #   These capabilities are FUNDAMENTAL to node-exporter's core functionality.
 #   Without them, we cannot collect host-level metrics (CPU, memory, disk, I/O).
 #
-#   The "baseline" PodSecurity profile prohibits all of these.
+#   The "baseline" PodSecurity profile prohibits hostNetwork/hostPID/hostPath.
 #   The "restricted" profile is even more strict.
 #
-#   Therefore, we use:
-#   - enforce: baseline (blocks truly dangerous patterns like privileged containers)
-#   - warn: privileged (suppresses expected warnings for node-exporter)
+#   Therefore, we MUST use:
+#   - enforce: privileged (allows node-exporter to run with required host access)
+#   - warn: baseline (warns if other pods violate baseline unnecessarily)
+#
+#   SECURITY NOTE: Only the monitoring namespace uses privileged enforcement.
+#   This is an intentional exception for infrastructure observability.
+#   All other namespaces use baseline or restricted enforcement.
 #
 # See: https://kubernetes.io/docs/concepts/security/pod-security-standards/
 apiVersion: v1
@@ -130,10 +135,12 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
     environment: infra
     # Pod Security Standards
-    # enforce=baseline prevents truly dangerous patterns
-    # warn=privileged suppresses expected warnings for node-exporter DaemonSet
-    pod-security.kubernetes.io/enforce: baseline
+    # enforce=privileged allows node-exporter DaemonSet to run
+    # warn=privileged suppresses warnings for expected privileged workloads
+    # audit=baseline logs violations for security review without blocking
+    pod-security.kubernetes.io/enforce: privileged
     pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/audit: baseline
   annotations:
     description: "Monitoring stack (Prometheus, Grafana)"
 

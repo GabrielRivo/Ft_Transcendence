@@ -118,6 +118,15 @@ prometheus:
     # Evaluation interval: how often rules are evaluated.
     evaluationInterval: 30s
 
+    # --------------------------------------------------------------------------
+    # Logging Configuration
+    # --------------------------------------------------------------------------
+    # Set log level to 'warn' to filter out INFO messages that contain
+    # the "v1 Endpoints deprecated" warning from the Kubernetes client.
+    # These are informational messages (level=INFO) about the deprecation
+    # of the Endpoints v1 API in Kubernetes v1.33+.
+    logLevel: warn
+
 # ==============================================================================
 # ALERTMANAGER CONFIGURATION
 # ==============================================================================
@@ -322,20 +331,41 @@ grafana:
         disableDeletion: false
         allowUiUpdates: true
 
+    # Datasources sidecar is DISABLED
+    # Using native provisioning via grafana.datasources instead to avoid
+    # race condition where sidecar writes file after Grafana reads config.
     datasources:
-      enabled: true
-      label: grafana_datasource
-      labelValue: "1"
-      searchNamespace: ALL
+      enabled: false
 
   # ----------------------------------------------------------------------------
-  # Default Datasource
+  # Datasource Provisioning (Native Method)
   # ----------------------------------------------------------------------------
-  # Configure Prometheus as the default datasource.
-  # This is auto-configured by the chart but we make it explicit.
+  # Using Grafana's native provisioning which creates a ConfigMap mounted
+  # at startup. This is more reliable than the sidecar approach.
+  # See: https://grafana.com/docs/grafana/latest/administration/provisioning/
   # ----------------------------------------------------------------------------
-  additionalDataSources: []
-  # Note: Prometheus datasource is automatically added by the chart
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          uid: prometheus
+          url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+          access: proxy
+          isDefault: true
+          editable: false
+          jsonData:
+            timeInterval: 30s
+            httpMethod: POST
+        - name: Alertmanager
+          type: alertmanager
+          uid: alertmanager
+          url: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
+          access: proxy
+          jsonData:
+            handleGrafanaManagedAlerts: false
+            implementation: prometheus
 
   # ----------------------------------------------------------------------------
   # Service Configuration
@@ -380,6 +410,32 @@ prometheusOperator:
     limits:
       cpu: 200m
       memory: 256Mi
+
+  # --------------------------------------------------------------------------
+  # Admission Webhooks Configuration
+  # --------------------------------------------------------------------------
+  # The admission webhooks are used to validate Prometheus/Alertmanager CRDs.
+  # These jobs run during Helm install/upgrade to create certificates.
+  # We configure explicit resources to avoid LimitRange defaults conflicts.
+  # --------------------------------------------------------------------------
+  admissionWebhooks:
+    enabled: true
+    # Patch job configuration (creates webhook certificates)
+    patch:
+      enabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 100m
+          memory: 128Mi
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+        seccompProfile:
+          type: RuntimeDefault
 
   # Security context for the operator
   securityContext:
