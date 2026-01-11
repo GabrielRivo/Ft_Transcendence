@@ -4,7 +4,9 @@
     "private": true,
     "scripts": {
         "dev": "pnpm -r run dev",
-        "build": "pnpm - run build",
+        "build": "pnpm packages-build",
+        "packages-build": "pnpm --filter \"./packages/*\" run build",
+        "apps-build": "pnpm --filter \"./apps/*\" run build",
         "test": "pnpm -r run test",
         "clean": "rm -rf node_modules **/*/node_modules"
     },
