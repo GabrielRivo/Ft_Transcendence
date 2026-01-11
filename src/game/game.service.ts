@@ -4,7 +4,6 @@ import Pong from './pong/Game/Pong.js';
 import { Socket } from 'socket.io';
 import { create } from 'domain';
 
-import { LEFT, RIGHT } from './pong/Player.js';
 
 @Service()
 export class GameService {
@@ -89,17 +88,11 @@ export class GameService {
         return this.games.size;
     }
 
-    public async processPlayerInput(client: Socket, data: any) {
+    public async onPlayerInput(client: Socket, data: any) {
         const game = this.gamesByPlayer.get(client.data.userId);
         if (game) {
-            const player = (game.player1!.id === client.data.userId) ? game.player1! : game.player2!;
-            switch (data.direction) {
-                case LEFT:
-                    player.setPaddleDirectionFromKeyboard(LEFT, data.isPressed);
-                    break;
-                case RIGHT:
-                    player.setPaddleDirectionFromKeyboard(RIGHT, data.isPressed);
-                    break;
+            if (game.inputManager) {
+                game.inputManager.recordInput(client, data);
             }
         }
     }

@@ -10,7 +10,7 @@ import Ball from "../Ball.js";
 import Wall from "../Wall.js";
 import InputManager from "../InputManager.js";
 import Game from "./Game.js";
-import { dir, timeStamp } from "console";
+import TruthManager from "./TruthManager.js";
 
 class Pong extends Game {
     private gameService : GameService;
@@ -24,6 +24,8 @@ class Pong extends Game {
     public id : string;
 
     inputManager?: InputManager;
+    truthManager?: TruthManager;
+
     player1?: Player;
     player2?: Player;
     ball?: Ball;
@@ -31,13 +33,8 @@ class Pong extends Game {
     width: number = 7;
     height: number = 12;
 
-    private fps : number;
-    private frameDuration : number;
-    private lastFrameTime: number;
-    private deltaT: number;
-
     private gameState : "waiting" | "playing" | null;
-    // private disconnectTimeout: NodeJS.Timeout | null = null;
+
 	private disconnectTimeout : Map<string, NodeJS.Timeout | null> = new Map();
 
     constructor(id: string, p1Id: string, p2Id: string, gameService: GameService) {
@@ -48,18 +45,11 @@ class Pong extends Game {
         this.nsp = null;
         this.p1Id = p1Id;
         this.p2Id = p2Id;
-        /*this.p1Socket = p1Socket;
-        this.p2Socket = p2Socket;
-        this.nsp = p1Socket.nsp;*/
+
         this.gameService = gameService;
         this.gameState = "waiting";
 
         this.services = new Services();
-
-        this.fps = 30;
-        this.frameDuration = Math.floor(1000 / this.fps);
-        this.lastFrameTime = 0;
-        this.deltaT = 0;
         
     }
 
@@ -67,8 +57,8 @@ class Pong extends Game {
         this.services.Scene = new Scene(this.services.Engine!);
         this.services.Dimensions = new Vector2(this.width, this.height);
 
-        this.inputManager = new InputManager(this);
-        this.inputManager.listenToKeyboard();
+        this.inputManager = new InputManager(this.services, this);
+        this.truthManager = new TruthManager(this.services, this);
         
         this.services.EventBus!.on("DeathBarHit", this.onDeathBarHit);
 
@@ -92,10 +82,6 @@ class Pong extends Game {
         this.player2.deathBar.model.position = new Vector3(0, 0.125, this.height / 2 - 1);
         this.walls[0]!.model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
         this.walls[1]!.model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
-    }
-
-    public start() {
-        
     }
 
     public async playerConnected(client: Socket) {
@@ -147,6 +133,25 @@ class Pong extends Game {
         this.ball.setFullPos(new Vector3(0, 0.125, 0));
     }
 
+    public sendGameState(): void {
+        this.nsp!.to(this.id).emit('gameUpdate', {
+            timestamp: this.services.TimeService!.getTimestamp(),
+            p1: {
+                pos: this.player1!.paddle.getPosition(),
+                dir: this.player1!.paddle.getDirection(),
+            },
+            p2: {
+                pos: this.player2!.paddle.getPosition(),
+                dir: this.player2!.paddle.getDirection(),
+            },
+            ball: {
+                pos: this.ball!.getPosition(),
+                dir: this.ball!.getDirection(),
+                speed: this.ball!.getSpeed(),
+            }
+        });
+    }
+
     run(message?: string) {
         if (this.p1Socket!.connected === false || this.p2Socket!.connected === false) {
             console.log("A player is still disconnected, cannot run the game.");
@@ -154,43 +159,23 @@ class Pong extends Game {
         }
         if (this.gameState === "waiting" || this.gameState === null) {
             this.gameState = "playing";
+            this.services.TimeService!.update();
             this.nsp!.to(this.id).emit('gameStarted', { timestamp: this.services.TimeService!.getTimestamp(), gameId: this.id, message: message || `Game ${this.id} is now running.` });
             console.log("Game started with timestamp:", this.services.TimeService!.getTimestamp());
 
-            this.services.TimeService!.update();
-            this.lastFrameTime = this.services.TimeService!.getTimestamp();
 
             this.services.Engine!.stopRenderLoop();
             this.services.Engine!.runRenderLoop(() => {
-                this.services.TimeService!.update();
-                let time = this.services.TimeService!.getTimestamp();
                 
-                this.deltaT = time - this.lastFrameTime;
-                if (this.deltaT >= this.frameDuration) {
-                    this.lastFrameTime = time;
-                    this.player1!.update(this.deltaT);
-                    this.player2!.update(this.deltaT);
-                    this.player1!.paddle.model.computeWorldMatrix(true);
-                    this.player2!.paddle.model.computeWorldMatrix(true);
-
-                    this.ball!.update(this.deltaT);
-                    this.nsp!.to(this.id).emit('gameUpdate', {
-                        timestamp: this.services.TimeService!.getTimestamp(),
-                        p1: {
-                            pos: this.player1!.paddle.getPosition(),
-                            dir: this.player1!.paddle.getDirection(),
-                        },
-                        p2: {
-                            pos: this.player2!.paddle.getPosition(),
-                            dir: this.player2!.paddle.getDirection(),
-                        },
-                        ball: {
-                            pos: this.ball!.getPosition(),
-                            dir: this.ball!.getDirection(),
-                            speed: this.ball!.getSpeed(),
-                        }
-                    });
-                }
+                //latency comparison test
+                // if (this.services.TimeService!.getRealTimestamp() > 20000)
+                // {
+                //     console.log("Stopping time for latency test at ", this.services.TimeService!.getTimestamp());
+                //     this.nsp!.to(this.id).emit('latencyTest', { timestamp: this.services.TimeService!.getRealTimestamp(), gameId: this.id, message: `Latency test at ${this.services.TimeService!.getRealTimestamp()}, with timestamp ${this.services.TimeService!.getTimestamp()}.` });
+                //     this.dispose();
+                //     return;
+                // }
+                this.truthManager!.truthUpdate();
             });
         }
     }

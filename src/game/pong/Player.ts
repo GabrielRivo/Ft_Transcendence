@@ -8,7 +8,7 @@ import Services from "./Services/Services.js";
 
 let idDefault = 0;
 
-enum Movement {
+export enum Movement {
     LEFT = "left",
     RIGHT = "right",
     UP = "up",

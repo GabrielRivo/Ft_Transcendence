@@ -7,7 +7,6 @@ abstract class Game {
     constructor() {
     }
     abstract initialize() : void;
-    abstract start() : void;
     abstract dispose() : void;
 }
 

@@ -51,10 +51,9 @@ export class GameGateway {
 	}
 
 	@SubscribeMessage('playerInput')
-	handleGameUpdate(client: Socket, data: any) {
-		console.log(`Received game update from client ${client.id}:`, data);
-		// this.gameService.processGameUpdate(data);
-		this.gameService.processPlayerInput(client, data);
+	handlePlayerInput(client: Socket, data: any) {
+		console.log(`Received playerInput from client ${client.id}:`, data);
+		this.gameService.onPlayerInput(client, data);
 	}
 
 	@SubscribeMessage('ping')

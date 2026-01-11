@@ -7,6 +7,8 @@ class TimeService {
     private tLast: number;
     private t0: number;
 
+    private offset: number;
+
     private timeScale: number;
 
     constructor() {
@@ -15,6 +17,7 @@ class TimeService {
         this.t0 = performance.now();
         this.tLast = this.t0;
         this.timeScale = 1;
+        this.offset = 0;
     }
 
     public initialize(): void {
@@ -22,6 +25,7 @@ class TimeService {
         this.timestamp = 0;
         this.t0 = performance.now();
         this.tLast = this.t0;
+        this.offset = 0;
     }
 
     public update(): void {
@@ -42,8 +46,19 @@ class TimeService {
         return this.deltaTime;
     }
 
+
     public getTimestamp(): number {
-        return this.timestamp;
+        return this.timestamp ;
+    }   
+    public setTimestamp(timestamp: number): void {
+        const offset = timestamp - this.timestamp;
+        this.offset += offset;
+        this.timestamp = timestamp;
+        this.tLast = performance.now();
+    }
+
+    public getRealTimestamp(): number {
+        return performance.now() - this.t0 + this.offset;
     }
 }
 

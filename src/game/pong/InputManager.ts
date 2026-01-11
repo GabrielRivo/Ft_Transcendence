@@ -1,64 +1,52 @@
 
-import { KeyboardEventTypes } from "@babylonjs/core";
 import Pong from "./Game/Pong.js";
-import { LEFT, RIGHT, UP, DOWN } from "./Player.js";
+import { LEFT, RIGHT } from "./Player.js";
+import Player from "./Player.js";
+import { Socket } from "node_modules/socket.io/dist/socket.js";
+import History from "./Utils/History.js";
+import type { PlayerInputData } from "./globalType.js";
 import Services from "./Services/Services.js";
+
 
 class InputManager {
     private game: Pong;
+    private services: Services;
 
-    constructor(game: Pong) {
+    private p1InputBuffer: History<PlayerInputData>;
+    private p2InputBuffer: History<PlayerInputData>;
+
+    constructor(services: Services, game: Pong) {
         this.game = game;
+        this.services = services;
+        this.p1InputBuffer = new History<PlayerInputData>(100);
+        this.p2InputBuffer = new History<PlayerInputData>(100);
     }
 
-    listenToKeyboard() {
-        /*Services.Scene!.onKeyboardObservable.add((kbInfo) => {
-        switch (kbInfo.type) {
-            case KeyboardEventTypes.KEYDOWN:
-            {
-                console.log("KEY DOWN: ", kbInfo.event.key);
-                switch (kbInfo.event.key) {
-                    case "j":
-                        this.game.player2!.setPaddleDirectionFromKeyboard(LEFT, true);
-                        break;
-                    case "l":
-                        this.game.player2!.setPaddleDirectionFromKeyboard(RIGHT, true);
-                        break;
-                    case "a":
-                        this.game.player1!.setPaddleDirectionFromKeyboard(LEFT, true);
-                        break;
-                    case "d":
-                        this.game.player1!.setPaddleDirectionFromKeyboard(RIGHT, true);
-                        break;
-                }
+    public getP1InputBuffer(): History<PlayerInputData> {
+        return this.p1InputBuffer;
+    }
+
+    public getP2InputBuffer(): History<PlayerInputData> {
+        return this.p2InputBuffer;
+    }
+
+    public async recordInput(client: Socket, data: PlayerInputData) {
+        const playerBuffer : History<PlayerInputData> = (this.game.player1!.id === client.data.userId) ? this.p1InputBuffer : this.p2InputBuffer;
+        playerBuffer.addState(data);
+    }
+
+    public processPlayerInput(player : Player, data: PlayerInputData) {
+        switch (data.direction) {
+            case LEFT:
+                player.setPaddleDirectionFromKeyboard(LEFT, data.isPressed);
                 break;
-            }
-            case KeyboardEventTypes.KEYUP:
-            {
-                switch (kbInfo.event.key) {
-                    case "j":
-                        this.game.player2!.setPaddleDirectionFromKeyboard(LEFT, false);
-                        break;
-                    case "l":
-                        this.game.player2!.setPaddleDirectionFromKeyboard(RIGHT, false);
-                        break;
-                    case "a":
-                        this.game.player1!.setPaddleDirectionFromKeyboard(LEFT, false);
-                        break;
-                    case "d":
-                        this.game.player1!.setPaddleDirectionFromKeyboard(RIGHT, false);
-                        break;
-                }
+            case RIGHT:
+                player.setPaddleDirectionFromKeyboard(RIGHT, data.isPressed);
                 break;
-            }
         }
-        });*/
-        ;
     }
 
-    dispose() : void {
-        //Services.Scene!.onKeyboardObservable.clear();
-        ;
+    public dispose() {
     }
 }
 
