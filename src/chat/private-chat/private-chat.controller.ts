@@ -10,7 +10,7 @@ export class PrivateChatController {
 	@Get('/private_history')
 	async get_history(@Param('userId1') userId1: string , 
 		@Param('userId2') userId2: string) {
-			const history = this.chatService.getPrivateHistory(Number(userId1), Number(userId2));
+			const history = await this.chatService.getPrivateHistory(Number(userId1), Number(userId2));
 			return history.reverse();
 	}
 }

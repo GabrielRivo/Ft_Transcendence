@@ -18,7 +18,6 @@ import { BlockManagementService } from '../friend-management/block-management.se
 import {ChatSchema, ChatDto }  from './dto/chat.dto.js'
 
 
-
 @WebSocketGateway('/chat')
 export class ChatGateway {
 	// @InjectPlugin('io')
@@ -33,11 +32,23 @@ export class ChatGateway {
 	@Inject(BlockManagementService)
 	private blockService!: BlockManagementService;
 
-	@SubscribeConnection()
-	handleConnection(@ConnectedSocket() client: Socket) {
-		console.log(`Client connected: ${client.id}`);
-		client.join("hub");
-	}
+	// @SubscribeConnection()
+	// handleConnection(@ConnectedSocket() client: Socket) {
+	// 	console.log(`Client connected: ${client.id}`);
+	// 	client.join("hub");
+	// }
+
+	handleConnection(@ConnectedSocket() client: Socket) { // le bloc de test a la con
+    const testId = client.handshake.query.testId;
+
+    if (testId) {
+        client.data.userId = Number(testId);
+    } else {
+        client.data.userId = 1;
+    }
+    
+    console.log(`Socket ${client.id} assigné à l'User ID: ${client.data.userId}`);
+}
 
 	@SubscribeMessage("join_private_room")
 	async handleJoinPrivateRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { friendId: number })
