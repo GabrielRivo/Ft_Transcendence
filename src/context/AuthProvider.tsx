@@ -28,7 +28,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
 			if (data.authenticated && data.user) {
 				setIsAuthenticated(true);
-				setUser(data.user);
+				setUser({
+					id: data.user.id,
+					email: data.user.email,
+					username: data.user.username || '',
+					noUsername: data.user.noUsername || false,
+					suggestedUsername: data.user.suggestedUsername || undefined,
+				});
 			} else {
 				setIsAuthenticated(false);
 				setUser(null);
@@ -85,6 +91,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 		}
 	}, [checkAuth]);
 
+	const setUsername = useCallback(async (username: string): Promise<boolean> => {
+		try {
+			const response = await fetch(`${API_BASE}/username`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				credentials: 'include',
+				body: JSON.stringify({ username }),
+			});
+
+			if (!response.ok) {
+				return false;
+			}
+
+			await checkAuth();
+			return true;
+		} catch {
+			return false;
+		}
+	}, [checkAuth]);
+
 	const logout = useCallback(async () => {
 		try {
 			await fetch(`${API_BASE}/logout`, {
@@ -113,10 +141,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				register,
 				logout,
 				checkAuth,
+				setUsername,
 			}}
 		>
 			{children}
 		</AuthContext.Provider>
 	);
 }
-

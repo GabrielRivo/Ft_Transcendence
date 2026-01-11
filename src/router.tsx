@@ -10,10 +10,12 @@ import { ConnexionLayout } from './layout/connexionLayout';
 import { Login } from './pages/login';
 import { Register } from './pages/register';
 import { Authentification } from './pages/authentification';
+import { SetUsername } from './pages/set-username';
 import { DashboardLayout } from './layout/dashboardLayout';
 import { Dashboard } from './pages/dashboard';
 import { GuestLayout } from './layout/GuestLayout';
 import { AuthenticatedLayout } from './layout/AuthenticatedLayout';
+import { SetUsernameLayout } from './layout/SetUsernameLayout';
 
 const routes = [
 	{
@@ -41,6 +43,21 @@ const routes = [
 							{
 								path: '/authentification',
 								component: Authentification,
+							},
+						],
+					},
+				],
+			},
+			// Set username route (for users without username)
+			{
+				layout: SetUsernameLayout,
+				routes: [
+					{
+						layout: ConnexionLayout,
+						routes: [
+							{
+								path: '/set-username',
+								component: SetUsername,
 							},
 						],
 					},

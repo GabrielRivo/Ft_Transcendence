@@ -3,6 +3,9 @@ import { createContext } from 'my-react';
 export interface User {
 	id: number;
 	email: string;
+	username: string;
+	noUsername: boolean;
+	suggestedUsername?: string;
 }
 
 export interface AuthContextType {
@@ -13,7 +16,7 @@ export interface AuthContextType {
 	register: (email: string, password: string) => Promise<boolean>;
 	logout: () => Promise<void>;
 	checkAuth: () => Promise<void>;
+	setUsername: (username: string) => Promise<boolean>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
-

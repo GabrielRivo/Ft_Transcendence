@@ -6,12 +6,19 @@
 // with backend services through the NGINX reverse proxy.
 //
 // Architecture:
-//   Browser -> NGINX (port 80) -> Backend services (port 3000)
+//   Browser -> NGINX (port 8080) -> Backend services (port 3000)
 //
-// The reverse proxy routes Socket.IO connections based on the namespace:
-//   - /game/*        -> game service
-//   - /chat/*        -> chat service
-//   - /matchmaking/* -> matchmaking service
+// Socket.IO configuration:
+//   - All clients connect to the DEFAULT NAMESPACE "/" 
+//   - The "path" option routes the HTTP handshake through NGINX
+//   - Chat:        path="/api/chat/"        -> nginx -> chat:3000 (namespace /)
+//   - Game:        path="/api/game/"        -> nginx -> game:3000 (namespace /)
+//   - Matchmaking: path="/api/matchmaking/" -> nginx -> matchmaking:3000 (namespace /)
+//
+// IMPORTANT: The namespace is NOT in the URL! We use SOCKET_BASE_URL directly.
+// The "path" option handles routing via NGINX.
+//
+// NGINX auth_request validates JWT before proxying to backend services.
 //
 // =============================================================================
 
@@ -21,18 +28,7 @@ import { io, Socket } from "socket.io-client";
 // Configuration
 // -----------------------------------------------------------------------------
 
-/**
- * Base URL for Socket.IO connections.
- * 
- * In development with NGINX reverse proxy:
- * - Uses the same origin as the page (no port specification needed)
- * - NGINX routes WebSocket connections to the appropriate backend service
- * 
- * In production:
- * - Can be configured via VITE_API_URL environment variable
- * - Falls back to current origin if not specified
- */
-const SOCKET_BASE_URL: string = import.meta.env.VITE_API_URL || window.location.origin;
+const SOCKET_BASE_URL: string = "http://localhost:8080";
 
 /**
  * Default Socket.IO client options.
@@ -41,7 +37,7 @@ const SOCKET_BASE_URL: string = import.meta.env.VITE_API_URL || window.location.
 const DEFAULT_SOCKET_OPTIONS = {
 	// Use WebSocket transport only (no polling fallback)
 	// This is more efficient and works well with NGINX proxy
-	transports: ["websocket"] as const,
+	transports: ["websocket"] as string[],
 
 	// Don't connect automatically - let components control connection lifecycle
 	autoConnect: false,
@@ -54,6 +50,9 @@ const DEFAULT_SOCKET_OPTIONS = {
 
 	// Timeout for connection attempts (ms)
 	timeout: 20000,
+
+	// Credentials for cookies (JWT in httpOnly cookie)
+	withCredentials: true,
 };
 
 // -----------------------------------------------------------------------------
@@ -63,69 +62,37 @@ const DEFAULT_SOCKET_OPTIONS = {
 /**
  * Socket.IO client for the Pong game service.
  * 
- * Namespace: /game/pong
+ * Path: /api/game/ (routed via NGINX with auth_request)
+ * Namespace: / (default - server uses @WebSocketGateway() without namespace param)
  * Used for: Real-time game state, player movements, ball position
- * 
- * Usage:
- *   import { gameSocket } from './libs/socket';
- *   
- *   // Connect when entering game
- *   gameSocket.connect();
- *   
- *   // Listen for game events
- *   gameSocket.on('gameState', (state) => { ... });
- *   
- *   // Disconnect when leaving game
- *   gameSocket.disconnect();
  */
-export const gameSocket: Socket = io(`${SOCKET_BASE_URL}/game/pong`, {
+export const gameSocket: Socket = io(SOCKET_BASE_URL, {
 	...DEFAULT_SOCKET_OPTIONS,
-	auth: {
-		// TODO: Replace with actual user authentication
-		userId: "game_client_1",
-	},
+	path: "/api/game/",
 });
 
 /**
  * Socket.IO client for the chat service.
  * 
- * Namespace: /chat
+ * Path: /api/chat/ (routed via NGINX with auth_request)
+ * Namespace: / (default - server uses @WebSocketGateway() without namespace param)
  * Used for: Private messages, group chats, online status
- * 
- * Usage:
- *   import { chatSocket } from './libs/socket';
- *   
- *   chatSocket.connect();
- *   chatSocket.on('message', (msg) => { ... });
- *   chatSocket.emit('sendMessage', { to: 'user123', content: 'Hello!' });
  */
-export const chatSocket: Socket = io(`${SOCKET_BASE_URL}/chat`, {
+export const chatSocket: Socket = io(SOCKET_BASE_URL, {
 	...DEFAULT_SOCKET_OPTIONS,
-	auth: {
-		// TODO: Replace with actual user authentication
-		userId: "chat_client_1",
-	},
+	path: "/api/chat/",
 });
 
 /**
  * Socket.IO client for the matchmaking service.
  * 
- * Namespace: /matchmaking
+ * Path: /api/matchmaking/ (routed via NGINX with auth_request)
+ * Namespace: / (default - server uses @WebSocketGateway() without namespace param)
  * Used for: Queue updates, match found notifications, tournament brackets
- * 
- * Usage:
- *   import { matchmakingSocket } from './libs/socket';
- *   
- *   matchmakingSocket.connect();
- *   matchmakingSocket.emit('joinQueue', { mode: 'ranked' });
- *   matchmakingSocket.on('matchFound', (match) => { ... });
  */
-export const matchmakingSocket: Socket = io(`${SOCKET_BASE_URL}/matchmaking`, {
+export const matchmakingSocket: Socket = io(SOCKET_BASE_URL, {
 	...DEFAULT_SOCKET_OPTIONS,
-	auth: {
-		// TODO: Replace with actual user authentication
-		userId: "matchmaking_client_1",
-	},
+	path: "/api/matchmaking/",
 });
 
 // -----------------------------------------------------------------------------

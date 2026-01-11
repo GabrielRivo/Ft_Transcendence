@@ -1,27 +1,129 @@
-import { createElement, useRef } from 'my-react';
+import { createElement, useRef, useState } from 'my-react';
+import type { Element } from 'my-react';
+import { useChat, ChatMessage, RoomUser } from '../hook/useChat';
+import { useFriends, Friend } from '../hook/useFriends';
+import { useAuth } from '../hook/useAuth';
 
 function Info() {
 	return (
-		// <div className="flex h-12 w-full shrink-0 items-center justify-between border-b border-cyan-500/30 bg-slate-900/90 px-6 font-mono text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.1)]">
-		// 	<div className="flex items-center gap-2">
-		// 		<div className="h-2 w-2 animate-pulse rounded-full bg-cyan-400"></div>
-		// 		<span className="tracking-widest">SYSTEM_OVERRIDE // V.2.0</span>
-		// 	</div>
-		// 	<div className="text-xs opacity-70">NET_SPEED: 12TB/s</div>
-		// </div>
 		<div className="flex h-12 w-full shrink-0 items-center justify-center"></div>
 	);
 }
 
 function Menu() {
-	// border-t border-red-500/30 bg-slate-900/90 font-mono text-xs text-red-400
 	return (
-		<div className="flex h-10 w-full shrink-0 items-center justify-center">{/* ⚠ WARNING: UNSECURED CONNECTION */}</div>
+		<div className="flex h-10 w-full shrink-0 items-center justify-center"></div>
 	);
 }
 
-function Chat() {
+// Composant pour un utilisateur dans la sidebar
+function UserItem({
+	name,
+	isOnline,
+	isSelected,
+	onClick,
+}: {
+	name: string;
+	isOnline?: boolean;
+	isSelected?: boolean;
+	onClick?: () => void;
+}) {
+	return (
+		<div
+			onClick={onClick}
+			className={`flex cursor-pointer flex-col items-center gap-2 transition-colors ${
+				isSelected ? 'text-cyan-400' : 'hover:text-cyan-500'
+			}`}
+		>
+			<div className="relative">
+				<div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold">
+					{name.charAt(0).toUpperCase()}
+				</div>
+				{isOnline !== undefined && (
+					<div
+						className={`absolute right-0 bottom-0 h-3 w-3 rounded-full ${
+							isOnline ? 'bg-green-500' : 'bg-gray-500'
+						}`}
+					></div>
+				)}
+			</div>
+			<span className="max-w-16 truncate text-center text-xs font-bold">{name}</span>
+		</div>
+	);
+}
+
+// Composant Sidebar (STATUS)
+function ChatSidebarPanel({
+	currentRoom,
+	friends,
+	friendsLoading,
+	onSelectHub,
+	onSelectFriend,
+}: {
+	currentRoom: string;
+	friends: Friend[];
+	friendsLoading: boolean;
+	onSelectHub: () => void;
+	onSelectFriend: (friendId: number) => void;
+}) {
+	return (
+		<div className="group h-full min-h-0 overflow-hidden rounded-xl border border-cyan-500/40 bg-slate-950/60 shadow-[0_0_20px_rgba(6,182,212,0.15),inset_0_0_20px_rgba(6,182,212,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-cyan-400 hover:shadow-[0_0_30px_rgba(6,182,212,0.4)]">
+			<div className="border-b border-cyan-500/20 bg-cyan-500/10 p-3 text-sm font-bold tracking-widest text-cyan-500">
+				Chats
+			</div>
+			<div className="flex h-full flex-col gap-4 overflow-y-auto p-4 font-mono text-xs text-cyan-300 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-cyan-500/50 [&::-webkit-scrollbar-track]:bg-slate-800/30">
+				{/* Hub */}
+				<div className="border-b border-cyan-500/20 pb-3">
+					<div className="mb-2 text-[10px] uppercase text-gray-500">Général</div>
+					<UserItem
+						name="Hub"
+						isOnline={true}
+						isSelected={currentRoom === 'hub'}
+						onClick={onSelectHub}
+					/>
+				</div>
+
+				{/* Amis */}
+				<div>
+					<div className="mb-2 text-[10px] uppercase text-gray-500">Amis</div>
+					{friendsLoading ? (
+						<div className="text-gray-500">Chargement...</div>
+					) : friends.length === 0 ? (
+						<div className="text-gray-500">Aucun ami</div>
+					) : (
+						<div className="flex flex-col gap-3">
+							{friends.map((friend) => (
+								<UserItem
+									key={friend.id}
+									name={friend.username}
+									isOnline={true}
+									isSelected={currentRoom.includes(String(friend.id))}
+									onClick={() => onSelectFriend(friend.id)}
+								/>
+							))}
+						</div>
+					)}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+// Composant Messages (CHAT > HUB)
+function ChatMessagesPanel({
+	messages,
+	currentRoom,
+	connected,
+	onSendMessage,
+}: {
+	messages: ChatMessage[];
+	currentRoom: string;
+	connected: boolean;
+	onSendMessage: (content: string) => void;
+}) {
+	const { user } = useAuth();
 	const scrollRef = useRef<HTMLDivElement | null>(null);
+	const [inputValue, setInputValue] = useState('');
 
 	const handleWheel = (e: WheelEvent) => {
 		if (scrollRef.current) {
@@ -29,220 +131,196 @@ function Chat() {
 		}
 	};
 
-	const logs = Array(50)
-		.fill(null)
-		.map((_, i) => ({
-			id: i,
-			time: `10:${(i % 60).toString().padStart(2, '0')}`,
-			msg: i % 2 === 0 ? 'Hello World' : 'Salut!!!',
-			user: i % 2 === 0 ? 'Micheal' : 'Jean',
-		}));
+	const handleSubmit = (e: Event) => {
+		e.preventDefault();
+		if (inputValue.trim() && connected) {
+			onSendMessage(inputValue);
+			setInputValue('');
+		}
+	};
+
+	const formatTime = (dateString: string) => {
+		const date = new Date(dateString);
+		return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+	};
+
+	const getRoomTitle = () => {
+		if (currentRoom === 'hub') return 'CHAT > HUB';
+		if (currentRoom.startsWith('room_') || currentRoom.startsWith('friend_')) return 'CHAT > PRIVÉ';
+		return `CHAT > ${currentRoom.toUpperCase()}`;
+	};
 
 	return (
-		<div className="ff-dashboard-chat-safe grid h-full w-full origin-left -rotate-y-12 grid-cols-6 gap-4 p-4 transform-3d">
-			<div className="ff-dashboard-panel-enter ff-dashboard-panel-enter--delay-2 col-span-1 h-full min-h-0">
-				<div className="group h-full min-h-0 rounded-xl border border-cyan-500/40 bg-slate-950/60 p-4 shadow-[0_0_20px_rgba(6,182,212,0.15),inset_0_0_20px_rgba(6,182,212,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-cyan-400 hover:shadow-[0_0_30px_rgba(6,182,212,0.4)]">
-					<div className="mb-3 border-b border-cyan-500/20 pb-1 text-sm font-bold tracking-widest text-cyan-500">
-						STATUS
-					</div>
-					<div className="flex flex-col gap-2 space-y-2 font-mono text-xs text-cyan-300">
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-cyan-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-								<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-cyan-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-								<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-cyan-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-								<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-cyan-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-								<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-cyan-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-								<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-cyan-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-								<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-					</div>
-				</div>
+		<div
+			onWheel={handleWheel}
+			className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-purple-500/40 bg-slate-950/60 shadow-[0_0_20px_rgba(168,85,247,0.15),inset_0_0_20px_rgba(168,85,247,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-purple-400 hover:shadow-[0_0_30px_rgba(168,85,247,0.4)]"
+		>
+			{/* Header */}
+			<div className="flex shrink-0 justify-between border-b border-purple-500/20 bg-purple-500/10 p-4 text-sm font-bold tracking-widest text-purple-500">
+				<span>{getRoomTitle()}</span>
+				<span className={`${connected ? 'animate-pulse text-green-500' : 'text-red-500'}`}>
+					● {connected ? 'LIVE' : 'OFFLINE'}
+				</span>
 			</div>
 
-			<div className="ff-dashboard-panel-enter ff-dashboard-panel-enter--delay-1 col-span-4 h-full min-h-0">
-				<div
-					onWheel={handleWheel}
-					className="group flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-purple-500/40 bg-slate-950/60 shadow-[0_0_20px_rgba(168,85,247,0.15),inset_0_0_20px_rgba(168,85,247,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-purple-400 hover:shadow-[0_0_30px_rgba(168,85,247,0.4)]"
-				>
-					<div className="flex shrink-0 justify-between border-b border-purple-500/20 bg-purple-500/10 p-4 text-sm font-bold tracking-widest text-purple-500">
-						<span>{`CHAT > HUB`}</span>
-						<span className="animate-pulse">● LIVE</span>
+			{/* Messages */}
+			<div
+				ref={scrollRef}
+				className="min-h-0 flex-1 overflow-y-auto p-2 font-mono text-xs text-purple-300 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-purple-500/50 hover:[&::-webkit-scrollbar-thumb]:bg-purple-400 [&::-webkit-scrollbar-track]:bg-slate-800/30"
+			>
+				{messages.length === 0 ? (
+					<div className="flex h-full items-center justify-center text-gray-500">
+						Aucun message
 					</div>
-
-					<div
-						ref={scrollRef}
-						className="min-h-0 flex-1 overflow-y-auto p-2 font-mono text-xs text-purple-300 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-purple-500/50 hover:[&::-webkit-scrollbar-thumb]:bg-purple-400 [&::-webkit-scrollbar-track]:bg-slate-800/30"
-					>
-						<div className="flex flex-col gap-1">
-							{logs.map((log) => (
+				) : (
+					<div className="flex flex-col gap-1">
+						{messages.map((msg, index) => {
+							const isOwn = msg.userId === user?.id;
+							return (
 								<div
-									key={log.id}
-									className="flex cursor-pointer flex-col gap-1 rounded border-b border-purple-500/10 px-1 py-1 transition-colors hover:bg-purple-500/20 hover:text-white"
+									key={`${msg.created_at}-${index}`}
+									className={`flex cursor-pointer flex-col gap-1 rounded border-b border-purple-500/10 px-1 py-1 transition-colors hover:bg-purple-500/20 hover:text-white ${
+										isOwn ? 'bg-purple-500/10' : ''
+									}`}
 								>
 									<div className="flex gap-2">
-										<span className="opacity-50 select-none">[{log.time}]</span>
+										<span className="opacity-50 select-none">[{formatTime(msg.created_at)}]</span>
 										<span>
-											<span className="font-bold">{log.user}</span>
+											<span className={`font-bold ${isOwn ? 'text-cyan-400' : ''}`}>
+												{msg.username}
+											</span>
 											{` >_`}
 										</span>
 									</div>
-									<p>{log.msg}</p>
+									<p className="break-words">{msg.msgContent}</p>
 								</div>
-							))}
-						</div>
+							);
+						})}
 					</div>
-				</div>
+				)}
 			</div>
 
+			{/* Input */}
+			<form
+				onSubmit={handleSubmit}
+				className="flex shrink-0 gap-2 border-t border-purple-500/20 bg-purple-500/5 p-3"
+			>
+				<input
+					type="text"
+					value={inputValue}
+					onInput={(e: Event) => setInputValue((e.target as HTMLInputElement).value)}
+					placeholder={connected ? 'Message...' : 'Connexion...'}
+					disabled={!connected}
+					className="flex-1 rounded border border-purple-500/30 bg-slate-900/50 px-3 py-2 font-mono text-xs text-white placeholder-gray-500 outline-none transition-colors focus:border-purple-400 disabled:opacity-50"
+				/>
+				<button
+					type="submit"
+					disabled={!connected || !inputValue.trim()}
+					className="rounded bg-purple-500/20 px-4 py-2 text-xs font-bold text-purple-400 transition-colors hover:bg-purple-500/30 disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					ENVOYER
+				</button>
+			</form>
+		</div>
+	);
+}
+
+// Composant Room Users (TARGET)
+function ChatRoomUsersPanel({
+	roomUsers,
+	currentRoom,
+}: {
+	roomUsers: RoomUser[];
+	currentRoom: string;
+}) {
+	const { user } = useAuth();
+
+	const getTitle = () => {
+		if (currentRoom === 'hub') return 'Users';
+		return 'EN LIGNE';
+	};
+
+	return (
+		<div className="group h-full min-h-0 overflow-hidden rounded-xl border border-orange-500/40 bg-slate-950/60 shadow-[0_0_20px_rgba(249,115,22,0.15),inset_0_0_20px_rgba(249,115,22,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-orange-400 hover:shadow-[0_0_30px_rgba(249,115,22,0.4)]">
+			<div className="border-b border-orange-500/20 bg-orange-500/10 p-3 text-right text-sm font-bold tracking-widest text-orange-500">
+				{getTitle()}
+			</div>
+			<div className="flex flex-col gap-3 overflow-y-auto p-4 text-xs [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-orange-500/50 [&::-webkit-scrollbar-track]:bg-slate-800/30">
+				{roomUsers.length === 0 ? (
+					<div className="text-center text-gray-500">Aucun utilisateur</div>
+				) : (
+					roomUsers.map((roomUser) => {
+						const isCurrentUser = roomUser.userId === user?.id;
+						return (
+							<div
+								key={roomUser.userId}
+								className={`flex cursor-pointer flex-col items-center gap-2 transition-colors hover:text-orange-500 ${
+									isCurrentUser ? 'text-orange-400' : 'text-orange-300'
+								}`}
+							>
+								<div className="relative">
+									<div
+										className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold ${
+											isCurrentUser ? 'bg-orange-500/30' : 'bg-slate-800'
+										}`}
+									>
+										{roomUser.username.charAt(0).toUpperCase()}
+									</div>
+									<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
+								</div>
+								<span className="max-w-16 truncate text-center font-bold">
+									{roomUser.username}
+									{isCurrentUser && <span className="text-gray-500"> (vous)</span>}
+								</span>
+							</div>
+						);
+					})
+				)}
+			</div>
+		</div>
+	);
+}
+
+// Composant Chat principal
+function Chat() {
+	const { connected, currentRoom, messages, roomUsers, sendMessage, joinRoom, joinPrivateRoom } =
+		useChat();
+	const { friends, loading: friendsLoading } = useFriends();
+
+	const handleSelectHub = () => {
+		joinRoom('hub');
+	};
+
+	const handleSelectFriend = (friendId: number) => {
+		joinPrivateRoom(friendId);
+	};
+
+	return (
+		<div className="ff-dashboard-chat-safe grid h-full w-full origin-left -rotate-y-12 grid-cols-6 gap-4 p-4 transform-3d">
+			{/* Sidebar - Amis/Groupes */}
+			<div className="ff-dashboard-panel-enter ff-dashboard-panel-enter--delay-2 col-span-1 h-full min-h-0">
+				<ChatSidebarPanel
+					currentRoom={currentRoom}
+					friends={friends}
+					friendsLoading={friendsLoading}
+					onSelectHub={handleSelectHub}
+					onSelectFriend={handleSelectFriend}
+				/>
+			</div>
+
+			{/* Messages */}
+			<div className="ff-dashboard-panel-enter ff-dashboard-panel-enter--delay-1 col-span-4 h-full min-h-0">
+				<ChatMessagesPanel
+					messages={messages}
+					currentRoom={currentRoom}
+					connected={connected}
+					onSendMessage={sendMessage}
+				/>
+			</div>
+
+			{/* Room Users */}
 			<div className="ff-dashboard-panel-enter ff-dashboard-panel-enter--delay-0 col-span-1 h-full min-h-0">
-				<div className="group h-full min-h-0 rounded-xl border border-orange-500/40 bg-slate-950/60 p-4 shadow-[0_0_20px_rgba(249,115,22,0.15),inset_0_0_20px_rgba(249,115,22,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-orange-400 hover:shadow-[0_0_30px_rgba(249,115,22,0.4)]">
-					<div className="mb-3 border-b border-orange-500/20 pb-1 text-right text-sm font-bold tracking-widest text-orange-500">
-						TARGET
-					</div>
-					<div className="flex flex-col gap-2 text-xs">
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-orange-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-orange-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-orange-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-orange-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-orange-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-						{/* Faire component */}
-						<div className="flex cursor-pointer flex-col items-center gap-2 hover:text-orange-500">
-							<div className="relative">
-								<img
-									src="https://cdn.omlet.com/images/originals/breed_abyssinian_cat.jpg"
-									alt="cat"
-									className="h-16 w-16 rounded-full object-cover"
-								/>
-							</div>
-							<span className="font-bold">Michel</span>
-						</div>
-						{/* Faire component - end*/}
-					</div>
-				</div>
+				<ChatRoomUsersPanel roomUsers={roomUsers} currentRoom={currentRoom} />
 			</div>
 		</div>
 	);

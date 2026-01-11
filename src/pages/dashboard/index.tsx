@@ -23,7 +23,7 @@ export function Dashboard() {
 					<h1 className="font-pirulen text-2xl tracking-widest">Dashboard</h1>
 					{user && (
 						<p className="mt-2 text-cyan-400">
-							Bienvenue, <span className="font-bold">{user.email}</span>
+							Bienvenue, <span className="font-bold">{user.username || user.email}</span>
 						</p>
 					)}
 				</div>

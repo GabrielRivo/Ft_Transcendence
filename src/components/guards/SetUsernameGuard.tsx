@@ -2,25 +2,30 @@ import { createElement, useEffect, Element, FragmentComponent } from 'my-react';
 import { useNavigate } from 'my-react-router';
 import { useAuth } from '../../hook/useAuth';
 
-interface AuthGuardProps {
+interface SetUsernameGuardProps {
 	children?: Element;
 }
 
-export function AuthGuard({ children }: AuthGuardProps) {
+/**
+ * Guard pour la page set-username
+ * - Redirige vers /login si non authentifié
+ * - Redirige vers /dashboard si l'utilisateur a déjà un username
+ */
+export function SetUsernameGuard({ children }: SetUsernameGuardProps) {
 	const { isAuthenticated, user, loading } = useAuth();
 	const navigate = useNavigate();
 
 	useEffect(() => {
-		if (!loading && !isAuthenticated) {
-			navigate('/login');
-			return;
-		}
+		if (!loading) {
+			if (!isAuthenticated) {
+				navigate('/login');
+				return;
+			}
 
-		// Si l'utilisateur est authentifié mais n'a pas de username
-		// et n'est pas déjà sur la page set-username
-		const currentPath = window.location.pathname;
-		if (!loading && isAuthenticated && user?.noUsername && currentPath !== '/set-username') {
-			navigate('/set-username');
+			// Si l'utilisateur a déjà un username, rediriger vers dashboard
+			if (!user?.noUsername) {
+				navigate('/dashboard');
+			}
 		}
 	}, [loading, isAuthenticated, user?.noUsername, navigate]);
 
@@ -32,9 +37,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 		);
 	}
 
-	if (!isAuthenticated) {
+	if (!isAuthenticated || !user?.noUsername) {
 		return null;
 	}
 
 	return <FragmentComponent>{children}</FragmentComponent>;
 }
+
