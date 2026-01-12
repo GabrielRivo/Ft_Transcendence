@@ -1,0 +1,50 @@
+### Invalid user
+GET http://localhost:3000/stats/user/999
+Accept: application/json
+
+### Register match
+POST http://localhost:3000/stats/game-result
+Content-Type: application/json
+
+{
+    "player1": 1,
+    "player2": 2,
+    "score_player1": 10,
+    "score_player2": 5,
+    "game_duration_in_seconde": 120
+}
+
+### Get stats player 1
+GET http://localhost:3000/stats/user/1
+Accept: application/json
+
+### Get stats player 2
+GET http://localhost:3000/stats/user/2
+Accept: application/json
+
+### Register a match
+POST http://localhost:3000/stats/game-result
+Content-Type: application/json
+
+{
+    "player1": 1,
+    "player2": 2,
+    "score_player1": 2,
+    "score_player2": 10,
+    "game_duration_in_seconde": 200
+}
+
+### Check average
+GET http://localhost:3000/stats/user/1
+Accept: application/json
+
+### Error on score
+POST http://localhost:3000/stats/game-result
+Content-Type: application/json
+
+{
+    "player1": 1,
+    "player2": 2,
+    "score_player1": 10,
+    "game_duration_in_seconde": 150
+}
