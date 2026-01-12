@@ -1,5 +1,5 @@
 import Database, { Statement } from 'better-sqlite3';
-import { Inject, InjectPlugin, Service } from 'my-fastify-decorators';
+import { InjectPlugin, Service } from 'my-fastify-decorators';
 
 
 export interface UserStatsValues {
@@ -20,17 +20,12 @@ export class UserStatsService {
 	@InjectPlugin('db')
 	private db !: Database.Database;
 	private statementGetStats!: Statement<number>;
-	private statementGameStats!: Statement<number>;;
 	private statementUserStats!: Statement<UserStatsValues>;
 
 	onModuleInit() {
 		this.statementGetStats = this.db.prepare(`
 			SELECT * FROM user_stats WHERE user_id = ?
 		`);
-		this.statementGameStats = this.db.prepare(`
-			INSERT INTO game_stats (player1, player2, score_player1, score_player2, game_duration_in_seconde)
-				VALUES (@player1, @player2, @score_player1, @score_player2, @game_duration_in_seconde)
-		`);	
 		this.statementUserStats = this.db.prepare(`
 			INSERT INTO user_stats (user_id, total_games, wins, losses, tournament_played,
 				tournament_won, average_score, average_game_duration_in_seconde, updated_at)

@@ -1,9 +1,15 @@
-import { Body, BodySchema, Controller, Get, Inject, Param, Post } from 'my-fastify-decorators';
+import { Body, BodySchema, Controller, Get, Inject, Param, Post, BadRequestException } from 'my-fastify-decorators';
 import { UserStatsService } from './user-stats.service.js';
 import { CreateGameStatDto, CreateGameStatSchema } from './dto/user-stats.dto.js';
+import { UserHistoryService } from '../user-history/user-history.service.js'
+import { CreateUserHistoryDto, CreateUserHistorySchema } from '../user-history/dto/user-history.dto.js'
+
 
 @Controller('/stats')
 export class UserStatsController {
+
+	@Inject(UserHistoryService)
+	private userHistoryService!: UserHistoryService;
 
 	@Inject(UserStatsService)
 	private statsService!: UserStatsService;
@@ -22,22 +28,17 @@ export class UserStatsController {
 		}
 	}
 
-	@Post('/game-result')
+	
+	@Post('/add')
 	@BodySchema(CreateGameStatSchema)
-	async saveGame(@Body() dto: CreateGameStatDto) {
+	async addMatch(@Body() data: CreateGameStatDto) {
 		try {
-			await this.statsService.updateUserGlobalStats(dto.player1, {win: dto.score_player1 > dto.score_player2, 
-				loss: dto.score_player1 < dto.score_player2, score: dto.score_player1, duration: dto.game_duration_in_seconde, 
-						isTournament: false, wonTournament: false});
-
-			await this.statsService.updateUserGlobalStats(dto.player2, {win: dto.score_player2 > dto.score_player1, 
-					loss: dto.score_player2 < dto.score_player1, score: dto.score_player2, 
-						duration: dto.game_duration_in_seconde, isTournament: false, wonTournament: false
-			});
-			return { message: "Match registered" };
+			return this.userHistoryService.add_match_to_history(data.game_id, data.player1_id, data.player2_id, data.score_player1, 
+							data.score_player2, data.winner_id, data.duration_seconds, data.game_type);
 		}
 		catch (err) {
-			console.error("Erreur POST game-result:", err);
+			if (err instanceof BadRequestException)
+				throw err;
 			return { message: "Can't register match" };
 		}
 	}

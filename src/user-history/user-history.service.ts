@@ -1,0 +1,107 @@
+import Database, { Statement } from 'better-sqlite3';
+import { InjectPlugin, Service, BadRequestException } from 'my-fastify-decorators';
+
+
+const addMatchHistoryStatement: string = `INSERT INTO game_history (game_id, player1_id, player2_id, score_player1,
+												score_player2, winner_id, duration_seconds, game_type) 
+										VALUES (@game_id, @player1_id, @player2_id, @score_player1,
+												@score_player2, @winner_id, @duration_seconds, @game_type);`;
+
+const getMatchHistory: string = `SELECT * FROM game_history 
+									WHERE player1_id = ? OR player2_id = ? ORDER BY created_at DESC;`;
+
+const updateUserGlobalStats : string = `UPDATE user_stats 
+										SET average_score = ((average_score * total_games) + @new_score) / (total_games + 1), 
+										total_games = total_games + 1,wins = wins + @is_win,losses = losses + @is_loss,
+										average_game_duration_in_seconde = ((average_game_duration_in_seconde * total_games) + @duration) / (total_games + 1)
+										WHERE user_id = @user_id`;
+
+const isGameIdValid : string = `SELECT 1 FROM game_history WHERE game_id = ?`;
+
+@Service()
+export class UserHistoryService {
+	@InjectPlugin('db')
+	private db !: Database.Database;
+
+	private statementAddMatchtoHistory : Statement<{
+		game_id: number;
+		player1_id: number;
+		player2_id: number;
+		score_player1: number;
+		score_player2: number;
+		winner_id: number;
+		duration_seconds: number;
+		game_type: string;
+	}>
+
+	private statementGet !: Statement<[number, number]>;
+	private statementisGameIdValid !: Statement;
+	private runMatchTransaction !: (match: any, p1: any, p2: any) => void;
+	private statementUpdateStats !: Statement;
+
+
+onModuleInit(){
+	this.statementAddMatchtoHistory = this.db.prepare(addMatchHistoryStatement);
+	this.statementGet = this.db.prepare(getMatchHistory);
+	this.statementisGameIdValid = this.db.prepare(isGameIdValid);
+	this.statementUpdateStats = this.db.prepare(updateUserGlobalStats);
+
+	this.runMatchTransaction = this.db.transaction((match, p1, p2) => {
+	this.statementAddMatchtoHistory.run(match);
+	this.statementUpdateStats.run(p1);
+	this.statementUpdateStats.run(p2);
+});
+	}
+
+	add_match_to_history(game_id: number, player1_id: number, player2_id: number, score_player1: number,
+								score_player2: number, winner_id: number, duration_seconds: number, game_type: string) {
+			if (player1_id === player2_id) {
+				throw new BadRequestException("Same ids");
+			}
+			if (score_player1 < 0 || score_player2 < 0) {
+				throw new BadRequestException("Negative scores");
+			}
+			if (winner_id != player1_id && winner_id != player2_id){
+				throw new BadRequestException("winner id doesn't match players id");
+			}
+			if (duration_seconds < 0) {
+				throw new BadRequestException("Invalid duration");
+			}
+			const exists = this.statementisGameIdValid.get(game_id);
+			if (exists) {
+				throw new BadRequestException(`Match ${game_id} already exist`);
+			}
+
+			const p1Stats = {
+				user_id: player1_id,
+				new_score: score_player1,
+				is_win: winner_id === player1_id ? 1 : 0,
+				is_loss: winner_id === player1_id ? 0 : 1,
+				duration: duration_seconds
+			};
+			const p2Stats = {
+				user_id: player2_id,
+				new_score: score_player2,
+				is_win: winner_id === player2_id ? 1 : 0,
+				is_loss: winner_id === player2_id ? 0 : 1,
+				duration: duration_seconds
+			};
+
+			const matchData = { game_id, player1_id, player2_id, score_player1, score_player2, winner_id, duration_seconds, game_type };
+
+			return (this.runMatchTransaction(matchData, p1Stats, p2Stats), { message: "Match registered" });
+			// return this.statementAddMatchtoHistory.run({ game_id, player1_id, player2_id, score_player1, 
+			// 				score_player2, winner_id, duration_seconds, game_type })
+		}
+
+	get_user_matches(userId: number) {
+		try {
+			return this.statementGet.all(userId, userId);
+		}
+		catch (error) {
+			console.error("ERREUR SQLITE :", error);
+			throw error;
+		}
+		// return this.statementGet.all(userId, userId);
+	}
+}
