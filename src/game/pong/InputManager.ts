@@ -32,7 +32,7 @@ class InputManager {
 
     public async recordInput(client: Socket, data: PlayerInputData) {
         const playerBuffer : History<PlayerInputData> = (this.game.player1!.id === client.data.userId) ? this.p1InputBuffer : this.p2InputBuffer;
-        playerBuffer.addState(data);
+        playerBuffer.addStateStrict(data);
     }
 
     public processPlayerInput(player : Player, data: PlayerInputData) {

@@ -6,7 +6,7 @@ import type { GameState } from "../globalType.js";
 import Pong from "./Pong.js";
 import type { PlayerInputData } from "../globalType.js";
 import InputManager from "../InputManager.js";
-import Player from "../Player.js";
+import Player, { LEFT } from "../Player.js";
 
 class TruthManager {
     private game: Pong;
@@ -25,6 +25,9 @@ class TruthManager {
     constructor(services: Services, game: Pong) {
         this.game = game;
         this.inputManager = this.game.inputManager!;
+        this.p1InputBuffer = this.inputManager.getP1InputBuffer();
+        this.p2InputBuffer = this.inputManager.getP2InputBuffer();
+        
         this.services = services;
         this.serverGameStateHistory = new History<GameState>(60);
 
@@ -33,8 +36,6 @@ class TruthManager {
         this.lastFrameTime = services.TimeService!.getTimestamp();
         this.deltaT = 0;
 
-        this.p1InputBuffer = this.inputManager.getP1InputBuffer();
-        this.p2InputBuffer = this.inputManager.getP2InputBuffer();
     }
 
     private getGameState(game: Pong): GameState {
@@ -90,26 +91,11 @@ class TruthManager {
 
         if (this.deltaT >= this.frameDuration) {
 
-            // regarder si un input est dispo entre lastFrameTime et time
-            // l'appliquer avant de update les joueurs
-
-            /*let p1Input = this.p1InputBuffer.getClosestState(time, this.deltaT);
-            if (p1Input)
-                this.inputManager.processPlayerInput(this.game.player1!, p1Input);
-     
-            let p2Input = this.p2InputBuffer.getClosestState(time, this.deltaT);
-            if (p2Input)
-                this.inputManager.processPlayerInput(this.game.player2!, p2Input);*/
             let p1Inputs = this.p1InputBuffer.getStatesInRange(this.lastFrameTime, time);
             this.computePlayerInputs(this.game.player1!, p1Inputs, this.lastFrameTime, time);
 
             let p2Inputs = this.p2InputBuffer.getStatesInRange(this.lastFrameTime, time);
             this.computePlayerInputs(this.game.player2!, p2Inputs, this.lastFrameTime, time);
-
-            // this.game.player1!.update(this.deltaT);
-            // this.game.player2!.update(this.deltaT);
-            // this.game.player1!.paddle.model.computeWorldMatrix(true);
-            // this.game.player2!.paddle.model.computeWorldMatrix(true);
 
             this.game.ball!.update(this.deltaT);
 

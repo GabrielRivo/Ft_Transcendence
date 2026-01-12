@@ -14,9 +14,47 @@ class History<T extends ITimestamped> {
         this.history = new Array(size).fill(null);
     }
 
+    public insert(index: number, state: T): void {
+        let currentIndex = this.writeIndex;
+        let prevIndex;
+        
+        while (currentIndex !== index) {
+            prevIndex = this.lessId(currentIndex, 1);
+            
+            this.history[currentIndex] = this.history[prevIndex]!;
+            
+            currentIndex = prevIndex;
+        }
+        this.history[index] = state;
+
+        this.writeIndex = this.upId(this.writeIndex, 1);
+    }
+
     public addStateStrict(state: T): void {
-        const lastState = this.history[this.lessId(this.writeIndex, 1)];
+        const lastIndex = this.lessId(this.writeIndex, 1);
+        const lastState = this.history[lastIndex];
+
         if (lastState && state.timestamp < lastState.timestamp) {
+            console.log("Inserting out-of-order state into history.");
+            let checkIndex = lastIndex;
+            let checkState = this.history[checkIndex];
+
+            for (let i = 1; i < this.size; i++) {
+                checkIndex = this.lessId(checkIndex, 1);
+                checkState = this.history[checkIndex];
+
+                if (!checkState) {
+                    const insertIndex = this.upId(checkIndex, 1);
+                    this.insert(insertIndex, state);
+                    return;
+                }
+
+                if (state.timestamp >= checkState.timestamp) {
+                    const insertIndex = this.upId(checkIndex, 1);
+                    this.insert(insertIndex, state);
+                    return;
+                }
+            }
             return;
         }
         this.history[this.writeIndex] = state;
