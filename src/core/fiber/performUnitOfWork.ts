@@ -45,7 +45,9 @@ function updateFunctionComponent(fiber: Fiber): void {
   }
   
   const fn = fiber.type as Function;
-  const children = [fn(fiber.props)];
+  const result = fn(fiber.props);
+  // Filtrer les null/undefined (composant qui retourne null) !!!
+  const children = result != null ? [result] : [];
   reconcileChildren(fiber, children as Element[]);
 }
 

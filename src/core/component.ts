@@ -1,4 +1,4 @@
-import type { Element, TextElement, Props, Fiber } from './types';
+import type { Element, TextElement, Props, Fiber } from "./types";
 
 // Variables globales pour gérer l'état
 export let currentFiber: Fiber | null = null;
@@ -51,8 +51,8 @@ export function getWipFiber(): Fiber | null {
 }
 
 // Fragment components
-export const Fragment = Symbol('Fragment');
-const DomHTMLElement = Symbol('DomHTMLElement');
+export const Fragment = Symbol("Fragment");
+const DomHTMLElement = Symbol("DomHTMLElement");
 
 export function FragmentComponent(props: { children?: any[] }): Element {
   return {
@@ -64,12 +64,20 @@ export function FragmentComponent(props: { children?: any[] }): Element {
 }
 
 // Fonction pour JSX (alias de createElement)
-export function createComponent(type: string | Function, props: Props | null, ...children: any[]): Element {
+export function createComponent(
+  type: string | Function,
+  props: Props | null,
+  ...children: any[]
+): Element {
   return createElement(type, props, ...children);
 }
 
 // Création d'éléments (équivalent à React.createElement)
-export function createElement(type: string | Function, props: Props | null, ...children: any[]): Element {
+export function createElement(
+  type: string | Function,
+  props: Props | null,
+  ...children: any[]
+): Element {
   // console.log('createElement', type, props, children);
 
   // essayer de voir pour le retirer car lourd
@@ -78,9 +86,12 @@ export function createElement(type: string | Function, props: Props | null, ...c
     type,
     props: {
       ...props,
-      children: children.flat().filter(child => child != null && child !== false && child !== true).map(child =>
-        typeof child === "object" ? child : createTextElement(child)
-      ),
+      children: children
+        .flat()
+        .filter((child) => child != null && child !== false && child !== true)
+        .map((child) =>
+          typeof child === "object" ? child : createTextElement(child)
+        ),
     },
   };
 }
@@ -110,31 +121,47 @@ export function createDom(fiber: Fiber): Node {
   // Détection SVG
   const isSvg = fiber.type === "svg" || isInSvg(fiber.parent || null);
 
-  const dom = fiber.type === "TEXT_ELEMENT"
-    ? document.createTextNode("")
-    : isSvg
-      ? document.createElementNS("http://www.w3.org/2000/svg", fiber.type as string)
+  const dom =
+    fiber.type === "TEXT_ELEMENT"
+      ? document.createTextNode("")
+      : isSvg
+      ? document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          fiber.type as string
+        )
       : document.createElement(fiber.type as string);
-  
+
   updateDom(dom, {}, fiber.props || {}, fiber.type !== "TEXT_ELEMENT");
   return dom;
 }
 
 // Mise à jour des propriétés DOM
-export function updateDom(dom: any, prevProps: Props, nextProps: Props, isNotText: boolean = false): void {
+export function updateDom(
+  dom: any,
+  prevProps: Props,
+  nextProps: Props,
+  isNotText: boolean = false
+): void {
   const isEvent = (key: string): boolean => key.startsWith("on");
-  const isProperty = (key: string): boolean => key !== "children" && key !== "ref" && key !== "key" && !isEvent(key);
-  const isNew = (prev: Props, next: Props) => (key: string): boolean => prev[key] !== next[key];
-  const isGone = (prev: Props, next: Props) => (key: string): boolean => !(key in next);
-  
+  const isProperty = (key: string): boolean =>
+    key !== "children" && key !== "ref" && key !== "key" && !isEvent(key);
+  const isNew =
+    (prev: Props, next: Props) =>
+    (key: string): boolean =>
+      prev[key] !== next[key];
+  const isGone =
+    (prev: Props, next: Props) =>
+    (key: string): boolean =>
+      !(key in next);
+
   const isSvg = dom instanceof SVGElement;
 
   // console.log('updateDom', prevProps, nextProps);
   // Supprimer les anciens event listeners
   Object.keys(prevProps)
     .filter(isEvent)
-    .filter(key => !(key in nextProps) || isNew(prevProps, nextProps)(key))
-    .forEach(name => {
+    .filter((key) => !(key in nextProps) || isNew(prevProps, nextProps)(key))
+    .forEach((name) => {
       const eventType = name.toLowerCase().substring(2);
       dom.removeEventListener(eventType, prevProps[name]);
     });
@@ -143,15 +170,15 @@ export function updateDom(dom: any, prevProps: Props, nextProps: Props, isNotTex
   Object.keys(prevProps)
     .filter(isProperty)
     .filter(isGone(prevProps, nextProps))
-    .forEach(name => {
+    .forEach((name) => {
       if (name === "className" && isSvg) {
-          dom.removeAttribute("class");
+        dom.removeAttribute("class");
       } else {
-          dom[name] = "";
-          // Note: removeAttribute might be safer for some attributes
-          if (isNotText) {
-             dom.removeAttribute(name);
-          }
+        dom[name] = "";
+        // Note: removeAttribute might be safer for some attributes
+        if (isNotText) {
+          dom.removeAttribute(name);
+        }
       }
     });
 
@@ -159,11 +186,11 @@ export function updateDom(dom: any, prevProps: Props, nextProps: Props, isNotTex
   Object.keys(nextProps)
     .filter(isProperty)
     .filter(isNew(prevProps, nextProps))
-    .forEach(name => {
+    .forEach((name) => {
       // console.log('TEST-A', name, nextProps[name]);
-      
+
       const value = nextProps[name];
-      
+
       // Si la valeur est false, on supprime l'attribut (ex: disabled=false)
       if (value === false) {
         dom.removeAttribute(name);
@@ -172,7 +199,7 @@ export function updateDom(dom: any, prevProps: Props, nextProps: Props, isNotTex
         }
         return;
       }
-      
+
       if (name === "className") {
         if (isSvg) {
           dom.setAttribute("class", value);
@@ -182,13 +209,13 @@ export function updateDom(dom: any, prevProps: Props, nextProps: Props, isNotTex
       } else {
         // Pour les propriétés standard
         if (!isSvg) {
-            dom[name] = value;
+          dom[name] = value;
         } else {
-            // Pour SVG, on privilégie setAttribute pour tout sauf style/dataset ?
-            // Mais dom[name] = ... peut marcher pour 'id', etc.
-            // On fait les deux ou juste setAttribute pour SVG.
-            // setAttribute est plus sûr pour SVG.
-            dom.setAttribute(name, value);
+          // Pour SVG, on privilégie setAttribute pour tout sauf style/dataset ?
+          // Mais dom[name] = ... peut marcher pour 'id', etc.
+          // On fait les deux ou juste setAttribute pour SVG.
+          // setAttribute est plus sûr pour SVG.
+          dom.setAttribute(name, value);
         }
 
         if (isNotText && name !== "className" && !isSvg) {
@@ -206,7 +233,7 @@ export function updateDom(dom: any, prevProps: Props, nextProps: Props, isNotTex
   Object.keys(nextProps)
     .filter(isEvent)
     .filter(isNew(prevProps, nextProps))
-    .forEach(name => {
+    .forEach((name) => {
       const eventType = name.toLowerCase().substring(2);
       dom.addEventListener(eventType, nextProps[name]);
     });
