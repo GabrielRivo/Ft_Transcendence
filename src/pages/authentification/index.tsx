@@ -1,18 +1,10 @@
-import { createElement, useState } from 'my-react';
+import { createElement } from 'my-react';
 import { ButtonStyle4 } from '../../components/ui/button/style4';
-import { Discord } from '../../components/ui/logo/discord';
-import { Github } from '../../components/ui/logo/github';
+import { Discord } from '@icon/discord';
+import { Github } from '@icon/github';
 import { useNavigate } from 'my-react-router';
 export function Authentification() {
-	const [resetKey, setResetKey] = useState(0);
-
 	const navigate = useNavigate();
-
-	// const handleClick = () => {
-	// 	console.log('clicked');
-	// 	navigate('/login');
-	// 	setResetKey(resetKey + 1);
-	// };
 
 	return (
 		<div className="flex flex-col items-center gap-8 text-white">
@@ -30,12 +22,12 @@ export function Authentification() {
 			<div className="flex min-w-2/3 flex-col gap-2">
 				<ButtonStyle4 onClick={() => navigate('/auth/github')}>
 					<div className="flex w-full items-center gap-2">
-						<Github size={20} /> <span>Github</span>
+						<Github size={20} className="text-white" /> <span>Github</span>
 					</div>
 				</ButtonStyle4>
 				<ButtonStyle4 onClick={() => navigate('/auth/discord')}>
 					<div className="flex w-full items-center gap-2">
-						<Discord size={20} /> <span>Discord</span>
+						<Discord size={20} className="text-white" /> <span>Discord</span>
 					</div>
 				</ButtonStyle4>
 			</div>
