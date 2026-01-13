@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS matchHistory (
 CREATE TABLE IF NOT EXISTS generalChatHistory(
     msgId INTEGER PRIMARY KEY AUTOINCREMENT,
     userId INTEGER,
+    username VARCHAR(255 ) DEFAULT 'Unknown',
     msgContent VARCHAR(5000),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -67,7 +68,7 @@ CREATE TABLE IF NOT EXISTS groupMembers (
     userId INTEGER NOT NULL,
     joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (groupId, userId),
-    FOREIGN KEY (groupId) REFERENCES privateGroups(groupId) ON DELETE CASCADE
+    FOREIGN KEY (groupId) REFERENCES privateGroup(groupId) ON DELETE CASCADE
 );
 
 
@@ -77,7 +78,7 @@ CREATE TABLE IF NOT EXISTS groupChatHistory(
     userId INTEGER,
     msgContent VARCHAR(5000),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (groupId) REFERENCES privateGroups(groupId) ON DELETE CASCADE
+    FOREIGN KEY (groupId) REFERENCES privateGroup(groupId) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tournamentChatHistory(

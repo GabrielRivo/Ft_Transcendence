@@ -7,7 +7,7 @@ import { BlockManagementService } from '../../friend-management/block-management
 export class GeneralChatService {
 	@InjectPlugin('db')
 	private db !: Database.Database;
-	private statementSaveGeneral !: Statement<{ userId: number, msgContent: string }>;
+	private statementSaveGeneral !: Statement<{ userId: number, username: string, msgContent: string }>;
 	private statementGetGeneralHistory !: Statement<[]>;
 	private statementGetAllGeneralHistory !: Statement<[]>;
 
@@ -17,7 +17,7 @@ export class GeneralChatService {
 
 	onModuleInit() {
 		this.statementSaveGeneral = this.db.prepare(
-		`INSERT INTO generalChatHistory (userId, msgContent) VALUES (@userId, @msgContent)`
+		`INSERT INTO generalChatHistory (userId, username, msgContent) VALUES (@userId, @username, @msgContent)`
 		);
 		this.statementGetGeneralHistory = this.db.prepare(
 			`SELECT * FROM generalChatHistory ORDER BY created_at DESC LIMIT 50`
@@ -25,9 +25,9 @@ export class GeneralChatService {
 		this.statementGetAllGeneralHistory = this.db.prepare(
 			`SELECT * FROM generalChatHistory ORDER BY created_at DESC LIMIT 100`);
 	}
-	async saveGeneralMessage(userId: number, content: string) {
+	async saveGeneralMessage(userId: number, username: string, content: string) {
 		try {
-		return this.statementSaveGeneral.run({ userId, msgContent: content });
+		return this.statementSaveGeneral.run({ userId, username, msgContent: content });
 		}
 		catch(e) {
 			console.log(e)

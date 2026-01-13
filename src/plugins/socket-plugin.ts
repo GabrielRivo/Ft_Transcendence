@@ -1,9 +1,9 @@
-import { channel } from 'diagnostics_channel';
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { Server, ServerOptions } from 'socket.io';
 
 const opts: Partial<ServerOptions> = {
+	path: '/ws/',
 	cors: {
 		origin: '*',
 	},

@@ -1,5 +1,6 @@
 import Database, { Statement } from 'better-sqlite3';
 import { InjectPlugin, Service } from 'my-fastify-decorators';
+import { Server } from 'socket.io';
 
 
 const Invit = 
@@ -16,54 +17,110 @@ const DeleteFromFriendList =
 	WHERE (userId = @userId AND otherId = @otherId)
 	OR (userId = @otherId AND otherId = @userId)`;
 
+const GetPendingInvitations =
+	`SELECT userId, created_at FROM friends 
+	WHERE otherId = @userId AND status = 'pending'`;
+
+const IsFriend =
+	`SELECT id FROM friends 
+	WHERE ((userId = @userId AND otherId = @otherId) OR (userId = @otherId AND otherId = @userId))
+	AND status = 'accepted'`;
+
+const GetFriends =
+	`SELECT 
+		CASE WHEN userId = @userId THEN otherId ELSE userId END as friendId
+	FROM friends 
+	WHERE (userId = @userId OR otherId = @userId) AND status = 'accepted'`;
+
+export interface PendingInvitation {
+	senderId: number;
+	senderUsername: string;
+	created_at: string;
+}
 
 @Service()
 export class FriendManagementService {
 	@InjectPlugin('db')
 	private db !: Database.Database;
 
-	private statementInvit : Statement<{userId : number, otherId : number,}>
-	private statementAcceptInvit : Statement<{userId : number, otherId : number,}>
-	private statementDeleteFromFriendList : Statement<{userId : number, otherId : number}>
-	private statementIsFriend!: Statement<{ userId: number, otherId: number }>;
+	@InjectPlugin('io')
+	private io!: Server;
 
-	onModuleInit(){
+	private statementInvit: Statement<{userId: number, otherId: number}>;
+	private statementAcceptInvit: Statement<{userId: number, otherId: number}>;
+	private statementDeleteFromFriendList: Statement<{userId: number, otherId: number}>;
+	private statementIsFriend: Statement<{userId: number, otherId: number}>;
+	private statementGetPendingInvitations: Statement<{userId: number}>;
+	private statementGetFriends: Statement<{userId: number}>;
+
+	onModuleInit() {
 		this.statementInvit = this.db.prepare(Invit);
 		this.statementAcceptInvit = this.db.prepare(AcceptInvit);
 		this.statementDeleteFromFriendList = this.db.prepare(DeleteFromFriendList);
+		this.statementIsFriend = this.db.prepare(IsFriend);
+		this.statementGetPendingInvitations = this.db.prepare(GetPendingInvitations);
+		this.statementGetFriends = this.db.prepare(GetFriends);
 	}
 
-	sendInvitation(userId: number, otherId: number) {
+	sendInvitation(userId: number, otherId: number, senderUsername: string) {
 		if (userId === otherId)
 			throw new Error("Self-friendship");
 		try {
 			this.statementInvit.run({ userId, otherId });
-			return { success: true, message: "Invitation send" };
+			
+			this.emitToUser(otherId, 'friend_request', {
+				senderId: userId,
+				senderUsername: senderUsername,
+			});
+			
+			return { success: true, message: "Invitation sent" };
 		}
-		catch (error : any) {
-			return { success: false, message: "You are already friend with this user or you have already send a invitation" };
+		catch (error: any) {
+			return { success: false, message: "You are already friend with this user or you have already sent an invitation" };
 		}
 	}
 
-	acceptInvitation(myId: number, senderId: number) {
+	acceptInvitation(myId: number, senderId: number, myUsername: string) {
 		const result = this.statementAcceptInvit.run({ userId: myId, otherId: senderId });
 		if (result.changes === 0) {
 			return { success: false, message: "No invitation pending" };
 		}
+		
+		this.emitToUser(senderId, 'friend_accepted', {
+			friendId: myId,
+			friendUsername: myUsername,
+		});
+		
 		return { success: true, message: "Friend added" };
 	}
 
-	async is_friend(userId: number, otherId: number): Promise <boolean> {
+	getPendingInvitations(userId: number): { userId: number; created_at: string }[] {
+		return this.statementGetPendingInvitations.all({ userId }) as { userId: number; created_at: string }[];
+	}
+
+	getFriends(userId: number): number[] {
+		const rows = this.statementGetFriends.all({ userId }) as { friendId: number }[];
+		return rows.map(r => r.friendId);
+	}
+
+	async is_friend(userId: number, otherId: number): Promise<boolean> {
 		return !!this.statementIsFriend.get({ userId, otherId });
 	}
 
-
 	deleteFromFriendlist(userId: number, otherId: number) {
 		const result = this.statementDeleteFromFriendList.run({ userId, otherId });
-		if (result.changes > 0 ) {
-			return { success: true, message: "Deleted relationship" }
+		if (result.changes > 0) {
+			return { success: true, message: "Deleted relationship" };
 		}
 		return { success: false, message: "This user wasn't in your friendlist or didn't send you a friend request" };
 	}
-}
 
+
+	private emitToUser(userId: number, event: string, data: any): void {
+		for (const [, socket] of this.io.sockets.sockets) {
+			if (socket.data.userId === userId) {
+				socket.emit(event, data);
+			}
+		}
+	}
+}

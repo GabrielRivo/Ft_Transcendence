@@ -4,17 +4,13 @@ import { AdditionalProperties, generateSchema, IsRequired, IsString, MinLength, 
 export class ChatDto {
 	@IsRequired()
 	@IsString()
-	username : string;
-
-	@IsRequired()
-	@IsString()
 	@MinLength(1)
 	@MaxLength(500)
-	content : string;
+	content: string;
 
 	@IsRequired()
 	@IsString()
-	roomId : string;
+	roomId: string;
 }
 
 export const ChatSchema = generateSchema(ChatDto);
