@@ -22,19 +22,27 @@ export interface ChatState {
 	roomUsers: RoomUser[];
 }
 
+interface HistoryMessage {
+	userId: number;
+	username?: string;
+	msgContent: string;
+	roomId?: string;
+	created_at: string;
+}
+
 export function useChat() {
 	const { user, isAuthenticated } = useAuth();
 	const [connected, setConnected] = useState(false);
 	const [currentRoom, setCurrentRoom] = useState('hub');
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [roomUsers, setRoomUsers] = useState<RoomUser[]>([]);
-	const isConnecting = useRef(false);
+	const isConnectingRef = useRef(false);
 
 	// Connecter au chat quand l'utilisateur est authentifié
 	useEffect(() => {
-		if (isAuthenticated && user && !user.noUsername && !isConnecting.current) {
-			isConnecting.current = true;
-			
+		if (isAuthenticated && user && !user.noUsername && !isConnectingRef.current) {
+			isConnectingRef.current = true;
+
 			// Mettre à jour l'auth du socket
 			chatSocket.auth = {
 				userId: String(user.id),
@@ -48,9 +56,9 @@ export function useChat() {
 			if (chatSocket.connected) {
 				chatSocket.disconnect();
 			}
-			isConnecting.current = false;
+			isConnectingRef.current = false;
 		};
-	}, [isAuthenticated, user?.id, user?.username, user?.noUsername]);
+	}, [isAuthenticated, user]);
 
 	// Gérer les événements socket
 	useEffect(() => {
@@ -70,7 +78,7 @@ export function useChat() {
 			setMessages((prev) => [...prev, msg]);
 		};
 
-		const handleHubHistory = (history: any[]) => {
+		const handleHubHistory = (history: HistoryMessage[]) => {
 			const formattedHistory: ChatMessage[] = history.map((h) => ({
 				userId: h.userId,
 				username: h.username || 'Unknown',
@@ -81,12 +89,12 @@ export function useChat() {
 			setMessages(formattedHistory.reverse());
 		};
 
-		const handlePrivateHistory = (history: any[]) => {
+		const handlePrivateHistory = (history: HistoryMessage[]) => {
 			const formattedHistory: ChatMessage[] = history.map((h) => ({
 				userId: h.userId,
 				username: h.username || 'Unknown',
 				msgContent: h.msgContent,
-				roomId: h.roomId,
+				roomId: h.roomId || '',
 				created_at: h.created_at,
 			}));
 			setMessages(formattedHistory.reverse());
@@ -172,6 +180,28 @@ export function useChat() {
 		[connected, user?.id],
 	);
 
+	const joinGroupRoom = useCallback(
+		(groupId: number) => {
+			if (!connected) return;
+
+			const roomId = `group_${groupId}`;
+
+			// Quitter l'ancienne room (sauf hub)
+			if (currentRoom !== 'hub') {
+				chatSocket.emit('leave_room', { roomId: currentRoom });
+			}
+
+			// Rejoindre la room du groupe
+			chatSocket.emit('join_room', { roomId });
+			setCurrentRoom(roomId);
+			setMessages([]);
+
+			// Demander les utilisateurs de la room
+			chatSocket.emit('get_room_users', { roomId });
+		},
+		[connected, currentRoom],
+	);
+
 	return {
 		connected,
 		currentRoom,
@@ -180,6 +210,6 @@ export function useChat() {
 		sendMessage,
 		joinRoom,
 		joinPrivateRoom,
+		joinGroupRoom,
 	};
 }
-

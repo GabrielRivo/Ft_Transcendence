@@ -69,7 +69,7 @@ export function Register() {
 	const passwordError = getFieldError(errors, 'password');
 
 	return (
-		<div className="relative h-full w-full">
+		<div className="relative size-full">
 			<div className="relative z-10 flex h-full items-center justify-center p-4">
 				<CardStyle2>
 					<div className="flex w-full flex-col gap-8">
@@ -91,9 +91,7 @@ export function Register() {
 									className={`focus:border-neon-blue w-full rounded-sm border bg-transparent p-3 text-sm text-white transition-all duration-300 outline-none placeholder:text-gray-600 focus:bg-white/5 ${emailError ? 'border-red-500' : 'border-white/10'}`}
 									placeholder="name@example.com"
 								/>
-								{emailError && (
-									<span className="text-xs text-red-400">{emailError}</span>
-								)}
+								{emailError && <span className="text-xs text-red-400">{emailError}</span>}
 							</div>
 							<div className="group flex flex-col gap-2">
 								<label
@@ -111,9 +109,7 @@ export function Register() {
 									className={`focus:border-neon-blue w-full rounded-sm border bg-transparent p-3 text-sm text-white transition-all duration-300 outline-none placeholder:text-gray-600 focus:bg-white/5 ${passwordError ? 'border-red-500' : 'border-white/10'}`}
 									placeholder="••••••••"
 								/>
-								{passwordError && (
-									<span className="text-xs text-red-400">{passwordError}</span>
-								)}
+								{passwordError && <span className="text-xs text-red-400">{passwordError}</span>}
 							</div>
 							<div className="group flex flex-col gap-2">
 								<label
@@ -131,17 +127,11 @@ export function Register() {
 									className={`focus:border-neon-blue w-full rounded-sm border bg-transparent p-3 text-sm text-white transition-all duration-300 outline-none placeholder:text-gray-600 focus:bg-white/5 ${confirmError ? 'border-red-500' : 'border-white/10'}`}
 									placeholder="••••••••"
 								/>
-								{confirmError && (
-									<span className="text-xs text-red-400">{confirmError}</span>
-								)}
+								{confirmError && <span className="text-xs text-red-400">{confirmError}</span>}
 							</div>
 							<div className="mt-4 flex flex-col justify-center gap-2">
-								<ButtonStyle4 type="submit">
-									{isLoading ? 'INSCRIPTION...' : "S'INSCRIRE"}
-								</ButtonStyle4>
-								<ButtonStyle3 onClick={handleClickReturn}>
-									Retour
-								</ButtonStyle3>
+								<ButtonStyle4 type="submit">{isLoading ? 'INSCRIPTION...' : "S'INSCRIRE"}</ButtonStyle4>
+								<ButtonStyle3 onClick={handleClickReturn}>Retour</ButtonStyle3>
 							</div>
 						</form>
 					</div>

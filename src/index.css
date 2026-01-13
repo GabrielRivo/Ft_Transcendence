@@ -90,9 +90,62 @@
 
 	--animate-float: float 3s ease-in-out infinite;
 	--animate-toast-slide-up: toastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	--animate-modal-enter: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	--animate-backdrop-fade-in: backdropFadeIn 0.2s ease-out forwards;
+	--animate-toast-progress: toastProgress 3s linear forwards;
 	/* Background Image background.png */
 
 	/* --background-image: url('./backgroundv2.svg') no-repeat center center fixed; */
+
+	/* Shadow - Utiliser avec shadow-{color} SANS opacité (ex: shadow-orange-500, pas shadow-orange-500/40) */
+
+	--shadow-neon-xs: 0 0 15px color-mix(in srgb, var(--tw-shadow-color) 40%, transparent);
+	--shadow-neon-sm: 0 0 20px color-mix(in srgb, var(--tw-shadow-color) 30%, transparent);
+	--shadow-neon: 0 0 30px color-mix(in srgb, var(--tw-shadow-color) 40%, transparent);
+	--shadow-neon-lg: 0 0 40px color-mix(in srgb, var(--tw-shadow-color) 30%, transparent);
+	--shadow-neon-xl: 0 0 60px color-mix(in srgb, var(--tw-shadow-color) 50%, transparent);
+
+	--shadow-neon-inner: inset 0 0 20px color-mix(in srgb, var(--tw-shadow-color) 10%, transparent);
+	--shadow-neon-inner-lg: inset 0 0 30px color-mix(in srgb, var(--tw-shadow-color) 20%, transparent);
+
+	--shadow-neon-complex-sm:
+		0 0 20px color-mix(in srgb, var(--tw-shadow-color) 20%, transparent),
+		inset 0 0 30px color-mix(in srgb, var(--tw-shadow-color) 20%, transparent);
+	--shadow-neon-complex-sm-low:
+		0 0 20px color-mix(in srgb, var(--tw-shadow-color) 15%, transparent),
+		inset 0 0 20px color-mix(in srgb, var(--tw-shadow-color) 5%, transparent);
+
+	--shadow-neon-complex:
+		0 0 40px color-mix(in srgb, var(--tw-shadow-color) 30%, transparent),
+		inset 0 0 60px color-mix(in srgb, var(--tw-shadow-color) 5%, transparent);
+
+	--shadow-neon-intense:
+		0 0 60px color-mix(in srgb, var(--tw-shadow-color) 50%, transparent),
+		inset 0 0 80px color-mix(in srgb, var(--tw-shadow-color) 10%, transparent);
+
+	/* 0_0_30px_rgba(249,115,22,0.4) 										shadow-neon
+
+0_0_30px_rgba(34,197,94,0.4) 												shadow-neon
+
+0_0_20px_rgba(249,115,22,0.15),inset_0_0_20px_rgba(249,115,22,0.05)			shadow-neon-complex-sm-low shadow-orange-500
+
+
+inset_0_0_20px_rgba(6,182,212,0.1) 											shadow-neon-inner
+0_0_20px_rgba(6,182,212,0.15),inset_0_0_20px_rgba(6,182,212,0.05)			shadow-neon-complex-sm-low
+0_0_30px_rgba(6,182,212,0.2) 												shadow-neon
+inset_0_0_30px_rgba(6,182,212,0.2),0_0_20px_rgba(6,182,212,0.2)				shadow-neon-complex-sm
+0_0_20px_rgba(6,182,212,0.3) 												shadow-neon-sm
+0_0_40px_rgba(6,182,212,0.3),inset_0_0_60px_rgba(6,182,212,0.05)			shadow-neon-complex
+0_0_30px_rgba(6,182,212,0.4) 												shadow-neon
+0_0_60px_rgba(6,182,212,0.5),inset_0_0_80px_rgba(6,182,212,0.1)				shadow-neon-intense
+
+0_0_20px_rgba(168,85,247,0.15),inset_0_0_20px_rgba(168,85,247,0.05)			shadow-neon-complex-sm-low
+0_0_30px_rgba(168,85,247,0.2) 												shadow-neon
+0_0_20px_rgba(168,85,247,0.3) 												shadow-neon-sm
+0_0_40px_rgba(168,85,247,0.3),inset_0_0_60px_rgba(168,85,247,0.05)			shadow-neon-complex
+0_0_15px_rgba(168,85,247,0.4) 												shadow-neon-xs
+0_0_30px_rgba(168,85,247,0.4) 												shadow-neon
+0_0_60px_rgba(168,85,247,0.5),inset_0_0_80px_rgba(168,85,247,0.1)			shadow-neon-intense  */
 
 	@keyframes float {
 		0%,
@@ -114,6 +167,36 @@
 			transform: translateY(0);
 		}
 	}
+
+	@keyframes modalEnter {
+		from {
+			opacity: 0;
+			transform: scale(0.9) translateY(20px);
+			filter: blur(4px);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1) translateY(0);
+			filter: blur(0);
+		}
+	}
+	@keyframes backdropFadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes toastProgress {
+		from {
+			width: 100%;
+		}
+		to {
+			width: 0%;
+		}
+	}
 }
 
 @utility bg-radial-primary {
@@ -123,6 +206,42 @@
 @utility bg-background-image {
 	background: var(--background-image);
 	background-size: cover;
+}
+
+@utility shadow-neon-cyan {
+	box-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+}
+@utility shadow-neon-cyan-low {
+	box-shadow:
+		0 0 20px rgba(6, 182, 212, 0.15),
+		inset 0 0 20px rgba(6, 182, 212, 0.05);
+}
+
+@utility shadow-neon-purple {
+	box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+}
+@utility shadow-neon-purple-low {
+	box-shadow:
+		0 0 20px rgba(168, 85, 247, 0.15),
+		inset 0 0 20px rgba(168, 85, 247, 0.05);
+}
+
+@utility shadow-neon-orange {
+	box-shadow: 0 0 30px rgba(249, 115, 22, 0.4);
+}
+@utility shadow-neon-orange-low {
+	box-shadow:
+		0 0 20px rgba(249, 115, 22, 0.15),
+		inset 0 0 20px rgba(249, 115, 22, 0.05);
+}
+
+@utility shadow-neon-green {
+	box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+}
+@utility shadow-neon-green-low {
+	box-shadow:
+		0 0 20px rgba(34, 197, 94, 0.15),
+		inset 0 0 20px rgba(34, 197, 94, 0.05);
 }
 
 @utility grid-area-button {
@@ -148,6 +267,12 @@
 		-webkit-font-smoothing: antialiased;
 		background-clip: padding-box;
 		perspective: 1000px;
+	}
+
+	/* Chamfer uniquement en bas à droite */
+	.chamfer-br {
+		--cut: 12px;
+		clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
 	}
 
 	.chamfer-full {

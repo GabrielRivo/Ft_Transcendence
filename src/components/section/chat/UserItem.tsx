@@ -20,12 +20,12 @@ export function UserItem({
 			}`}
 		>
 			<div className="relative">
-				<div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold">
+				<div className="flex size-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold">
 					{name.charAt(0).toUpperCase()}
 				</div>
 				{isOnline !== undefined && (
 					<div
-						className={`absolute right-0 bottom-0 h-3 w-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-500'}`}
+						className={`absolute right-0 bottom-0 size-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-500'}`}
 					></div>
 				)}
 			</div>

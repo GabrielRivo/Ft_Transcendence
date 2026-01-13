@@ -17,12 +17,12 @@ function Menu() {
 
 export function DashboardLayout({ children }: { children: Element }) {
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden text-white selection:bg-cyan-500/30">
+		<div className="flex size-full flex-col overflow-hidden text-white selection:bg-cyan-500/30">
 			<Info />
 			<div className="flex min-h-0 w-full flex-1 overflow-hidden p-8">
-				<div className="grid h-full w-full grid-cols-1 gap-6 md:grid-cols-12">
+				<div className="grid size-full grid-cols-1 gap-6 md:grid-cols-12">
 					<div className="h-full min-h-0 overflow-hidden md:col-span-7">
-						<div className="h-full w-full overflow-y-auto">{children}</div>
+						<div className="size-full overflow-y-auto">{children}</div>
 					</div>
 
 					<div className="ff-dashboard-perspective flex h-full min-h-0 items-center justify-center perspective-[2000px] md:col-span-5">

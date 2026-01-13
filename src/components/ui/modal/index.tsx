@@ -1,39 +1,58 @@
-import { createElement, FragmentComponent, createPortal, Element } from 'my-react';
+import { createElement, FragmentComponent, createPortal, Element, useEffect } from 'my-react';
 import { Cross } from '@icon/cross';
 
 interface ModalProps {
 	onClose: () => void;
 	children?: Element;
-	title: string;
+	title?: string | false;
+	variant?: 'cyan' | 'purple';
 }
 
 interface ModalHeaderProps {
-	title: string;
+	title: string | false;
 	onClose: () => void;
+	variant: 'cyan' | 'purple';
 }
 
 interface ModalContentProps {
 	children?: Element | Element[];
+	variant: 'cyan' | 'purple';
 }
 
-function ModalContent({ children }: ModalContentProps) {
+function ModalContent({ children, variant }: ModalContentProps) {
+	const borderColor = variant === 'cyan' ? 'border-cyan-500/50' : 'border-purple-500/50';
+	const shadowColor =
+		variant === 'cyan'
+			? 'shadow-[0_0_40px_rgba(6,182,212,0.3),inset_0_0_60px_rgba(6,182,212,0.05)]'
+			: 'shadow-[0_0_40px_rgba(168,85,247,0.3),inset_0_0_60px_rgba(168,85,247,0.05)]';
+	const glowColor = variant === 'cyan' ? 'hover:border-cyan-400' : 'hover:border-purple-400';
+	const hoverShadow =
+		variant === 'cyan'
+			? 'hover:shadow-[0_0_60px_rgba(6,182,212,0.5),inset_0_0_80px_rgba(6,182,212,0.1)]'
+			: 'hover:shadow-[0_0_60px_rgba(168,85,247,0.5),inset_0_0_80px_rgba(168,85,247,0.1)]';
+
 	return (
 		<div
 			onMouseDown={(e: MouseEvent) => e.stopPropagation()}
-			className="w-full max-w-md rounded-xl border border-purple-500/30 bg-slate-900 p-6 shadow-2xl shadow-purple-500/10"
+			className={`w-full max-w-md overflow-hidden rounded-xl border-2 ${borderColor} bg-slate-950/90 backdrop-blur-xl ${shadowColor} ${glowColor} ${hoverShadow} animate-modal-enter transition-all duration-300`}
 		>
 			{children}
 		</div>
 	);
 }
 
-function ModalHeader({ title, onClose }: ModalHeaderProps) {
+function ModalHeader({ title, onClose, variant }: ModalHeaderProps) {
+	const bgColor = variant === 'cyan' ? 'bg-cyan-500/10' : 'bg-purple-500/10';
+	const borderColor = variant === 'cyan' ? 'border-cyan-500/30' : 'border-purple-500/30';
+	const textColor = variant === 'cyan' ? 'text-cyan-400' : 'text-purple-400';
+	const hoverBg = variant === 'cyan' ? 'hover:bg-cyan-500/20' : 'hover:bg-purple-500/20';
+
 	return (
-		<div className="mb-6 flex items-center justify-between">
-			<h2 className="text-xl font-bold text-white">{title}</h2>
+		<div className={`flex items-center justify-between border-b ${borderColor} ${bgColor} px-6 py-4`}>
+			<h2 className={`font-orbitron text-lg font-bold tracking-wider ${textColor} uppercase`}>{title}</h2>
 			<button
 				onClick={onClose}
-				className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+				className={`rounded-lg p-2 text-gray-400 transition-all duration-200 ${hoverBg} hover:rotate-90 hover:text-white`}
 			>
 				<Cross />
 			</button>
@@ -41,12 +60,23 @@ function ModalHeader({ title, onClose }: ModalHeaderProps) {
 	);
 }
 
-// je sais, sert a rien mais plus lisible...
 function ModalBody({ children }: { children?: Element | Element[] }) {
-	return <FragmentComponent>{children}</FragmentComponent>;
+	return <div className="p-6">{children}</div>;
 }
 
-export function Modal({ onClose, children, title }: ModalProps) {
+export function Modal({ onClose, children, title = false, variant = 'cyan' }: ModalProps) {
+	// Écouter la touche Escape sur le document
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				onClose();
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+		return () => document.removeEventListener('keydown', handleKeyDown);
+	}, [onClose]);
+
 	const handleBackdropMouseDown = (e: MouseEvent) => {
 		if (e.target === e.currentTarget) {
 			e.stopPropagation();
@@ -57,10 +87,10 @@ export function Modal({ onClose, children, title }: ModalProps) {
 	return createPortal(
 		<div
 			onMouseDown={handleBackdropMouseDown}
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+			className="animate-backdrop-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
 		>
-			<ModalContent>
-				<ModalHeader title={title} onClose={onClose} />
+			<ModalContent variant={variant}>
+				{title && <ModalHeader title={title} onClose={onClose} variant={variant} />}
 				<ModalBody>{children}</ModalBody>
 			</ModalContent>
 		</div>,

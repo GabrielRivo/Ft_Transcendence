@@ -58,17 +58,13 @@ export function SetUsername() {
 	const usernameError = getFieldError(errors, 'username');
 
 	return (
-		<div className="relative h-full w-full">
+		<div className="relative size-full">
 			<div className="relative z-10 flex h-full items-center justify-center p-4">
 				<CardStyle2>
 					<div className="flex w-full flex-col gap-8">
 						<div className="text-center">
-							<h1 className="font-pirulen text-xl tracking-widest text-white">
-								Choisir un pseudo
-							</h1>
-							<p className="mt-2 text-sm text-gray-400">
-								Choisissez un pseudo unique pour votre compte
-							</p>
+							<h1 className="font-pirulen text-xl tracking-widest text-white">Choisir un pseudo</h1>
+							<p className="mt-2 text-sm text-gray-400">Choisissez un pseudo unique pour votre compte</p>
 						</div>
 						<form className="flex flex-col gap-6" onSubmit={handleSubmit}>
 							<div className="group flex flex-col gap-2">
@@ -83,24 +79,16 @@ export function SetUsername() {
 									id="username"
 									name="username"
 									value={username}
-									onInput={(e: Event) =>
-										setUsernameValue((e.target as HTMLInputElement).value)
-									}
+									onInput={(e: Event) => setUsernameValue((e.target as HTMLInputElement).value)}
 									className={`focus:border-neon-blue w-full rounded-sm border bg-transparent p-3 text-sm text-white transition-all duration-300 outline-none placeholder:text-gray-600 focus:bg-white/5 ${usernameError ? 'border-red-500' : 'border-white/10'}`}
 									placeholder="MonPseudo123"
 									autoFocus
 								/>
-								{usernameError && (
-									<span className="text-xs text-red-400">{usernameError}</span>
-								)}
-								<p className="text-xs text-gray-500">
-									3-20 caractères, lettres, chiffres et underscore uniquement
-								</p>
+								{usernameError && <span className="text-xs text-red-400">{usernameError}</span>}
+								<p className="text-xs text-gray-500">3-20 caractères, lettres, chiffres et underscore uniquement</p>
 							</div>
 							<div className="mt-4 flex flex-col justify-center gap-2">
-								<ButtonStyle4 type="submit">
-									{isLoading ? 'ENREGISTREMENT...' : 'VALIDER'}
-								</ButtonStyle4>
+								<ButtonStyle4 type="submit">{isLoading ? 'ENREGISTREMENT...' : 'VALIDER'}</ButtonStyle4>
 							</div>
 						</form>
 					</div>
@@ -109,4 +97,3 @@ export function SetUsername() {
 		</div>
 	);
 }
-

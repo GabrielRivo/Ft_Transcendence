@@ -1,13 +1,16 @@
 import { createElement } from 'my-react';
 import { useChat } from '../../../hook/useChat';
 import { useFriends } from '../../../hook/useFriends';
+import { useGroups } from '../../../hook/useGroups';
 import { ChatSidebarPanel } from './ChatSidebarPanel';
 import { ChatMessagesPanel } from './ChatMessagesPanel';
 import { ChatRoomUsersPanel } from './ChatRoomUsersPanel';
 
 export function ChatSection() {
-	const { connected, currentRoom, messages, roomUsers, sendMessage, joinRoom, joinPrivateRoom } = useChat();
+	const { connected, currentRoom, messages, roomUsers, sendMessage, joinRoom, joinPrivateRoom, joinGroupRoom } =
+		useChat();
 	const { friends, loading: friendsLoading } = useFriends();
+	const { groups, loading: groupsLoading } = useGroups();
 
 	const handleSelectHub = () => {
 		joinRoom('hub');
@@ -15,6 +18,10 @@ export function ChatSection() {
 
 	const handleSelectFriend = (friendId: number) => {
 		joinPrivateRoom(friendId);
+	};
+
+	const handleSelectGroup = (groupId: number) => {
+		joinGroupRoom(groupId);
 	};
 
 	return (
@@ -25,8 +32,11 @@ export function ChatSection() {
 					currentRoom={currentRoom}
 					friends={friends}
 					friendsLoading={friendsLoading}
+					groups={groups}
+					groupsLoading={groupsLoading}
 					onSelectHub={handleSelectHub}
 					onSelectFriend={handleSelectFriend}
+					onSelectGroup={handleSelectGroup}
 				/>
 			</div>
 

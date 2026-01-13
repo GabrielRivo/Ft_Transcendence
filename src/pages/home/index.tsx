@@ -6,10 +6,8 @@ import { useToast } from '../../hook/useToast';
 
 export function Home() {
 	const navigate = useNavigate();
-	const { toast } = useToast();
 
 	const handleClick = () => {
-		toast(`Oops tu n'es pas encore connecté ! 💩`, 'error');
 		navigate('/authentification');
 	};
 

@@ -28,7 +28,7 @@ function FriendRequestToastItem({ invitation, onAccept, onDecline, onClose }: Fr
 			{/* Header */}
 			<div className="mb-3 flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<div className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-500/20 text-sm font-bold text-cyan-400">
+					<div className="flex size-8 items-center justify-center rounded-full bg-cyan-500/20 text-sm font-bold text-cyan-400">
 						{invitation.senderUsername.charAt(0).toUpperCase()}
 					</div>
 					<div>
@@ -40,7 +40,7 @@ function FriendRequestToastItem({ invitation, onAccept, onDecline, onClose }: Fr
 					onClick={() => onClose(invitation.senderId)}
 					className="rounded p-1 text-gray-500 transition-colors hover:bg-white/10 hover:text-white"
 				>
-					<svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+					<svg className="size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 						<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
 					</svg>
 				</button>
@@ -58,7 +58,7 @@ function FriendRequestToastItem({ invitation, onAccept, onDecline, onClose }: Fr
 				<button
 					onClick={handleAccept}
 					disabled={loading}
-					className="flex-1 rounded-lg bg-gradient-to-r from-cyan-500 to-cyan-600 py-2 text-sm font-medium text-white transition-all hover:from-cyan-400 hover:to-cyan-500 disabled:opacity-50"
+					className="flex-1 rounded-lg bg-linear-to-r from-cyan-500 to-cyan-600 py-2 text-sm font-medium text-white transition-all hover:from-cyan-400 hover:to-cyan-500 disabled:opacity-50"
 				>
 					{loading ? '...' : 'Accepter'}
 				</button>
@@ -82,11 +82,14 @@ export function FriendRequestToastContainer() {
 				if (prev.some((inv) => inv.senderId === data.senderId)) {
 					return prev;
 				}
-				return [...prev, {
-					senderId: data.senderId,
-					senderUsername: data.senderUsername,
-					created_at: new Date().toISOString(),
-				}];
+				return [
+					...prev,
+					{
+						senderId: data.senderId,
+						senderUsername: data.senderUsername,
+						created_at: new Date().toISOString(),
+					},
+				];
 			});
 		};
 
@@ -99,9 +102,7 @@ export function FriendRequestToastContainer() {
 
 	// Combiner les invitations persistées et les nouvelles
 	const allInvitations = [...pendingInvitations, ...liveInvitations]
-		.filter((inv, index, self) => 
-			self.findIndex((i) => i.senderId === inv.senderId) === index
-		)
+		.filter((inv, index, self) => self.findIndex((i) => i.senderId === inv.senderId) === index)
 		.filter((inv) => !dismissedIds.has(inv.senderId));
 
 	const handleAccept = async (senderId: number) => {
@@ -130,7 +131,7 @@ export function FriendRequestToastContainer() {
 
 	return createPortal(
 		<FragmentComponent>
-			<div className="pointer-events-none fixed left-5 bottom-5 z-50 flex flex-col gap-3">
+			<div className="pointer-events-none fixed bottom-5 left-5 z-50 flex flex-col gap-3">
 				{allInvitations.map((invitation) => (
 					<FriendRequestToastItem
 						key={invitation.senderId}
@@ -145,4 +146,3 @@ export function FriendRequestToastContainer() {
 		document.body,
 	);
 }
-

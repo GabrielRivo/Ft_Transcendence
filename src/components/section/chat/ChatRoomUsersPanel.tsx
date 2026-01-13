@@ -11,7 +11,7 @@ export function ChatRoomUsersPanel({ roomUsers, currentRoom }: { roomUsers: Room
 	};
 
 	return (
-		<div className="group h-full min-h-0 overflow-hidden rounded-xl border border-orange-500/40 bg-slate-950/60 shadow-[0_0_20px_rgba(249,115,22,0.15),inset_0_0_20px_rgba(249,115,22,0.05)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-orange-400 hover:shadow-[0_0_30px_rgba(249,115,22,0.4)]">
+		<div className="group shadow-neon-orange-low hover:shadow-neon-orange h-full min-h-0 overflow-hidden rounded-xl border border-orange-500/40 bg-slate-950/60 backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-orange-400">
 			<div className="border-b border-orange-500/20 bg-orange-500/10 p-3 text-right text-sm font-bold tracking-widest text-orange-500">
 				{getTitle()}
 			</div>
@@ -30,13 +30,13 @@ export function ChatRoomUsersPanel({ roomUsers, currentRoom }: { roomUsers: Room
 							>
 								<div className="relative">
 									<div
-										className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold ${
+										className={`flex size-12 items-center justify-center rounded-full text-lg font-bold ${
 											isCurrentUser ? 'bg-orange-500/30' : 'bg-slate-800'
 										}`}
 									>
 										{roomUser.username.charAt(0).toUpperCase()}
 									</div>
-									<div className="absolute right-0 bottom-0 h-3 w-3 rounded-full bg-green-500"></div>
+									<div className="absolute right-0 bottom-0 size-3 rounded-full bg-green-500" />
 								</div>
 								<span className="max-w-16 truncate text-center font-bold">
 									{roomUser.username}

@@ -10,10 +10,10 @@ function Bracket({ position }: { position: 'top' | 'bottom' }) {
 	const isTop = position === 'top';
 	return (
 		<div className={`pointer-events-none absolute left-0 z-10 h-16 w-full ${isTop ? 'top-0 rotate-180' : 'bottom-0'}`}>
-			<svg className="absolute bottom-0 left-0 h-full w-[64px]" viewBox="0 0 454 454" preserveAspectRatio="none">
+			<svg className="absolute bottom-0 left-0 h-full w-16" viewBox="0 0 454 454" preserveAspectRatio="none">
 				<use href="/svg/card-bracket.svg#corner-left" />
 			</svg>
-			<svg className="absolute right-0 bottom-0 h-full w-[64px]" viewBox="0 0 454 454" preserveAspectRatio="none">
+			<svg className="absolute right-0 bottom-0 h-full w-16" viewBox="0 0 454 454" preserveAspectRatio="none">
 				<use href="/svg/card-bracket.svg#corner-right" />
 			</svg>
 			<div className="bg-neon-blue absolute right-[63px] bottom-0 left-[63px] h-1" />
@@ -74,7 +74,7 @@ export function CardStyle1({ children, className = '' }: CardStyle1Props) {
 	return (
 		<div ref={containerRef} className={`relative w-fit ${className}`}>
 			<svg
-				className="pointer-events-none absolute inset-0 z-0 h-full w-full"
+				className="pointer-events-none absolute inset-0 z-0 size-full"
 				style={`opacity: ${svgState.opacity}; transition: opacity 0.2s ease-in;`}
 			>
 				<path
@@ -87,7 +87,7 @@ export function CardStyle1({ children, className = '' }: CardStyle1Props) {
 			</svg>
 
 			<div className="relative p-10">
-				<div className="relative z-10 flex h-full w-full min-w-[300px] flex-col items-center justify-center px-12 py-16">
+				<div className="relative z-10 flex size-full min-w-[300px] flex-col items-center justify-center px-12 py-16">
 					<Bracket position="top" />
 					{children}
 					<Bracket position="bottom" />

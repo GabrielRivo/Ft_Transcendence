@@ -1,6 +1,7 @@
 import { createElement, useEffect, Element, FragmentComponent } from 'my-react';
 import { useNavigate } from 'my-react-router';
-import { useAuth } from '../../hook/useAuth';
+import { useAuth } from '@hook/useAuth';
+import { useToast } from '@hook/useToast';
 
 interface GuestGuardProps {
 	children?: Element;
@@ -10,24 +11,21 @@ export function GuestGuard({ children }: GuestGuardProps) {
 	const { isAuthenticated, loading } = useAuth();
 	const navigate = useNavigate();
 
+	const { toast } = useToast();
 	useEffect(() => {
 		if (!loading && isAuthenticated) {
+			toast(`Tu es déjà connecté !`, 'error', 3000);
 			navigate('/dashboard');
 		}
 	}, [loading, isAuthenticated, navigate]);
 
-	if (loading) {
+	if (loading || isAuthenticated) {
 		return (
-			<div className="flex h-full w-full items-center justify-center">
-				<div className="h-8 w-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
+			<div className="flex size-full items-center justify-center">
+				<div className="size-8 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
 			</div>
 		);
 	}
 
-	if (isAuthenticated) {
-		return null;
-	}
-
 	return <FragmentComponent>{children}</FragmentComponent>;
 }
-

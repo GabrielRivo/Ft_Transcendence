@@ -60,7 +60,7 @@ export function CardStyle2({ children, className = '' }: CardStyle2Props) {
 	return (
 		<div ref={containerRef} className={`relative w-fit ${className}`}>
 			<svg
-				className="pointer-events-none absolute inset-0 z-0 h-full w-full"
+				className="pointer-events-none absolute inset-0 z-0 size-full"
 				style={`opacity: ${svgState.opacity}; transition: opacity 0.2s ease-in;`}
 			>
 				<path
@@ -73,7 +73,7 @@ export function CardStyle2({ children, className = '' }: CardStyle2Props) {
 			</svg>
 
 			<div className="relative p-10">
-				<div className="relative z-10 flex h-full w-full min-w-[300px] flex-col items-center justify-center px-12 py-16">
+				<div className="relative z-10 flex size-full min-w-[300px] flex-col items-center justify-center px-12 py-16">
 					{children}
 				</div>
 			</div>

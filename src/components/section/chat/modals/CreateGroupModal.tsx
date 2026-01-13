@@ -2,7 +2,6 @@ import { createElement, useState } from 'my-react';
 import { useAuth } from '@hook/useAuth';
 import { useGroups } from '@hook/useGroups';
 import { Modal } from '@ui/modal';
-import { Check } from '@icon/check';
 
 interface CreateGroupModalProps {
 	onClose: () => void;
@@ -42,7 +41,9 @@ export function CreateGroupModal({ onClose }: CreateGroupModalProps) {
 			{success ? (
 				<div className="flex flex-col items-center gap-4 py-8">
 					<div className="flex size-16 items-center justify-center rounded-full bg-green-500/20">
-						<Check className="text-green-400" />
+						<svg className="size-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+						</svg>
 					</div>
 					<p className="text-green-400">Groupe créé !</p>
 				</div>
