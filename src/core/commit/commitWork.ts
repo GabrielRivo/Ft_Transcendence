@@ -55,6 +55,15 @@ export function commitWork(fiber?: Fiber): void {
 }
 
 function commitDeletionLogic(fiber: Fiber) {
+  // Si le fiber à supprimer est un portal, on utilise son container directement
+  if (fiber.type === PORTAL_TYPE) {
+    const portalContainer = fiber.props?.container;
+    if (portalContainer) {
+      commitDeletion(fiber, portalContainer);
+    }
+    return;
+  }
+
   let domParentFiber = fiber.parent;
   while (domParentFiber && !domParentFiber.dom) {
     if (domParentFiber.type === PORTAL_TYPE) break;
