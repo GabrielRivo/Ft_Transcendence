@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { Service, Inject, type OnModuleInit, type OnModuleDestroy } from 'my-fastify-decorators';
 import { MatchHistoryRepository } from './repositories/match-history.repository.js';
 import { PenaltyRepository } from './repositories/penalty.repository.js';
+import { GameService } from './game.service.js';
 import { createQueuedPlayer, type QueuedPlayer, type PendingMatch } from './types.js';
 import {
 	BASE_TOLERANCE,
@@ -41,6 +42,7 @@ export class MatchmakingService implements OnModuleInit, OnModuleDestroy {
 	constructor(
 		@Inject(MatchHistoryRepository) private matchHistoryRepository: MatchHistoryRepository,
 		@Inject(PenaltyRepository) private penaltyRepository: PenaltyRepository,
+		@Inject(GameService) private gameService: GameService,
 	) {}
 
 	public onModuleInit(): void {
@@ -172,9 +174,9 @@ export class MatchmakingService implements OnModuleInit, OnModuleDestroy {
 			`[MatchmakingService] [acceptMatch] Player accepted | MatchId: ${matchId} | UserId: ${userId}`,
 		);
 
-		// Si les deux joueurs ont accepté, on finalise
+		// If both players have accepted, finalize the match and create the game
 		if (match.player1.status === 'ACCEPTED' && match.player2.status === 'ACCEPTED') {
-			this.finalizeMatch(match);
+			await this.finalizeMatch(match);
 		}
 	}
 
@@ -200,20 +202,47 @@ export class MatchmakingService implements OnModuleInit, OnModuleDestroy {
 	}
 
 	/**
-	 * Finalise un match quand les deux joueurs sont PRÊTS.
-	 * - Nettoie le timeout
-	 * - Log le début de session
-	 * - Notifie les clients
+	 * Finalizes a match when both players have accepted the proposal.
+	 *
+	 * This method orchestrates the final phase of the matchmaking workflow:
+	 * 1. Clears the pending match timeout
+	 * 2. Logs the session start to the database (non-blocking)
+	 * 3. Calls the Game Service to create the game instance
+	 * 4. Notifies both players of the result (success or failure)
+	 *
+	 * ## Game Service Integration
+	 *
+	 * The Game Service is called via HTTP POST to create the actual game instance.
+	 * This is a critical step that must succeed for players to start playing.
+	 *
+	 * On success:
+	 * - Players receive 'match_confirmed' with the gameId to connect to the Game Gateway
+	 *
+	 * On failure (network error, game already exists, player in another game):
+	 * - Players receive 'match_failed' with reason and are re-queued with priority
+	 * - This ensures a graceful degradation when the Game Service is unavailable
+	 *
+	 * @param match - The pending match object with both players' information
+	 *
+	 * @remarks
+	 * The GameService.createGame() method uses resilience patterns (@Resilient decorator)
+	 * and will return a fallback response on network errors instead of throwing.
+	 * This allows us to handle failures gracefully without try/catch blocks everywhere.
+	 *
+	 * @see GameService.createGame - HTTP client for game creation
+	 * @see PendingMatch - Data structure for pending matches
 	 */
-	private finalizeMatch(match: PendingMatch): void {
+	private async finalizeMatch(match: PendingMatch): Promise<void> {
+		// Step 1: Clear the acceptance timeout to prevent race conditions
 		if (match.timeoutId) clearTimeout(match.timeoutId);
 		this.pendingMatches.delete(match.matchId);
 
 		console.info(
-			`[MatchmakingService] [finalizeMatch] BOTH READY. Starting match... | MatchId: ${match.matchId}`,
+			`[MatchmakingService] [finalizeMatch] BOTH READY. Creating game... | MatchId: ${match.matchId}`,
 		);
 
-		// Archiving the session start
+		// Step 2: Archive the session start (non-blocking, failure is logged but not fatal)
+		// This creates a record for analytics and debugging purposes
 		try {
 			this.matchHistoryRepository.createSessionLog({
 				id: match.matchId,
@@ -223,25 +252,135 @@ export class MatchmakingService implements OnModuleInit, OnModuleDestroy {
 				startedAt: Date.now(),
 			});
 		} catch (e) {
-			// On log l'erreur mais on ne bloque pas le jeu si l'archivage échoue
+			// Log the error but don't block the game - session logging is not critical
 			console.error(`[MatchmakingService] [finalizeMatch] Failed to create session log`, e);
 		}
 
-		if (this.server) {
-			const payload = {
-				gameId: match.matchId,
-				player1Id: match.player1.userId,
-				player2Id: match.player2.userId,
-			};
+		// Step 3: Call Game Service to create the game instance
+		// The GameService handles retries and returns a typed response
+		const gameCreationResult = await this.gameService.createGame({
+			gameId: match.matchId,
+			player1Id: match.player1.userId,
+			player2Id: match.player2.userId,
+		});
 
-			// Notification de succès
-			this.server.to(match.player1.socketId).emit('match_confirmed', payload);
-			this.server.to(match.player2.socketId).emit('match_confirmed', payload);
-
-			// TODO: Appeler ici le GameService pour instancier le moteur de jeu
+		// Step 4: Handle the game creation result
+		if (gameCreationResult.success) {
+			// SUCCESS: Game was created in the Game Service
+			// Notify both players to connect to the Game Gateway
+			this.handleGameCreationSuccess(match, gameCreationResult.gameId);
+		} else {
+			// FAILURE: Game Service returned an error or was unreachable
+			// Re-queue both players with priority and notify them of the failure
+			this.handleGameCreationFailure(match, gameCreationResult.error, gameCreationResult.message);
 		}
 
 		this.emitQueueStats();
+	}
+
+	/**
+	 * Handles successful game creation by notifying both players.
+	 *
+	 * Players receive the 'match_confirmed' event with the gameId, which they
+	 * use to establish a WebSocket connection to the Game Gateway.
+	 *
+	 * @param match - The pending match data
+	 * @param gameId - The created game's ID (usually same as matchId)
+	 */
+	private handleGameCreationSuccess(match: PendingMatch, gameId: string): void {
+		console.info(
+			`[MatchmakingService] [handleGameCreationSuccess] Game created successfully | ` +
+				`GameId: ${gameId} | P1: ${match.player1.userId} | P2: ${match.player2.userId}`,
+		);
+
+		if (!this.server) {
+			console.warn(
+				`[MatchmakingService] [handleGameCreationSuccess] No server instance - cannot notify players`,
+			);
+			return;
+		}
+
+		// Construct the success payload with all information needed by the frontend
+		const payload = {
+			gameId,
+			player1Id: match.player1.userId,
+			player2Id: match.player2.userId,
+		};
+
+		// Notify both players that the match is confirmed and they should connect to the game
+		this.server.to(match.player1.socketId).emit('match_confirmed', payload);
+		this.server.to(match.player2.socketId).emit('match_confirmed', payload);
+	}
+
+	/**
+	 * Handles game creation failure by re-queueing both players with priority.
+	 *
+	 * When the Game Service fails (network error, already exists, etc.), both players
+	 * are put back in the queue with priority status to get matched again quickly.
+	 * This provides a graceful degradation experience.
+	 *
+	 * @param match - The pending match data
+	 * @param errorCode - Error code from GameService (e.g., 'GAME_ALREADY_EXISTS')
+	 * @param errorMessage - Human-readable error message
+	 *
+	 * @remarks
+	 * Error codes from GameService:
+	 * - GAME_ALREADY_EXISTS: Rare race condition, retry with new UUID should work
+	 * - PLAYER_ALREADY_IN_GAME: Player is already in another game (should not happen normally)
+	 * - INVALID_PLAYERS: Invalid player IDs (configuration error)
+	 * - Fallback message indicates network/service unavailability
+	 */
+	private handleGameCreationFailure(
+		match: PendingMatch,
+		errorCode: string,
+		errorMessage: string,
+	): void {
+		console.error(
+			`[MatchmakingService] [handleGameCreationFailure] Failed to create game | ` +
+				`MatchId: ${match.matchId} | Error: ${errorCode} | Message: ${errorMessage}`,
+		);
+
+		// Notify both players of the failure
+		const failurePayload = {
+			matchId: match.matchId,
+			reason: 'game_creation_failed',
+			errorCode,
+			message: errorMessage,
+		};
+
+		if (this.server) {
+			this.server.to(match.player1.socketId).emit('match_failed', failurePayload);
+			this.server.to(match.player2.socketId).emit('match_failed', failurePayload);
+		}
+
+		// Re-queue both players with priority status
+		// They accepted the match, so they deserve priority for the next match attempt
+		const players = [match.player1, match.player2];
+
+		for (const player of players) {
+			console.info(
+				`[MatchmakingService] [handleGameCreationFailure] Re-queueing player with PRIORITY | ` +
+					`UserId: ${player.userId}`,
+			);
+
+			// Use async re-queue with error handling to prevent one failure from blocking others
+			this.addPlayer(player.userId, player.socketId, player.elo, true).catch((err) => {
+				console.error(
+					`[MatchmakingService] [handleGameCreationFailure] Failed to re-queue user ${player.userId}`,
+					err,
+				);
+			});
+
+			// Notify the frontend that the player is back in queue
+			if (this.server) {
+				this.server.to(player.socketId).emit('queue_joined', {
+					userId: player.userId,
+					elo: player.elo,
+					timestamp: Date.now(),
+					priority: true,
+				});
+			}
+		}
 	}
 
 	/**
