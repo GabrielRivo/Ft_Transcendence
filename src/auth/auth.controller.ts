@@ -11,6 +11,8 @@ import {
 	Req,
 	Res,
 	UseGuards,
+	NotFoundException,
+	UnauthorizedException
 } from 'my-fastify-decorators';
 
 import config from '../config.js';
@@ -71,32 +73,24 @@ export class AuthController {
 		return { success: true, message: 'Login successful' };
 	}
 
-	/**
-	 * Verify endpoint for nginx auth_request
-	 * Returns 200 if valid, 401 if invalid
-	 * Sets X-User-Id and X-User-Email headers for upstream services
-	 */
 	@Get('/verify')
 	async verify(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
 		const accessToken = (req.cookies as Record<string, string>)[config.accessTokenName];
 
 		if (!accessToken) {
-			res.status(401).send({ error: 'No access token' });
-			return;
+			throw new UnauthorizedException('No access token');
 		}
 
 		const payload = this.authService.verifyAccessToken(accessToken);
+		// this.authService.verifyAccessToken(accessToken);
 
-		// Set headers for upstream services
 		res.header('X-User-Id', String(payload.id));
 		res.header('X-User-Email', payload.email || '');
 
 		return { valid: true };
 	}
 
-	/**
-	 * Get current user info from access token
-	 */
+
 	@Get('/me')
 	async me(@Req() req: FastifyRequest) {
 		const accessToken = (req.cookies as Record<string, string>)[config.accessTokenName];
@@ -113,16 +107,12 @@ export class AuthController {
 		}
 	}
 
-	/**
-	 * Refresh access token using refresh token cookie
-	 */
 	@Post('/refresh')
 	async refresh(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
 		const refreshToken = (req.cookies as Record<string, string>)[config.refreshTokenName];
 
 		if (!refreshToken) {
-			res.status(401).send({ error: 'No refresh token' });
-			return;
+			throw new UnauthorizedException('No refresh token');
 		}
 
 		const tokens = await this.authService.refresh(refreshToken);
@@ -145,10 +135,6 @@ export class AuthController {
 		return { success: true, message: 'Logged out' };
 	}
 
-	/**
-	 * Set username for authenticated user without one
-	 * Protected by AuthGuard - user payload available in req.user
-	 */
 	@Post('/username')
 	@UseGuards(AuthGuard)
 	@BodySchema(SetUsernameSchema)
@@ -168,6 +154,15 @@ export class AuthController {
 	@Get('/users')
 	async getAllUsers() {
 		return this.dbExchangeService.getAllUsers();
+	}
+
+	@Get('/user-by-username/:username')
+	async getUserByUsername(@Param('username') username: string, @Res() res: FastifyReply) {
+		const user = await this.dbExchangeService.getUserByUsername(username);
+		if (!user) {
+			throw new NotFoundException('User not found');
+		}
+		return { id: user.id, username: user.username };
 	}
 
 	@Get('/:provider/callback')
