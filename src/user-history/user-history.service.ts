@@ -73,7 +73,7 @@ export class UserHistoryService {
 		tournament_id: number | null = null,
 		is_final: boolean = false,
 	) {
-		// Validation des paramètres
+		// WARNING a faire plutot dans le DTO
 		if (player1_id === player2_id) {
 			throw new BadRequestException('Same ids');
 		}
@@ -86,12 +86,14 @@ export class UserHistoryService {
 		if (duration_seconds < 0) {
 			throw new BadRequestException('Invalid duration');
 		}
+
+		// FIN du WARNING
+
 		const exists = this.statementisGameIdValid.get(game_id);
 		if (exists) {
 			throw new BadRequestException(`Match ${game_id} already exist`);
 		}
 
-		// Vérifier que les utilisateurs existent
 		const player1Exists = this.statementIsUserExists.get(player1_id);
 		if (!player1Exists) {
 			throw new BadRequestException(`Player ${player1_id} doesn't exist`);
