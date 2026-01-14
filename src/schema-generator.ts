@@ -33,7 +33,7 @@ export function generateSchema(DtoClass: Function) {
 
 	for (const key in validations) {
 		const propValidations = validations[key];
-		const { isRequired, requiredMessage, type, constraints, custom, errorMessage, nested } =
+		const { isRequired, requiredMessage, type, constraints, custom, errorMessage, nested, enum: enumValues } =
 			propValidations;
 
 		// --- Handle Nested DTOs ---
@@ -105,6 +105,14 @@ export function generateSchema(DtoClass: Function) {
 		if (custom) {
 			for (const customKeyword in custom) {
 				propSchema[customKeyword] = true;
+			}
+		}
+
+		if (enumValues) {
+			propSchema.enum = enumValues;
+			if (!propSchema.errorMessage) propSchema.errorMessage = {};
+			if (errorMessage?.enum) {
+				propSchema.errorMessage.enum = errorMessage.enum;
 			}
 		}
 
