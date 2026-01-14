@@ -11,17 +11,16 @@ let idDefault = 0;
 export enum Movement {
     LEFT = "left",
     RIGHT = "right",
-    UP = "up",
-    DOWN = "down"
+    NONE = "none"
+
 }
 
-export const { LEFT, RIGHT, UP, DOWN } = Movement;
+export const { LEFT, RIGHT, NONE } = Movement;
 
 type input = {
     left: boolean,
     right: boolean,
-    up: boolean,
-    down: boolean
+    none?: boolean
 }
 
 class Player {
@@ -31,7 +30,7 @@ class Player {
     paddle: Paddle;
     deathBar: DeathBar;
     direction: Vector3 = new Vector3(0, 0, 0);
-    input: input = {left: false, right: false, up: false, down: false};
+    input: input = {left: false, right: false};
     speed : number = 7;
     score: number = 0;
 
@@ -42,6 +41,22 @@ class Player {
         this.paddle.owner = this;
         this.deathBar = new DeathBar(this.services, undefined, this);
         this.deathBar.owner = this;
+    }
+
+    setPaddleDirectionFromMovement(movement: Movement) {
+        switch (movement) {
+            case LEFT:
+                this.direction.x = -1;
+                break;
+            case RIGHT:
+                this.direction.x = 1;
+                break;
+            case NONE:
+                this.direction.x = 0;
+                break;
+        }
+        console.log("Player " + this.id + " set direction to ", this.direction);
+        this.paddle.setDirection(this.direction);
     }
 
     setPaddleDirection(direction: Vector3) {

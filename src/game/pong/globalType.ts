@@ -42,3 +42,8 @@ export interface PlayerInputData {
     direction: Movement;
     isPressed: boolean;
 }
+
+export interface PlayerDirectionData {
+    timestamp: number;
+    direction: Movement;
+}

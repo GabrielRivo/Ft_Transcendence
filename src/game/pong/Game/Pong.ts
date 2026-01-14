@@ -71,9 +71,9 @@ class Pong extends Game {
         this.player2 = new Player(this.services, this.p2Id);
         this.walls = [new Wall(this.services), new Wall(this.services)];
         this.walls.forEach(wall => this.services.Scene!.addMesh(wall.model));
-        this.ball = new Ball(this.services);
+        //this.ball = new Ball(this.services);
 
-        this.ball.setFullPos(new Vector3(0, 0.125, 0));
+        //this.ball.setFullPos(new Vector3(0, 0.125, 0));
         this.player1.paddle.setModelDirection(new Vector3(0, 0, 1));
         this.player2.paddle.setModelDirection(new Vector3(0, 0, -1));
         this.player1.paddle.setPosition(new Vector3(0, 0.15, -this.height / 2 + 2));
@@ -102,7 +102,8 @@ class Pong extends Game {
             this.disconnectTimeout.delete(client.data.userId);
         }
         setTimeout(() => {
-            client.emit("gameJoined", { gameId: this.id, message: `Joined game ${this.id} successfully!` });
+            const playerNbr: number = this.p1Id === client.data.userId ? 1 : 2;
+            client.emit("gameJoined", { gameId: this.id, message: `Joined game ${this.id} successfully!`, player: playerNbr });
             this.run(`Player ${client.data.userId} has reconnected. Resuming game...`);
         }, 500);
     }
@@ -129,8 +130,10 @@ class Pong extends Game {
         else if (payload.deathBar.owner == this.player2) {
             this.player1!.scoreUp();
         }
-        this.ball = new Ball(this.services);
-        this.ball.setFullPos(new Vector3(0, 0.125, 0));
+        //this.ball = new Ball(this.services);
+        //this.ball.setFullPos(new Vector3(0, 0.125, 0));
+        this.ball!.generate(3000);
+        this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp() });
     }
 
     public sendGameState(): void {
@@ -148,6 +151,7 @@ class Pong extends Game {
                 pos: this.ball!.getPosition(),
                 dir: this.ball!.getDirection(),
                 speed: this.ball!.getSpeed(),
+                moving: this.ball!.isMoving()
             }
         });
     }
@@ -162,7 +166,11 @@ class Pong extends Game {
             this.services.TimeService!.update();
             this.nsp!.to(this.id).emit('gameStarted', { timestamp: this.services.TimeService!.getTimestamp(), gameId: this.id, message: message || `Game ${this.id} is now running.` });
             console.log("Game started with timestamp:", this.services.TimeService!.getTimestamp());
-
+            if (!this.ball) {
+                this.ball = new Ball(this.services);
+                this.ball.generate(3000);
+                this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp() });
+            }
 
             this.services.Engine!.stopRenderLoop();
             this.services.Engine!.runRenderLoop(() => {

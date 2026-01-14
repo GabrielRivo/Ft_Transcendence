@@ -88,7 +88,7 @@ export class GameService {
         return this.games.size;
     }
 
-    public async onPlayerInput(client: Socket, data: any) {
+    public async onplayerDirection(client: Socket, data: any) {
         const game = this.gamesByPlayer.get(client.data.userId);
         if (game) {
             if (game.inputManager) {

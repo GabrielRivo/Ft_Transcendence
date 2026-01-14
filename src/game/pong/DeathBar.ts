@@ -24,7 +24,6 @@ class DeathBar {
 
     onBallHit(ball: Ball) {
         this.services.EventBus!.emit("DeathBarHit", {deathBar: this, ball: ball} as DeathBarPayload);
-        ball.dispose();
     }
 
     dispose() {

@@ -50,10 +50,10 @@ export class GameGateway {
 		console.log(`Total connected clients: ${this.count}`);
 	}
 
-	@SubscribeMessage('playerInput')
+	@SubscribeMessage('playerDirection')
 	handlePlayerInput(client: Socket, data: any) {
-		console.log(`Received playerInput from client ${client.id}:`, data);
-		this.gameService.onPlayerInput(client, data);
+		console.log(`Received playerDirection from client ${client.id}:`, data);
+		this.gameService.onplayerDirection(client, data);
 	}
 
 	@SubscribeMessage('ping')

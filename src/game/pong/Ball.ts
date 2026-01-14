@@ -12,11 +12,12 @@ class Ball {
     model: OwnedMesh;
     direction!: Vector3;
     position!: Vector3;
-    speed: number = 4;
+    speed: number = 3;
     maxSpeed: number = 150;
     acceleration: number = 1.1;
     diameter: number = 0.25;
     moving: boolean = true;
+    startMovingTime: number = 0;
     owner: any;
 
     constructor(services: Services, model?: Mesh) {
@@ -71,8 +72,27 @@ class Ball {
     }
 
     startDirection() {
-        let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4);
+        // let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4);
+        let angle : number = Math.PI;
         this.setFullDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
+    }
+
+    setMoving(moving: boolean) {
+        this.moving = moving;
+    }
+    isMoving() : boolean {
+        return this.moving;
+    }
+
+    public generate(delay: number) {
+        this.startDirection();
+        this.setSpeed(3);
+        this.setFullPos(new Vector3(0, 0.125, 0));
+        this.moving = false;
+
+        const currentTime = this.services.TimeService!.getTimestamp();
+        
+        this.startMovingTime = currentTime + delay;
     }
 
     move(deltaT: number) {
@@ -182,6 +202,12 @@ class Ball {
     }
 
     update(deltaT: number) {
+        const currentTime = this.services.TimeService!.getTimestamp();
+        if (!this.moving && currentTime >= this.startMovingTime && currentTime - deltaT < this.startMovingTime) {
+            this.moving = true;
+            deltaT = currentTime - this.startMovingTime;
+            console.log("Ball started at time:", currentTime - deltaT, "startMovingTime:", this.startMovingTime);
+        }
         this.move(deltaT);
     }
 

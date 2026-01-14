@@ -2,9 +2,8 @@
 import { Vector3 } from "@babylonjs/core";
 import Services from "../Services/Services.js";
 import History from "../Utils/History.js";
-import type { GameState } from "../globalType.js";
+import type { GameState, PlayerDirectionData } from "../globalType.js";
 import Pong from "./Pong.js";
-import type { PlayerInputData } from "../globalType.js";
 import InputManager from "../InputManager.js";
 import Player, { LEFT } from "../Player.js";
 
@@ -14,8 +13,8 @@ class TruthManager {
     private inputManager: InputManager;
 
     private serverGameStateHistory: History<GameState>;
-    private p1InputBuffer: History<PlayerInputData>;
-    private p2InputBuffer: History<PlayerInputData>;
+    private p1InputBuffer: History<PlayerDirectionData>;
+    private p2InputBuffer: History<PlayerDirectionData>;
 
     private fps: number;
     private frameDuration: number;
@@ -67,19 +66,95 @@ class TruthManager {
         game.ball!.setSpeed(state.ball.speed);
     }*/
 
-    public computePlayerInputs(player: Player, inputs : PlayerInputData[], lastFrameTime: number, currentTime: number): void {
+    // public computePlayerInputs(player: Player, inputs : PlayerDirectionData[], lastFrameTime: number, currentTime: number): void {
+    //     let deltaT : number;
+
+    //     for (let input of inputs) {
+    //         deltaT = input.timestamp - lastFrameTime;
+    //         player.update(deltaT);
+    //         this.inputManager.setPlayerDirection(player, input);
+    //         lastFrameTime = input.timestamp;
+    //     }
+    //     deltaT = currentTime - lastFrameTime;
+    //     if (deltaT > 0)
+    //         player.update(deltaT);
+    //     player.paddle.model.computeWorldMatrix(true);
+    // }
+
+    public computeState(lastFrameTime: number, currentTime: number)/*: GameState*/ {
+        const p1 : Player = this.game.player1!;
+        const p2 : Player = this.game.player2!;
+        const ball = this.game.ball!;
+
+        let p1Inputs = this.p1InputBuffer.getStatesInRange(lastFrameTime, currentTime);
+        let p2Inputs = this.p2InputBuffer.getStatesInRange(lastFrameTime, currentTime);
+        
+        let p1Index = 0;
+        let p2Index = 0;
+
         let deltaT : number;
 
-        for (let input of inputs) {
-            this.inputManager.processPlayerInput(player, input);
-            deltaT = input.timestamp - lastFrameTime;
-            player.update(deltaT);
-            lastFrameTime = input.timestamp;
+        while (p1Index < p1Inputs.length || p2Index < p2Inputs.length) {
+            
+            const p1NextInput = p1Inputs[p1Index];
+            const p2NextInput = p2Inputs[p2Index];
+
+            let nextEventTime = currentTime;
+            let processP1 = false;
+            let processP2 = false;
+
+            if (p1NextInput && p2NextInput) {
+                if (p1NextInput.timestamp < p2NextInput.timestamp) {
+                    nextEventTime = p1NextInput.timestamp;
+                    processP1 = true;
+                }
+                else if (p1NextInput.timestamp > p2NextInput.timestamp) {
+                    nextEventTime = p2NextInput.timestamp;
+                    processP2 = true;
+                }
+                else {
+                    nextEventTime = p1NextInput.timestamp;
+                    processP1 = true;
+                    processP2 = true;
+                }
+            }
+            else if (p1NextInput) {
+                nextEventTime = p1NextInput.timestamp;
+                processP1 = true;
+            }
+            else if (p2NextInput) {
+                nextEventTime = p2NextInput.timestamp;
+                processP2 = true;
+            }
+
+            deltaT = nextEventTime - lastFrameTime;
+            
+            if (deltaT > 0) {
+                p1.update(deltaT);
+                p2.update(deltaT);
+                ball.update(deltaT);
+            }
+
+            if (processP1) {
+                this.inputManager.setPlayerDirection(p1, p1Inputs[p1Index]!);
+                p1Index++;
+            }
+            if (processP2) {
+                this.inputManager.setPlayerDirection(p2, p2Inputs[p2Index]!);
+                p2Index++;
+            }
+
+            lastFrameTime = nextEventTime;
         }
+
         deltaT = currentTime - lastFrameTime;
-        if (deltaT > 0)
-            player.update(deltaT);
-        player.paddle.model.computeWorldMatrix(true);
+        if (deltaT > 0) {
+            p1.update(deltaT);
+            p2.update(deltaT);
+            ball.update(deltaT);
+        }
+
+        //return this.getGameState(this.game);
     }
 
     public async truthUpdate(): Promise<void> {
@@ -91,13 +166,15 @@ class TruthManager {
 
         if (this.deltaT >= this.frameDuration) {
 
-            let p1Inputs = this.p1InputBuffer.getStatesInRange(this.lastFrameTime, time);
-            this.computePlayerInputs(this.game.player1!, p1Inputs, this.lastFrameTime, time);
+            // let p1Inputs = this.p1InputBuffer.getStatesInRange(this.lastFrameTime, time);
+            // this.computePlayerInputs(this.game.player1!, p1Inputs, this.lastFrameTime, time);
 
-            let p2Inputs = this.p2InputBuffer.getStatesInRange(this.lastFrameTime, time);
-            this.computePlayerInputs(this.game.player2!, p2Inputs, this.lastFrameTime, time);
+            // let p2Inputs = this.p2InputBuffer.getStatesInRange(this.lastFrameTime, time);
+            // this.computePlayerInputs(this.game.player2!, p2Inputs, this.lastFrameTime, time);
 
-            this.game.ball!.update(this.deltaT);
+            this.computeState(this.lastFrameTime, time);
+
+            //this.game.ball!.update(this.deltaT);
 
             this.game.sendGameState();
 

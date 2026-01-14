@@ -94,6 +94,7 @@ class Paddle {
 
     update(deltaT: number) {
         this.move(deltaT);
+        this.model.computeWorldMatrix(true);
     }
 
     dispose() {
