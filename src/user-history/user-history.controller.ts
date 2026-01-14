@@ -11,7 +11,6 @@ export class UserHistoryController {
 	@Post('/add')
 	@BodySchema(CreateUserHistorySchema)
 	add_match_to_history(@Body() data: CreateUserHistoryDto) {
-
 		return this.userHistoryService.add_match_to_history(
 			data.game_id,
 			data.player1_id,
@@ -20,7 +19,11 @@ export class UserHistoryController {
 			data.score_player2,
 			data.winner_id,
 			data.duration_seconds,
-			data.game_type
+			data.game_type,
+			// data.tournament_won,
+			// data.tournament_id || null,
+			// data.is_final 
+			
 		);
 	}
 

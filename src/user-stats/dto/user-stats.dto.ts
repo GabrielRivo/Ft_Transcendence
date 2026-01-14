@@ -1,4 +1,6 @@
-import { generateSchema, IsRequired, IsNumber, IsString } from 'my-class-validator';
+import { generateSchema, IsRequired, IsNumber, IsString, IsBoolean, IsNullable,createCustomValidator } from 'my-class-validator';
+
+
 
 export class CreateGameStatDto {
 		@IsRequired({ message : "game id is requiered" })
@@ -32,5 +34,13 @@ export class CreateGameStatDto {
 		@IsRequired({ message : "ranked or tournament is requiered" })
 		@IsString()
 		game_type : string;
+
+		// @IsRequired({ message: "Send -1 if no tournament" })
+		// @IsNumber({ message : "need a number" })
+		// tournament_id: number
+
+		// @IsBoolean({ message : "need a boolean" })
+		// is_final?: boolean;
+		
 }
 export const CreateGameStatSchema = generateSchema(CreateGameStatDto);

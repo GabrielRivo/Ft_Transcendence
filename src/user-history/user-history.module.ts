@@ -6,4 +6,4 @@ import { UserHistoryService } from './user-history.service.js'
 	controllers: [UserHistoryController],
 	providers: [UserHistoryService],
 })
-export class MatchHistoryModule {}
+export class UserHistoryModule {}

@@ -1,4 +1,5 @@
-import { generateSchema, IsRequired, IsNumber, IsString } from "my-class-validator";
+import { generateSchema, IsRequired, IsNumber, IsString, IsBoolean } from "my-class-validator";
+
 
 export class CreateUserHistoryDto {
 
@@ -33,6 +34,17 @@ export class CreateUserHistoryDto {
 	@IsRequired({ message : "ranked or tournament is requiered" })
 	@IsString()
 	game_type : string;
+
+	// @IsRequired({ message: "Send -1 if no tournament" })
+	// @IsNumber({ message : "need a number" })
+	// tournament_id: number
+
+	// @IsRequired({ message: "0?" })
+	// @IsNumber({ message : "need a number" })
+	// tournament_won: number
+	
+	// @IsBoolean({ message : "need a boolean" })
+	// is_final?: boolean;
 }
 
 export const CreateUserHistorySchema = generateSchema(CreateUserHistoryDto);

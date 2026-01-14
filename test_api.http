@@ -1,6 +1,6 @@
-### Invalid user
-GET http://localhost:3000/stats/user/999
-Accept: application/json
+### -----------------------
+### SECTION LECTURE (GET)
+### -----------------------
 
 ### Get stats player 1
 GET http://localhost:3000/stats/user/1
@@ -10,31 +10,16 @@ Accept: application/json
 GET http://localhost:3000/stats/user/2
 Accept: application/json
 
-
-### Check average
-GET http://localhost:3000/stats/user/1
-Accept: application/json
-
-### Error on score
-POST http://localhost:3000/stats/game-result
-Content-Type: application/json
-
-{
-    "player1": 1,
-    "player2": 2,
-    "score_player1": 10,
-    "game_duration_in_seconde": 150
-}
-
 ### Get player history
 GET http://localhost:3000/match-history/user/1
-Content-Type: application/json
+Accept: application/json
 
-{
 
-}
+### -----------------------
+### SECTION ECRITURE (POST)
+### -----------------------
 
-### Register a match in player history
+### Register a match (Standard Ranked - No Tournament)
 POST http://localhost:3000/match-history/add
 Content-Type: application/json
 
@@ -46,11 +31,13 @@ Content-Type: application/json
     "score_player2": 5,
     "winner_id" : 1,
     "duration_seconds" : 500,
-    "game_type" : "ranked"
+    "game_type" : "ranked",
+    "tournament_id": -1,
+    "is_final": false
 }
 
 
-### Register a match in player history
+### Register a match (Ranked - Player 2 Wins)
 POST http://localhost:3000/match-history/add
 Content-Type: application/json
 
@@ -62,25 +49,29 @@ Content-Type: application/json
     "score_player2": 5,
     "winner_id" : 2,
     "duration_seconds" : 500,
-    "game_type" : "ranked"
+    "game_type" : "ranked",
+    "tournament_id": -1,
+    "is_final": false
 }
 
-### Register a match in player history
+### Register a match (Ranked - Revanche)
 POST http://localhost:3000/match-history/add
 Content-Type: application/json
 
 {
-    "game_id" : 11,
+    "game_id" : 1,
     "player1_id": 2,
     "player2_id": 1,
     "score_player1": 8,
     "score_player2": 5,
     "winner_id" : 2,
     "duration_seconds" : 500,
-    "game_type" : "ranked"
+    "game_type" : "ranked",
+    "tournament_id": -1,
+    "is_final": false
 }
 
-### Register a match in player history
+### Register a match (Long Duration / High Score)
 POST http://localhost:3000/match-history/add
 Content-Type: application/json
 
@@ -91,28 +82,13 @@ Content-Type: application/json
     "score_player1": 80,
     "score_player2": 5,
     "winner_id" : 2,
-    "duration_seconds" : 500000,
-    "game_type" : "ranked"
+    "duration_seconds" : 3600,
+    "game_type" : "ranked",
+    "tournament_id": -1,
+    "is_final": false
 }
 
-### Register a match in player history
-POST http://localhost:3000/match-history/add
-Content-Type: application/json
-
-{
-    "game_id" : 15,
-    "player1_id": 1,
-    "player2_id": 2,
-    "score_player1": 80,
-    "score_player2": 5,
-    "winner_id" : 1,
-    "duration_seconds" : 500000,
-    "game_type" : "ranked"
-}
-
-
-
-### Register a match in player history
+### Register a match (Tournament - Not Final)
 POST http://localhost:3000/match-history/add
 Content-Type: application/json
 
@@ -120,9 +96,28 @@ Content-Type: application/json
     "game_id" : 37,
     "player1_id": 1,
     "player2_id": 2,
-    "score_player1": 80,
+    "score_player1": 11,
     "score_player2": 5,
     "winner_id" : 1,
-    "duration_seconds" : 500000,
-    "game_type" : "tournament"
+    "duration_seconds" : 300,
+    "game_type" : "tournament",
+    "tournament_id": 900,
+    "is_final": false
+}
+
+### Register a match (Tournament - FINAL)
+POST http://localhost:3000/match-history/add
+Content-Type: application/json
+
+{
+    "game_id": 6005,
+    "player1_id": 1,
+    "player2_id": 2,
+    "score_player1": 11,
+    "score_player2": 9,
+    "winner_id": 1,
+    "duration_seconds": 300,
+    "game_type": "tournament",
+    "tournament_id": 900,
+    "is_final": true
 }
