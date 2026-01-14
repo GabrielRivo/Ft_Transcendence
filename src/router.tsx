@@ -13,6 +13,7 @@ import { Authentification } from './pages/authentification';
 import { SetUsername } from './pages/set-username';
 import { DashboardLayout } from './layout/dashboardLayout';
 import { Dashboard } from './pages/dashboard';
+import { MatchmakingPage } from './pages/matchmaking';
 import { GuestLayout } from './layout/GuestLayout';
 import { AuthenticatedLayout } from './layout/AuthenticatedLayout';
 import { SetUsernameLayout } from './layout/SetUsernameLayout';
@@ -75,6 +76,10 @@ const routes = [
 								component: Dashboard,
 							},
 						],
+					},
+					{
+						path: '/matchmaking',
+						component: MatchmakingPage,
 					},
 				],
 			},

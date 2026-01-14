@@ -16,6 +16,10 @@ export function Dashboard() {
 		});
 	};
 
+	const handleMatchmaking = () => {
+		navigate('/matchmaking');
+	};
+
 	return (
 		<div className="flex h-full flex-col gap-6 p-6 text-white">
 			<div className="flex items-center justify-between">
@@ -36,9 +40,18 @@ export function Dashboard() {
 					<p className="text-gray-400">Vos statistiques de jeu apparaîtront ici.</p>
 				</div>
 
-				<div className="rounded-lg border border-purple-500/30 bg-slate-900/50 p-6">
-					<h2 className="font-pirulen mb-2 text-sm tracking-wider text-purple-500">MATCHMAKING</h2>
+				<div
+					onClick={handleMatchmaking}
+					className="group cursor-pointer rounded-lg border border-purple-500/30 bg-slate-900/50 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-purple-400 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)]"
+				>
+					<h2 className="font-pirulen mb-2 text-sm tracking-wider text-purple-500 transition-colors group-hover:text-purple-400">
+						MATCHMAKING
+					</h2>
 					<p className="text-gray-400">Trouvez une partie rapidement.</p>
+					<div className="mt-4 flex items-center gap-2 text-xs text-purple-400 opacity-0 transition-opacity group-hover:opacity-100">
+						<span>Cliquez pour jouer</span>
+						<span>→</span>
+					</div>
 				</div>
 
 				<div className="rounded-lg border border-orange-500/30 bg-slate-900/50 p-6">

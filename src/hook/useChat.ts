@@ -40,7 +40,7 @@ export function useChat() {
 
 	// Connecter au chat quand l'utilisateur est authentifié
 	useEffect(() => {
-		if (isAuthenticated && user && !user.noUsername && !isConnectingRef.current) {
+		if (isAuthenticated && user && !user.noUsername) {
 			isConnectingRef.current = true;
 
 			// Mettre à jour l'auth du socket
@@ -71,6 +71,7 @@ export function useChat() {
 
 		const handleDisconnect = () => {
 			setConnected(false);
+			isConnectingRef.current = false;
 			console.log('Chat socket disconnected');
 		};
 
@@ -119,6 +120,11 @@ export function useChat() {
 		chatSocket.on('private_history', handlePrivateHistory);
 		chatSocket.on('room_users_update', handleRoomUsersUpdate);
 		chatSocket.on('room_users', handleRoomUsers);
+
+		if (chatSocket.connected) {
+			console.log('Chat socket already connected on mount');
+			setConnected(true);
+		}
 
 		return () => {
 			chatSocket.off('connect', handleConnect);

@@ -1,10 +1,9 @@
-import { io, Socket } from "socket.io-client";
+import { io, Socket } from 'socket.io-client';
 
-const SOCKET_BASE_URL: string = "http://localhost:8080";
-
+const SOCKET_BASE_URL: string = 'http://localhost:8080';
 
 const DEFAULT_SOCKET_OPTIONS = {
-	transports: ["websocket"] as string[],
+	transports: ['websocket'] as string[],
 	autoConnect: false,
 	reconnection: true,
 	reconnectionAttempts: 5,
@@ -16,17 +15,17 @@ const DEFAULT_SOCKET_OPTIONS = {
 
 export const gameSocket: Socket = io(SOCKET_BASE_URL, {
 	...DEFAULT_SOCKET_OPTIONS,
-	path: "/api/game/",
+	path: '/api/game/',
 });
 
 export const chatSocket: Socket = io(SOCKET_BASE_URL, {
 	...DEFAULT_SOCKET_OPTIONS,
-	path: "/api/chat/ws/",
+	path: '/api/chat/',
 });
 
 export const matchmakingSocket: Socket = io(SOCKET_BASE_URL, {
 	...DEFAULT_SOCKET_OPTIONS,
-	path: "/api/matchmaking/",
+	path: '/api/matchmaking/',
 });
 
 // deprecated voir pour enlever plus tard
