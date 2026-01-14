@@ -16,6 +16,7 @@ const updateUserGlobalStats: string = `UPDATE user_stats
 										average_game_duration_in_seconde = ((average_game_duration_in_seconde * total_games) + @duration) / (total_games + 1)
 										WHERE user_id = @user_id`;
 
+const isTournamentExists: string = `SELECT 1 FROM tournament WHERE tournament_id = ?`;
 const isGameIdValid: string = `SELECT 1 FROM game_history WHERE game_id = ?`;
 const isUserExists: string = `SELECT 1 FROM user_stats WHERE user_id = ?`;
 const updateTournamentWinner = `UPDATE tournament SET winner_id = ?, status = 'completed' WHERE tournament_id = ?;`;
@@ -42,6 +43,7 @@ export class UserHistoryService {
 	private statementisGameIdValid!: Statement;
 	private statementIsUserExists!: Statement;
 	private runMatchTransaction!: (match: any, p1: any, p2: any, isFinal: any) => void;
+	private statementIsTournamentExists!: Statement;
 	private statementUpdateStats!: Statement;
 
 	onModuleInit() {
@@ -49,6 +51,7 @@ export class UserHistoryService {
 		this.statementGet = this.db.prepare(getMatchHistory);
 		this.statementisGameIdValid = this.db.prepare(isGameIdValid);
 		this.statementIsUserExists = this.db.prepare(isUserExists);
+		this.statementIsTournamentExists = this.db.prepare(isTournamentExists);
 		this.statementUpdateStats = this.db.prepare(updateUserGlobalStats);
 
 		this.runMatchTransaction = this.db.transaction((match, p1, p2, isFinal) => {
@@ -72,22 +75,24 @@ export class UserHistoryService {
 		game_type: string,
 		tournament_id: number | null = null,
 		is_final: boolean = false,
-	) {
-		// WARNING a faire plutot dans le DTO
+	){
+
 		if (player1_id === player2_id) {
 			throw new BadRequestException('Same ids');
 		}
 		if (score_player1 < 0 || score_player2 < 0) {
-			throw new BadRequestException('Negative scores');
+			throw new BadRequestException();
 		}
 		if (winner_id != player1_id && winner_id != player2_id) {
 			throw new BadRequestException("winner id doesn't match players id");
 		}
 		if (duration_seconds < 0) {
-			throw new BadRequestException('Invalid duration');
+			throw new BadRequestException();
 		}
-
-		// FIN du WARNING
+		const allowedTypes = ['tournament', 'ranked'];
+		if (!allowedTypes.includes(game_type)) {
+			throw new BadRequestException(`Invalid game_type: ${game_type}. Must be 'tournament' or 'ranked'`);
+		}
 
 		const exists = this.statementisGameIdValid.get(game_id);
 		if (exists) {
@@ -102,18 +107,26 @@ export class UserHistoryService {
 		if (!player2Exists) {
 			throw new BadRequestException(`Player ${player2_id} doesn't exist`);
 		}
-		const safeTournamentId = tournament_id && tournament_id > 0 ? tournament_id : null;
+		// let is_new_T_p1 = 0;
+		// let is_new_T_p2 = 0;
+		
+		const safeTournamentId = (tournament_id && tournament_id > 0) ? tournament_id : null;
+
+		if (safeTournamentId) {
+			const tExists = this.statementIsTournamentExists.get(safeTournamentId);
+			if (!tExists) {
+				throw new BadRequestException(`Tournament ${safeTournamentId} does not exist`);
+			}
+		}
+
 		let is_new_T_p1 = 0;
 		let is_new_T_p2 = 0;
 
 		if (safeTournamentId) {
-			const stmt = this.db.prepare(
-				`INSERT OR IGNORE INTO tournament_players (tournament_id, user_id) VALUES (?, ?)`,
-			);
-			is_new_T_p1 = stmt.run(tournament_id, player1_id).changes;
-			is_new_T_p2 = stmt.run(tournament_id, player2_id).changes;
+			const tournament_save = this.db.prepare(`INSERT OR IGNORE INTO tournament_players (tournament_id, user_id) VALUES (?, ?)`,);
+			is_new_T_p1 = tournament_save.run(safeTournamentId, player1_id).changes;
+			is_new_T_p2 = tournament_save.run(safeTournamentId, player2_id).changes;
 		}
-
 		const p1Stats = {
 			user_id: player1_id,
 			new_score: score_player1,

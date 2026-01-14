@@ -93,7 +93,7 @@ POST http://localhost:3000/match-history/add
 Content-Type: application/json
 
 {
-    "game_id" : 37,
+    "game_id" : 103,
     "player1_id": 1,
     "player2_id": 2,
     "score_player1": 11,
@@ -119,5 +119,39 @@ Content-Type: application/json
     "duration_seconds": 300,
     "game_type": "tournament",
     "tournament_id": 900,
+    "is_final": true
+}
+
+### Register a match false tournament
+POST http://localhost:3000/match-history/add
+Content-Type: application/json
+
+{
+    "game_id": 600,
+    "player1_id": 1,
+    "player2_id": 2,
+    "score_player1": 11,
+    "score_player2": 9,
+    "winner_id": 1,
+    "duration_seconds": 300,
+    "game_type": "tournament",
+    "tournament_id": 90,
+    "is_final": true
+}
+
+### mumuse
+POST http://localhost:3000/match-history/add
+Content-Type: application/json
+
+{
+    "game_id": 2,
+    "player1_id": 1,
+    "player2_id": 2,
+    "score_player1": 1,
+    "score_player2": 9,
+    "winner_id": 1,
+    "duration_seconds": 300,
+    "game_type": "tournament",
+    "tournament_id": 90,
     "is_final": true
 }
