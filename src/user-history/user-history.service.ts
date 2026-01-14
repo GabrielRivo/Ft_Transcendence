@@ -42,8 +42,8 @@ export class UserHistoryService {
 	private statementGet!: Statement<[number, number]>;
 	private statementisGameIdValid!: Statement;
 	private statementIsUserExists!: Statement;
-	private runMatchTransaction!: (match: any, p1: any, p2: any, isFinal: any) => void;
 	private statementIsTournamentExists!: Statement;
+	private runMatchTransaction!: (match: any, p1: any, p2: any, isFinal: any) => void;
 	private statementUpdateStats!: Statement;
 
 	onModuleInit() {
