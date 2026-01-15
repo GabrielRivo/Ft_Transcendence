@@ -96,51 +96,100 @@ class Ball {
         this.startMovingTime = currentTime + delay;
     }
 
+    private test: boolean = true;
+    private static readonly EPSILON = 1e-10;
+
     move(deltaT: number, paddle1: Paddle, paddle2: Paddle) {
         if (!this.moving)
             return;
+        const currentTime = this.services.TimeService!.getTimestamp() - deltaT;
 
-        deltaT = deltaT / 1000;
-        let distance : number = this.speed * deltaT;
-        const displacement : Vector3 = this.direction.scale(distance);
-        let newPos : Vector3 = this.position.add(displacement);
+        let remainingDeltaT = deltaT / 1000;
         
-        let ray = new Ray(this.position, this.direction, distance + (this.diameter / 2));
+        // let distance : number = this.speed * deltaT;
+        // let displacement : Vector3 = this.direction.scale(distance);
+        // let newPos : Vector3 = this.position.add(displacement);
+        let distance : number;
+        let displacement : Vector3;
+        let newPos : Vector3 = this.position;
+        
+        let ray : Ray;
         
 
         const initPaddlePos1 = paddle1.getPosition();
         const initPaddlePos2 = paddle2.getPosition();
-        let paddle1CollisionTime = this.findRelativeCollisionTime(ray, paddle1, displacement, deltaT);
-        let paddle2CollisionTime = this.findRelativeCollisionTime(ray, paddle2, displacement, deltaT);
-        if (paddle1CollisionTime < paddle2CollisionTime) {
-            paddle1.update(paddle1CollisionTime);
-            paddle2.update(paddle1CollisionTime);
-        }
-        else {
-            paddle1.update(paddle2CollisionTime);
-            paddle2.update(paddle2CollisionTime);
-        }
-
-        ray.origin = this.position, ray.direction = this.direction, ray.length = distance + (this.diameter / 2);
-        let hit = this.hitRay(ray);
 
         let loopCount = 0;
-        while (hit && hit.pickedMesh && loopCount < 50) {
+        while (remainingDeltaT > Ball.EPSILON && this.moving) {
             loopCount++;
+            if (loopCount > 50) {
+                console.log("Ball move loop exceeded 50 iterations, breaking to avoid infinite loop.");
+                break;
+            }
+
+            deltaT = remainingDeltaT;
             //console.log("Ball hit detected with mesh: " + hit.pickedMesh.name);
+            
+            distance = this.speed * deltaT;
+            displacement = this.direction.scale(distance);
+            newPos = this.position.add(displacement);
+
+
+            let paddle1CollisionTime = this.findRelativeCollisionTime(paddle1, displacement, deltaT);
+            let paddle2CollisionTime = this.findRelativeCollisionTime(paddle2, displacement, deltaT);
+            let otherCollisionTime = this.findCollisionTime(distance, deltaT);
+            
+            // Tri explicite pour garantir le déterminisme
+            let collisionTimes = [
+                { time: paddle1CollisionTime, id: 0 },
+                { time: paddle2CollisionTime, id: 1 },
+                { time: otherCollisionTime, id: 2 }
+            ].sort((a, b) => {
+                const diff = a.time - b.time;
+                return Math.abs(diff) < Ball.EPSILON ? a.id - b.id : diff;
+            });
+            
+            deltaT = collisionTimes[0]!.time;
+
+
+
+            if (Math.abs(deltaT - remainingDeltaT) < Ball.EPSILON) {
+                //console.log("No collision detected within remaining deltaT.");
+                //console.log("paddle1CollisionTime: " + paddle1CollisionTime + ", paddle2CollisionTime: " + paddle2CollisionTime + ", otherCollisionTime: " + otherCollisionTime);
+                //console.log("Continuing with deltaT: " + deltaT);
+            }
+            else {
+                //console.log("COLLISION detected, adjusting deltaT to: " + deltaT);
+                //console.log("paddle1CollisionTime: ", paddle1CollisionTime, ", paddle2CollisionTime: ", paddle2CollisionTime, ", otherCollisionTime: ", otherCollisionTime);
+                //console.log("paddle1CollisionTime: " + paddle1CollisionTime + ", paddle2CollisionTime: " + paddle2CollisionTime + ", otherCollisionTime: " + otherCollisionTime);
+                //this.test = false;
+                if (this.test)
+                {
+                    console.log("Collision at : ", currentTime, " + ", deltaT);
+                    this.test = false;
+                }
+            }
+            paddle1.update(deltaT);
+            paddle2.update(deltaT);
+
+            distance = this.speed * deltaT;
+            displacement = this.direction.scale(distance);
+            newPos = this.position.add(displacement);
+
+            ray = new Ray(this.position, this.direction, distance + (this.diameter / 2) + 0.01);
+
+            let hit = this.hitRay(ray);
+            if (!hit || !hit.pickedMesh) {
+                this.setPos(newPos);
+                break;
+            }
+
+            //console.log("DeltaT : ", deltaT, " RemainingDeltaT : ", remainingDeltaT, " Distance : ", distance, " Hit mesh : ", hit.pickedMesh.name);
+            //console.log("Paddle1Time: ", paddle1CollisionTime, " Paddle2Time: ", paddle2CollisionTime, " OtherTime: ", otherCollisionTime);
+
             let traveledDistance = hit.distance - (this.diameter / 2);
             this.setPos(this.direction.scale(traveledDistance).add(this.position));
 
-            paddle1CollisionTime = this.findRelativeCollisionTime(ray, paddle1, displacement, deltaT);
-            paddle2CollisionTime = this.findRelativeCollisionTime(ray, paddle2, displacement, deltaT);
-            if (paddle1CollisionTime < paddle2CollisionTime) {
-                paddle1.update(paddle1CollisionTime);
-                paddle2.update(paddle1CollisionTime);
-            }
-            else {
-                paddle1.update(paddle2CollisionTime);
-                paddle2.update(paddle2CollisionTime);
-            }
             this.hit(hit);
             /*let i = 0
             this.moving = false;
@@ -155,38 +204,72 @@ class Ball {
 
             distance = distance - traveledDistance;
             deltaT = (distance) / this.speed;
-            if (!this.moving)
-            {
-                newPos = this.position;
-                break;
+
+            displacement = this.direction.scale(distance);
+            newPos = this.position.add(displacement);
+
+            remainingDeltaT -= deltaT;
+            if (Math.abs(remainingDeltaT) < Ball.EPSILON) {
+                remainingDeltaT = 0;
             }
-            newPos = this.position.add(this.direction.scale(this.speed * deltaT));
-            ray.origin = this.position, ray.direction = this.direction, ray.length = distance + (this.diameter / 2);
-            hit = this.hitRay(ray);
+
+            /*ray.origin = this.position, ray.direction = this.direction, ray.length = distance + (this.diameter / 2);
+            hit = this.hitRay(ray);*/
         }
         //this.model.setDirection(this.direction);
         //this.setFullPos(newPos);
         paddle1.setPosition(initPaddlePos1);
         paddle2.setPosition(initPaddlePos2);
+        if (!this.moving)
+        {
+            newPos = this.position;
+        }
         this.setPos(newPos);
     }
 
-    public findRelativeCollisionTime(ray: Ray, paddle: Paddle, displacement: Vector3, deltaT: number) : number {
+    public findCollisionTime(distance: number, deltaT: number) : number {
+
+        const rayLen = distance + (this.diameter / 2);
+
+        const ray = new Ray(this.position, this.direction, rayLen);
+        let hit = this.hitRay(ray);
+
+        if (hit && hit.pickedMesh && hit.pickedMesh.name !== "paddle") {
+            const traveledDistance = hit.distance - (this.diameter / 2);
+            //console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + distance);
+            const timeToCollision = (traveledDistance / distance) * deltaT;
+            return Math.max(0, timeToCollision);
+        }
+        return deltaT;
+    }
+
+    public findRelativeCollisionTime(paddle: Paddle, displacement: Vector3, deltaT: number) : number {
 
         const paddleDisplacement = paddle.getDirection().scale(paddle.getSpeed() * deltaT);
 
         const relativeDisplacement = displacement.subtract(paddleDisplacement);
         const relativeDist = relativeDisplacement.length();
+        
+        if (relativeDist < Ball.EPSILON) {
+            return deltaT;
+        }
 
         const rayDir = relativeDisplacement.normalize();
         const rayLen = relativeDist + (this.diameter / 2);
 
-        ray.origin = this.position, ray.direction = rayDir, ray.length = rayLen;
+        const ray = new Ray(this.position, rayDir, rayLen);
         let hit = this.hitRay(ray);
 
         if (hit && hit.pickedMesh && (hit.pickedMesh === paddle.model)) {
             const traveledDistance = hit.distance - (this.diameter / 2);
+            //console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + relativeDist);
+
             const timeToCollision = (traveledDistance / relativeDist) * deltaT;
+            if (timeToCollision < 0)
+            {
+                //console.log("Negative time to collision detected! : " + timeToCollision);
+                return 0;
+            }
             return timeToCollision;
         }
         return deltaT;
@@ -224,10 +307,10 @@ class Ball {
 
     findRadialImpact(collidedMesh : OwnedMesh) : PickingInfo | null {
         const radius = this.diameter / 2;
-        let ray : Ray = new Ray(this.position, this.direction, radius + 1);
+        let ray : Ray = new Ray(this.position, this.direction, radius + 0.1);//1
         const accuracy = 8;
 
-        let shortestDist : number = radius + 1;
+        let shortestDist : number = radius + 0.1;//1
         let impact : PickingInfo | null = null;
         
         let rayDirection : Vector3;
