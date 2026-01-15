@@ -1,6 +1,13 @@
 import Database, { Statement } from 'better-sqlite3';
 import { InjectPlugin, Service } from 'my-fastify-decorators';
 
+// `
+// <action>     => SELECT
+// <?recupere>  => userId, ...
+// FROM
+// <name>		=> groupMembers
+// <condition> => WHERE groupId=@groupId
+// `
 
 @Service()
 export class GroupChatService {
@@ -8,6 +15,7 @@ export class GroupChatService {
 	private db !: Database.Database;
 	private statementSaveGroup !: Statement<{ userId: number, msgContent: string }>;
 	private statementGetGroupHistory !: Statement<[]>;
+	private statementGetUsersGroup !: Statement<{ groupId: number}>;
 
 	onModuleInit() {
 		this.statementSaveGroup = this.db.prepare(
@@ -16,13 +24,20 @@ export class GroupChatService {
 		this.statementGetGroupHistory = this.db.prepare(
 			`SELECT * FROM groupChatHistory ORDER BY created_at DESC LIMIT 50`
 		);
+		this.statementGetUsersGroup = this.db.prepare(
+			`SELECT userId FROM groupMembers WHERE groupId = @groupId`
+		)
 	}
-	saveGeneralMessage(userId: number, content: string) {
+	saveGroupMessage(userId: number, content: string) {
 		return this.statementSaveGroup.run({ userId, msgContent: content });
 	}
 
 	getGroupHistory() {
 		return this.statementGetGroupHistory.all();
+	}
+
+	getUserGroup(groupId : number) {
+		return this.statementGetUsersGroup.all({groupId}) as number[];
 	}
 }
 

@@ -1,3 +1,4 @@
+
 import Database, { Statement } from 'better-sqlite3';
 import { Inject, InjectPlugin, Service } from 'my-fastify-decorators';
 import { FriendManagementService } from '../../friend-management/friend-management.service.js';
@@ -7,7 +8,7 @@ import { FriendManagementService } from '../../friend-management/friend-manageme
 export class PrivateChatService {
 	@InjectPlugin('db')
 	private db !: Database.Database;
-	private statementSavePrivate !: Statement<{ userId1: number, userId2 : number,  msgContent: string }>;
+	private statementSavePrivate !: Statement<{ u1: number, u2 : number,  content: string, senderId : string }>;
 	private statementGetPrivateHistory !: Statement<{userId1 : number, userId2 : number}>;
 
 	@Inject(FriendManagementService)
@@ -20,11 +21,9 @@ export class PrivateChatService {
 		);
 		this.statementGetPrivateHistory = this.db.prepare(
 			`SELECT * FROM privateChatHistory WHERE (userId1 = @userId1 AND userId2 = @userId2)
-				OR (userId2 = @userId2 AND userId1 = @userId1)
 					ORDER BY created_at DESC LIMIT 50`
 		);
 	}
-	
 
 	async createPrivateRoom(userId1 : number, userId2 : number) {
 		const isfriend = await this.friendService.is_friend(userId1, userId2);
@@ -37,10 +36,8 @@ export class PrivateChatService {
 		return(`room_${min}_${max}`)
 	}
 
-
-
-	savePrivateMessage(userId1 : number, userId2 : number, content: string) {
-		return this.statementSavePrivate.run({userId1, userId2, msgContent: content });
+	savePrivateMessage(userId1 : number, userId2 : number, content: string, senderId : string) {
+		return this.statementSavePrivate.run({u1: userId1, u2: userId2, content: content, senderId});
 	}
 
 	async getPrivateHistory(userId1 : number, userId2 : number) {
