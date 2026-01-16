@@ -13,8 +13,10 @@ import {
 import { Socket } from 'socket.io';
 import { GeneralChatService } from './general-chat/general-chat.service.js';
 import { PrivateChatService } from './private-chat/private-chat.service.js';
+import { GroupChatService } from './group-chat/group-chat.service.js'
 import { BlockManagementService } from '../friend-management/block-management.service.js';
 import { ChatSchema, ChatDto } from './dto/chat.dto.js';
+import { group } from 'console';
 
 @WebSocketGateway()
 export class ChatGateway {
@@ -26,6 +28,9 @@ export class ChatGateway {
 
 	@Inject(BlockManagementService)
 	private blockService!: BlockManagementService;
+
+	@Inject(GroupChatService)
+	private groupChatServie!: GroupChatService;
 
 	// Helper: Récupérer les utilisateurs d'une room via Socket.io (dédupliqués par userId)
 	private async getUsersInRoom(client: Socket, roomId: string): Promise<{ userId: number; username: string }[]> {
@@ -139,6 +144,21 @@ export class ChatGateway {
 		if (roomId === 'hub') {
 			await this.handleGetHubHistory(client, user);
 		}
+
+		// start test
+		if (roomId.startsWith("group")){
+			console.log("[join_group]");
+			const groupId = parseInt(roomId.slice(6));
+			//await this.groupChatServie.getGroupHistory(groupId);
+			const messages = await this.groupChatServie.getGroupHistory(groupId);
+			client.emit('group_history', messages);
+			console.log("messges : ", messages)
+		}
+		
+		
+		//
+
+
 
 		// Envoyer la liste des utilisateurs
 		const users = await this.getUsersInRoom(client, roomId);
@@ -278,22 +298,6 @@ export class ChatGateway {
 			console.log(user1, user2);
 			await this.privateChatService.savePrivateMessage(user1, user2, content, user?.id);
 		}
-
-		// test pour group
-		if (roomId.startsWith("group")) {
-			const groupId = parseInt(roomId.slice(6));
-			console.log(roomId);
-			if (!groupId) 
-				client.emit('error', { message: 'invalid group name' });
-			if (groupId < 0)
-				client.emit('error', { message: 'invalid group id' });
-
-			// recuperer les id?
-			// verifier si tout les id sont correctes -> negatif, same id ?
-			// le save private message sur le salon 
-			// -> emit aux autres users?
-		}
-
 		const messageData = {
 			userId: user.id,
 			username: user.username,
@@ -302,11 +306,48 @@ export class ChatGateway {
 			created_at: new Date().toISOString(),
 		};
 
+		// bloc de test
+		const testdata = {
+			userId: user.id,
+			username: user.username,
+			msgContent: "le message lul",
+			roomId: "group_1",
+			created_at: new Date().toISOString(),
+		};
+
+		//client.nsp.in(targetRoom).emit('message', messageData);
+		//client.nsp.in("group_1").emit('message', messageData);
+
+
+		// fin du test
+		
+		console.log("sender : ", user.id)
+		// test pour group
+		if (roomId.startsWith("group")) {
+			const groupId = parseInt(roomId.slice(6));
+			console.log("room id : ", groupId);
+			console.log("here room: ", roomId);
+			if (!groupId) 
+				client.emit('error', { message: 'invalid group name' });
+			if (groupId < 0)
+				client.emit('error', { message: 'invalid group id' });
+			console.log("group");
+			console.log("here@ room", roomId);
+			await this.groupChatServie.saveGroupMessage(groupId, user?.id, content); // nique tout
+			// recuperer les id?
+			// verifier si tout les id sont correctes -> negatif, same id ?
+			// le save private message sur le salon 
+			// -> emit aux autres users?
+			// !! pour les bloqued users, pas testablr actuellement
+			//client.nsp.in(targetRoom).emit('message', messageData);
+		}
+		console.log("room : ", roomId);
+
+
 		// Sauvegarder le message si c'est le hub 
 		if (targetRoom === 'hub') {
 			await this.generalChatService.saveGeneralMessage(user.id, user.username, content);
 		}
-
 		client.nsp.in(targetRoom).emit('message', messageData);
 	}
 }

@@ -1,6 +1,7 @@
 import Database, { Statement } from 'better-sqlite3';
 import { InjectPlugin, Service, Inject } from 'my-fastify-decorators';
 import { FriendManagementService } from '../friend-management/friend-management.service.js';
+import { PrivateChatService } from '../chat/private-chat/private-chat.service.js'
 
 const blockUserSQL = `INSERT INTO blocklist (userId, otherId) VALUES (@userId, @otherId);`;
 const unblockUserSQL = `DELETE FROM blocklist WHERE userId = @userId AND otherId = @otherId;`;
@@ -17,6 +18,9 @@ export class BlockManagementService {
 	private statementUnblock !: Statement<{ userId: number, otherId: number }>;
 	private statementIsBlocked !: Statement<{ userId: number, otherId: number }>;
 
+	@Inject(PrivateChatService)
+	private chatService!: PrivateChatService;
+
 	onModuleInit() {
 		this.statementBlock = this.db.prepare(blockUserSQL);
 		this.statementUnblock = this.db.prepare(unblockUserSQL);
@@ -31,6 +35,7 @@ export class BlockManagementService {
 			this.friendService.deleteFromFriendlist(userId, otherId)
 			this.friendService.deleteFromFriendlist(otherId, userId);
 			this.statementBlock.run({ userId, otherId });
+			this.chatService.removePrivateChat(userId, otherId);
 			return { success: true, message: "Block user" };
 		} catch (e) {
 			return { success: false, message: "User already blocked" };

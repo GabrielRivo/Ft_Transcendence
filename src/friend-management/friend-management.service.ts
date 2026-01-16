@@ -1,5 +1,7 @@
 import Database, { Statement } from 'better-sqlite3';
-import { InjectPlugin, Service } from 'my-fastify-decorators';
+import { InjectPlugin, Service, Inject } from 'my-fastify-decorators';
+import { PrivateChatService } from '../chat/private-chat/private-chat.service.js'
+
 import { Server } from 'socket.io';
 
 
@@ -45,6 +47,9 @@ export class FriendManagementService {
 
 	@InjectPlugin('io')
 	private io!: Server;
+
+	@Inject(PrivateChatService)
+		private chatService!: PrivateChatService;
 
 	private statementInvit: Statement<{userId: number, otherId: number}>;
 	private statementAcceptInvit: Statement<{userId: number, otherId: number}>;
@@ -110,6 +115,7 @@ export class FriendManagementService {
 	deleteFromFriendlist(userId: number, otherId: number) {
 		const result = this.statementDeleteFromFriendList.run({ userId, otherId });
 		if (result.changes > 0) {
+			this.chatService.removePrivateChat(userId, otherId);
 			return { success: true, message: "Deleted relationship" };
 		}
 		return { success: false, message: "This user wasn't in your friendlist or didn't send you a friend request" };
@@ -119,8 +125,10 @@ export class FriendManagementService {
 	private emitToUser(userId: number, event: string, data: any): void {
 		for (const [, socket] of this.io.sockets.sockets) {
 			if (socket.data.userId === userId) {
-				socket.emit(event, data);
+				socket.emit(event, data);userId
 			}
 		}
 	}
 }
+
+
