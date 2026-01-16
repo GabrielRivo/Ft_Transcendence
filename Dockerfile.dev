@@ -1,5 +1,5 @@
 # =============================================================================
-# Dockerfile.dev - User Service (Development)
+# Dockerfile.dev - Tournament Service (Development)
 # =============================================================================
 #
 # This Dockerfile is optimized for local development with hot-reload support.
@@ -24,10 +24,10 @@ FROM node:24-alpine
 # -----------------------------------------------------------------------------
 # Metadata Labels (OCI standard)
 # -----------------------------------------------------------------------------
-LABEL org.opencontainers.image.title="ft_transcendence User Service (Dev)"
-LABEL org.opencontainers.image.description="User management microservice handling profiles, avatars, friends and stats"
+LABEL org.opencontainers.image.title="ft_transcendence Tournament Service (Dev)"
+LABEL org.opencontainers.image.description="Tournament management microservice handling tournaments, brackets and participation"
 LABEL org.opencontainers.image.authors="ft_transcendence team"
-LABEL org.opencontainers.image.source="https://github.com/thetranscendence/profile"
+LABEL org.opencontainers.image.source="https://github.com/thetranscendence/tournament"
 
 # -----------------------------------------------------------------------------
 # Install System Dependencies
@@ -35,12 +35,14 @@ LABEL org.opencontainers.image.source="https://github.com/thetranscendence/profi
 # These packages are required for:
 # - python3, make, g++: Building native Node.js addons (better-sqlite3)
 # - git: Some npm packages may need git for installation
+# - wget: For healthcheck
 # Note: In production, use multi-stage builds to exclude build tools
 RUN apk add --no-cache \
   python3 \
   make \
   g++ \
-  git
+  git \
+  wget
 
 # -----------------------------------------------------------------------------
 # Install pnpm Package Manager
@@ -57,7 +59,7 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 #   /app/package.json
 #   /app/pnpm-workspace.yaml
 #   /app/pnpm-lock.yaml
-#   /app/apps/user/...
+#   /app/apps/tournament/...
 #   /app/packages/...
 WORKDIR /app
 
@@ -74,8 +76,8 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 # -----------------------------------------------------------------------------
 # Expose Application Port
 # -----------------------------------------------------------------------------
-# The user service listens on port 3000 (internal container port)
-# NGINX reverse proxy will route /api/user/* requests to this container
+# The tournament service listens on port 3000 (internal container port)
+# NGINX reverse proxy will route /api/tournament/* requests to this container
 EXPOSE 3000
 
 # -----------------------------------------------------------------------------
@@ -101,4 +103,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
 # - Code changes trigger automatic restart (tsx watch)
 # - No container rebuild needed for code changes
 # - Dependencies are reinstalled only when package.json changes
-CMD ["sh", "-c", "pnpm install --frozen-lockfile && pnpm --filter user run dev"]
+CMD ["sh", "-c", "pnpm install --frozen-lockfile && pnpm --filter tournament run dev"]
