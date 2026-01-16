@@ -29,9 +29,11 @@
 [submodule "apps/frontend"]
 	path = apps/frontend
 	url = git@github.com:thetranscendence/front.git
+	branch = main
 [submodule "apps/chat"]
 	path = apps/chat
 	url = git@github.com:thetranscendence/rgolfett_chat.git
+	branch = main
 [submodule "apps/game"]
 	path = apps/game
 	url = git@github.com:thetranscendence/game_backend.git
@@ -41,3 +43,8 @@
 [submodule "apps/tournament"]
 	path = apps/tournament
 	url = git@github.com:thetranscendence/tournament.git
+	branch = main
+[submodule "apps/social_management"]
+	path = apps/user
+	url = git@github.com:thetranscendence/social_management.git
+	branch = main
