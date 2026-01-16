@@ -38,3 +38,6 @@
 [submodule "apps/user"]
 	path = apps/user
 	url = git@github.com:thetranscendence/profile.git
+[submodule "apps/tournament"]
+	path = apps/tournament
+	url = git@github.com:thetranscendence/tournament.git

@@ -53,6 +53,8 @@ services:
         condition: service_started
       matchmaking:
         condition: service_started
+      tournament:
+        condition: service_started
       frontend:
         condition: service_started
     healthcheck:
@@ -252,6 +254,34 @@ services:
         condition: service_healthy
 
   # ---------------------------------------------------------------------------
+  # Tournament Service - Tournament Management
+  # ---------------------------------------------------------------------------
+  # Handles: Tournament creation, brackets, participation
+  tournament:
+    build:
+      context: .
+      dockerfile: apps/tournament/Dockerfile.dev
+    container_name: transcendence-tournament
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    volumes:
+      - ./package.json:/app/package.json:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:ro
+      - ./apps/tournament:/app/apps/tournament
+      - ./packages/my-fastify-decorators:/app/packages/my-fastify-decorators
+      - ./packages/my-class-validator:/app/packages/my-class-validator
+      - tournament-node-modules:/app/node_modules
+      - tournament-data:/app/apps/tournament/db
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
   # Frontend - Vite Development Server
   # ---------------------------------------------------------------------------
   # Handles: SPA with custom React, Babylon.js 3D Pong, Tailwind CSS
@@ -307,6 +337,8 @@ volumes:
     name: transcendence-chat-node-modules
   matchmaking-node-modules:
     name: transcendence-matchmaking-node-modules
+  tournament-node-modules:
+    name: transcendence-tournament-node-modules
   frontend-node-modules:
     name: transcendence-frontend-node-modules
   
@@ -321,3 +353,5 @@ volumes:
     name: transcendence-chat-data
   matchmaking-data:
     name: transcendence-matchmaking-data
+  tournament-data:
+    name: transcendence-tournament-data
