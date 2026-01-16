@@ -1,22 +1,49 @@
-import type { Fiber } from '../types';
+import type { Fiber, Hook } from '../types';
 import { PORTAL_TYPE } from '../portal';
 
+
+function runCleanupEffects(fiber: Fiber): void {
+  if (fiber.hooks) {
+    for (const hook of fiber.hooks) {
+      if (hook && 'cleanup' in hook && typeof hook.cleanup === 'function') {
+        try {
+          hook.cleanup();
+        } catch (error) {
+          console.error('[my-react] Error running useEffect cleanup:', error);
+        }
+        hook.cleanup = null;
+      }
+    }
+  }
+
+  let child = fiber.child;
+  while (child) {
+    runCleanupEffects(child);
+    child = child.sibling;
+  }
+}
+
 export function commitDeletion(fiber: Fiber, domParent: Node): void {
-  // console.log("Deleting fiber:", fiber.type, fiber);
+
+  runCleanupEffects(fiber);
   
-  // Si c'est un portal, ses enfants sont dans le container du portal, pas dans domParent...
   if (fiber.type === PORTAL_TYPE) {
     const portalContainer = fiber.props?.container;
     if (portalContainer) {
       let child = fiber.child;
       while (child) {
-        commitDeletion(child, portalContainer);
+        commitDeletionDOM(child, portalContainer);
         child = child.sibling;
       }
     }
     return;
   }
   
+  commitDeletionDOM(fiber, domParent);
+}
+
+
+function commitDeletionDOM(fiber: Fiber, domParent: Node): void {
   if (fiber.dom) {
     console.log("Removing DOM node:", fiber.dom);
 
@@ -37,7 +64,7 @@ export function commitDeletion(fiber: Fiber, domParent: Node): void {
     // re check plus tard // WARNING
     let child = fiber.child;
     while (child) {
-      commitDeletion(child, domParent);
+      commitDeletionDOM(child, domParent);
       child = child.sibling;
     }
   }
