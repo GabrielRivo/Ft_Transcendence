@@ -44,8 +44,8 @@
 	path = apps/tournament
 	url = git@github.com:thetranscendence/tournament.git
 	branch = main
-[submodule "apps/social_management"]
-	path = apps/social_management
+[submodule "apps/social"]
+	path = apps/social
 	url = git@github.com:thetranscendence/social_management.git
 	branch = main
 

@@ -307,11 +307,12 @@ services:
       - frontend-node-modules:/app/node_modules
     networks:
       - transcendence-network
-  socialManagement:
+
+  social:
     build:
       context: .
-      dockerfile: apps/social_managemenent/Dockerfile.dev
-    container_name: transcendence-social_management
+      dockerfile: apps/social/Dockerfile.dev
+    container_name: transcendence-social
     restart: unless-stopped
     environment:
       NODE_ENV: development
@@ -320,11 +321,11 @@ services:
       - ./package.json:/app/package.json:ro
       - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
       - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:ro
-      - ./apps/social_management:/app/apps/social_management
+      - ./apps/social:/app/apps/social
       - ./packages/my-fastify-decorators:/app/packages/my-fastify-decorators
       - ./packages/my-class-validator:/app/packages/my-class-validator
-      - social_management-node-modules:/app/node_modules
-      - social_management-data:/app/apps/social_management/db
+      - social-node-modules:/app/node_modules
+      - social-data:/app/apps/social/db
     networks:
       - transcendence-network
     depends_on:
@@ -364,8 +365,8 @@ volumes:
     name: transcendence-tournament-node-modules
   frontend-node-modules:
     name: transcendence-frontend-node-modules
-  social_management-node-modules:
-    name: transcendence-social_management-node-modules
+  social-node-modules:
+    name: transcendence-social-node-modules
   
   # SQLite database volumes (persistent data)
   auth-data:
@@ -378,8 +379,8 @@ volumes:
     name: transcendence-chat-data
   matchmaking-data:
     name: transcendence-matchmaking-data
-  social_management-data:
-    name: transcendence-social_management-data
+  social-data:
+    name: transcendence-social-data
 
   tournament-data:
     name: transcendence-tournament-data
