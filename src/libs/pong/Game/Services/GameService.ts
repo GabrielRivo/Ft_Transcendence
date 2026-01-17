@@ -56,8 +56,8 @@ class GameService {
             return;
         }
 
-        console.log(`[GameService] Launching game: ${game}`);
         this.stopGame();
+        console.log(`[GameService] Launching game: ${game}`);
 
         if (game === "PongOnline") {
             this.currentGameType = 'PongOnline';

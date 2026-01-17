@@ -3,6 +3,7 @@ import type { Element } from 'my-react';
 import { GameContext, GameMode, GameScores } from './gameContext';
 import Game from '../libs/pong/Game/index';
 import Services from '../libs/pong/Game/Services/Services';
+import { useToast } from '@/hook/useToast';
 
 interface GameProviderProps {
 	children?: Element;
@@ -18,6 +19,7 @@ export function GameProvider({ children }: GameProviderProps) {
 	const [error, setError] = useState<string | null>(null);
 	const [isInitialized, setIsInitialized] = useState(false);
 	const [gameId, setGameId] = useState<string | null>(null);
+	const { toast } = useToast();
 	const [scores, setScores] = useState<GameScores>({
 		player1Score: 0,
 		player2Score: 0,
@@ -59,6 +61,11 @@ export function GameProvider({ children }: GameProviderProps) {
 
 			Services.EventBus?.on('Game:ScoreUpdated', (event: GameScores) => {
 				handleScoreUpdateRef.current(event);
+			});
+
+			Services.EventBus?.on('Game:Ended', () => {
+				setMode('background');
+				toast('Game ended', 'warning');
 			});
 
 			Game.Services.GameService!.launchGame('PongBackground');
