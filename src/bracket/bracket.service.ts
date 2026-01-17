@@ -1,5 +1,5 @@
 import { Service } from 'my-fastify-decorators';
-import { BracketData, BracketMatch, Participant } from '../tournament/types.js';
+import { BracketData, BracketMatch, Participant } from '../types.js';
 
 @Service()
 export class BracketService {
@@ -117,5 +117,93 @@ export class BracketService {
         const finalMatch = bracket.matches
             .find(m => m.round === bracket.totalRounds && m.status === 'COMPLETED' && m.winnerId !== null);
         return finalMatch !== undefined;
+    }
+
+    /**
+     * Récupère un match par son ID
+     */
+    getMatchById(bracket: BracketData, matchId: number): BracketMatch | undefined {
+        return bracket.matches.find(m => m.id === matchId);
+    }
+
+    /**
+     * Récupère un match par son gameId
+     */
+    getMatchByGameId(bracket: BracketData, gameId: string): BracketMatch | undefined {
+        return bracket.matches.find(m => m.gameId === gameId);
+    }
+
+    /**
+     * Vérifie si un match est prêt à être lancé (2 joueurs présents, pas encore commencé)
+     */
+    isMatchReady(match: BracketMatch): boolean {
+        return (
+            match.player1Id !== null &&
+            match.player2Id !== null &&
+            match.status === 'PENDING'
+        );
+    }
+
+    /**
+     * Lance un match en assignant un gameId et en changeant le statut
+     */
+    launchMatch(bracket: BracketData, matchId: number, gameId: string): BracketData {
+        const match = this.getMatchById(bracket, matchId);
+        if (!match) {
+            throw new Error('Match not found');
+        }
+        if (!this.isMatchReady(match)) {
+            throw new Error('Match is not ready to be launched');
+        }
+        match.gameId = gameId;
+        match.status = 'SCHEDULED';
+        match.startTime = new Date().toISOString();
+        return bracket;
+    }
+
+    /**
+     * Marque un match comme en cours
+     */
+    setMatchInProgress(bracket: BracketData, gameId: string): BracketData {
+        const match = this.getMatchByGameId(bracket, gameId);
+        if (!match) {
+            throw new Error('Match not found');
+        }
+        match.status = 'IN_PROGRESS';
+        return bracket;
+    }
+
+    /**
+     * Récupère tous les matchs du round courant
+     */
+    getCurrentRoundMatches(bracket: BracketData): BracketMatch[] {
+        return bracket.matches.filter(m => m.round === bracket.currentRound);
+    }
+
+    /**
+     * Récupère les matchs prêts à être lancés dans le round courant
+     */
+    getReadyMatches(bracket: BracketData): BracketMatch[] {
+        return this.getCurrentRoundMatches(bracket).filter(m => this.isMatchReady(m));
+    }
+
+    /**
+     * Passe au round suivant si le round actuel est complet
+     */
+    advanceToNextRound(bracket: BracketData): BracketData {
+        if (this.isRoundComplete(bracket) && bracket.currentRound < bracket.totalRounds) {
+            bracket.currentRound += 1;
+        }
+        return bracket;
+    }
+
+    /**
+     * Récupère l'ID du vainqueur final (si le tournoi est terminé)
+     */
+    getFinalWinnerId(bracket: BracketData): string | null {
+        const finalMatch = bracket.matches.find(
+            m => m.round === bracket.totalRounds && m.status === 'COMPLETED'
+        );
+        return finalMatch?.winnerId ?? null;
     }
 }
