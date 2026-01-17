@@ -1,6 +1,7 @@
 import type { Fiber } from '../types';
 import { getWipRoot, getDeletions, setCurrentRoot, setWipRoot } from '../component';
 import { commitWork } from './commitWork';
+import { checkPendingRender } from '../hooks/useState';
 
 // Commit des changements dans le DOM
 export function commitRoot(): void {
@@ -13,4 +14,5 @@ export function commitRoot(): void {
   }
   setCurrentRoot(wipRoot);
   setWipRoot(null);
+  checkPendingRender();
 } 

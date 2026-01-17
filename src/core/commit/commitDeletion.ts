@@ -44,6 +44,18 @@ export function commitDeletion(fiber: Fiber, domParent: Node): void {
 
 
 function commitDeletionDOM(fiber: Fiber, domParent: Node): void {
+  if (fiber.type === PORTAL_TYPE) {
+    const portalContainer = fiber.props?.container;
+    if (portalContainer) {
+      let child = fiber.child;
+      while (child) {
+        commitDeletionDOM(child, portalContainer);
+        child = child.sibling;
+      }
+    }
+    return;
+  }
+
   if (fiber.dom) {
     console.log("Removing DOM node:", fiber.dom);
 
@@ -61,7 +73,6 @@ function commitDeletionDOM(fiber: Fiber, domParent: Node): void {
       domParent.removeChild(fiber.dom);
     }
   } else {
-    // re check plus tard // WARNING
     let child = fiber.child;
     while (child) {
       commitDeletionDOM(child, domParent);

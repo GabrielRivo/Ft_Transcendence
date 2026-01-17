@@ -10,6 +10,39 @@ import {
 } from '../component';
 import { setNextUnitOfWork } from '../fiber';
 
+let isRenderScheduled = false;
+
+function scheduleRender() {
+  const currentRoot = getCurrentRoot();
+  const wipRoot = getWipRoot();
+  
+  if (wipRoot) {
+    isRenderScheduled = true;
+    return;
+  }
+
+  if (currentRoot) {
+    const newWipRoot = {
+      type: "ROOT",
+      dom: currentRoot.dom,
+      props: currentRoot.props,
+      alternate: currentRoot,
+    };
+    setWipRoot(newWipRoot);
+    setNextUnitOfWork(newWipRoot);
+    setDeletions([]);
+  }
+}
+
+export function checkPendingRender() {
+  if (isRenderScheduled) {
+    isRenderScheduled = false;
+    queueMicrotask(() => {
+      scheduleRender();
+    });
+  }
+}
+
 // Hook useState
 export function useState<T>(initial: T): [T, (action: T | ((prev: T) => T)) => void] {
   const wipFiber = getWipFiber();
@@ -36,21 +69,7 @@ export function useState<T>(initial: T): [T, (action: T | ((prev: T) => T)) => v
 
   const setState = (action: T | ((prev: T) => T)) => {
     hook.queue.push(action);
-    
-    const currentRoot = getCurrentRoot();
-    // const wipRoot = getWipRoot();
-
-    if (currentRoot) {
-      const newWipRoot = {
-        type: "ROOT",
-        dom: currentRoot.dom,
-        props: currentRoot.props,
-        alternate: currentRoot,
-      };
-      setWipRoot(newWipRoot);
-      setNextUnitOfWork(newWipRoot);
-      setDeletions([]);
-    }
+    scheduleRender();
   };
 
   if (wipFiber.hooks) {
