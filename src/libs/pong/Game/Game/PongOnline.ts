@@ -131,6 +131,7 @@ class PongOnline extends Game {
         socket.on("gameEnded", this.onGameEnded);
         socket.on("gameUpdate", this.onGameUpdate);
         socket.on("generateBall", this.onGenerateBall);
+        socket.on("score", this.onScore);
         socket.onAny(this.onServerLog);
 
 
@@ -279,8 +280,19 @@ class PongOnline extends Game {
         this.ball.generate(3000 - deltaT);
     }
 
+    private onScore = (payload: any): void => {
+        console.log("Score update from server:", payload);
+        this.player1!.setScore(payload.player1Score);
+        this.player2!.setScore(payload.player2Score);
+        Services.EventBus!.emit("Game:ScoreUpdated", { player1Score: this.player1!.score, player2Score: this.player2!.score, scoreToWin: 5 });
+
+        if (this.player1!.score >= 5 || this.player2!.score >= 5) {
+            console.log("Game over detected from score update.");
+        }
+    }
+
     private onDeathBarHit = (payload: DeathBarPayload) => {
-        if (payload.deathBar.owner == this.player1) {
+        /*if (payload.deathBar.owner == this.player1) {
             this.player2!.scoreUp();
             Services.EventBus!.emit("Game:ScoreUpdated", { player1Score: this.player1!.score, player2Score: this.player2!.score, scoreToWin: 5 });
             console.log("Player 2 score :", this.player2!.score);
@@ -289,7 +301,7 @@ class PongOnline extends Game {
             this.player1!.scoreUp();
             Services.EventBus!.emit("Game:ScoreUpdated", { player1Score: this.player1!.score, player2Score: this.player2!.score, scoreToWin: 5 });
             console.log("Player 1 score :", this.player1!.score);
-        }
+        }*/
         this.ball!.setFullPos(new Vector3(0, -100, 0));
         //this.ball = new Ball();
         //this.ball.setFullPos(new Vector3(0, 0.125, 0));
@@ -345,8 +357,9 @@ class PongOnline extends Game {
     }
 
     private endGame(): void {
-        Services.EventBus!.emit("UI:MenuStateChange", "pongMenu");
+        //Services.EventBus!.emit("UI:MenuStateChange", "pongMenu");
         Services.EventBus!.emit("Game:Ended", { name: "PongOnline", winnerId: null, score: { player1: this.player1!.score, player2: this.player2!.score } });
+        //this.dispose();
     }
 
     dispose(): void {
@@ -373,6 +386,7 @@ class PongOnline extends Game {
         socket.off("gameEnded", this.onGameEnded);
         socket.off("gameUpdate", this.onGameUpdate);
         socket.off("generateBall", this.onGenerateBall);
+        socket.off("score", this.onScore);
         socket.offAny(this.onServerLog);
         socket.disconnect();
 
