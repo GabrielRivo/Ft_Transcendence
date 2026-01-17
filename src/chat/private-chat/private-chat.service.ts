@@ -13,6 +13,7 @@ export class PrivateChatService {
 	private statementDeleteConversation!: Statement<{ user1: number; user2: number }>;
 	//private statementCheckBlock!: Statement<{ sender: number; receiver: number }>;
 
+
 	// @Inject(FriendManagementService)
 	// private friendService!: FriendManagementService;
 

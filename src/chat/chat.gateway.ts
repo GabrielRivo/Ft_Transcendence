@@ -348,6 +348,7 @@ export class ChatGateway {
 		if (targetRoom === 'hub') {
 			await this.generalChatService.saveGeneralMessage(user.id, user.username, content);
 		}
+		
 		client.nsp.in(targetRoom).emit('message', messageData);
 	}
 }

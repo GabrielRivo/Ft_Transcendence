@@ -19,7 +19,7 @@ export class PrivateChatController {
 	@Get('/private_history')
 	async get_history(@Param('userId1') userId1: string , @Param('userId2') userId2: string)
 	{	
-		const res = fetch(`${BLOCK_URL}/social/friend-management/block`, 
+		const res = await fetch(`${BLOCK_URL}/social/friend-management/block`, 
 			{
 				method: 'GET',
 				headers : {
@@ -27,7 +27,18 @@ export class PrivateChatController {
 				},
 				body : JSON.stringify({ userId1, userId2 })
 			});
-		// if (res == false)
+		if (!res.ok) {
+			console.error(`Error with friend service ${res.status}`);
+
+			} else {
+				const data = await res.json() as { isBlocked: boolean };
+
+			if (data.isBlocked === true) {
+				console.log("Deleted history");
+				this.chatService.removePrivateChat(Number(userId1), Number(userId2));
+				return [];
+			}
+		}
 		const history = await this.chatService.getPrivateHistory(Number(userId1), Number(userId2));
 		return history.reverse();
 	}
