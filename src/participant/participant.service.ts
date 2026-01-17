@@ -1,9 +1,9 @@
 import { Service } from 'my-fastify-decorators';
 import type { JwtPayload } from '../guards/optional-auth.guard.js';
-import { Participant } from '../tournament/types.js';
+import { Participant, ParticipantType } from '../types.js';
 import { v4 as uuidv4 } from 'uuid';
 
-interface GuestInfo {
+export interface GuestInfo {
     alias: string;
     sessionId?: string;
 }
@@ -15,17 +15,17 @@ export class ParticipantService {
             return {
                 id: String(user.id),
                 alias: user.username,
-                type: 'user',
-                userId: user.id,
+                type: 'user' as ParticipantType,
+                userId: String(user.id),
             };
         }
-        if (guestInfo && !guestInfo?.alias) {
+        if (guestInfo?.alias) {
             return {
                 id: guestInfo.sessionId || uuidv4(),
                 alias: guestInfo.alias,
-                type: 'guest',
+                type: 'guest' as ParticipantType,
                 userId: null,
-            }
+            };
         }
         throw new Error('Alias requis pour les participants invités');
     }
