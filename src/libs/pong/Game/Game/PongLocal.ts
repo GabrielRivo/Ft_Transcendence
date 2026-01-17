@@ -85,17 +85,20 @@ class PongLocal extends Game {
         this.walls[0].model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
         this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 
-		const background = await ImportMeshAsync("./models/pong.glb", Services.Scene!);
-		background.meshes.forEach(mesh => {
-			mesh.isPickable = false;
+		try {
+            const background = await ImportMeshAsync("./models/pong.glb", Services.Scene!);
+            background.meshes.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+        } catch (e) {
+            console.error('[PongLocal] Failed to load pong.glb:', e);
+        }
 
 			// const mat = mesh.material as PBRMaterial;
 			// if (mat) {
 			// 	if (mat.albedoColor.toLuminance() < 0.01) {
 			// 		mat.albedoColor = new Color3(0.02, 0.02, 0.05); // Gris bleuté très profond
 			// 	}
-			// }
-		});
     }
 
     launch() : void {
