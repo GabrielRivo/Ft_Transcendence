@@ -94,6 +94,7 @@ class Ball {
         const currentTime = this.services.TimeService!.getTimestamp();
         
         this.startMovingTime = currentTime + delay;
+        console.log("Ball will start moving at time:", this.startMovingTime, "current time:", currentTime);
     }
 
     private test: boolean = true;
@@ -101,9 +102,11 @@ class Ball {
 
     move(deltaT: number, paddle1: Paddle, paddle2: Paddle) {
         if (!this.moving)
+        {
+            //console.log("Ball not moving, skipping move.");
             return;
+        }
         const currentTime = this.services.TimeService!.getTimestamp() - deltaT;
-
         let remainingDeltaT = deltaT / 1000;
         
         // let distance : number = this.speed * deltaT;
@@ -202,11 +205,11 @@ class Ball {
                 i++;
             }*/
 
-            distance = distance - traveledDistance;
+            /*distance = distance - traveledDistance;
             deltaT = (distance) / this.speed;
 
             displacement = this.direction.scale(distance);
-            newPos = this.position.add(displacement);
+            newPos = this.position.add(displacement);*/
 
             remainingDeltaT -= deltaT;
             if (Math.abs(remainingDeltaT) < Ball.EPSILON) {
@@ -330,9 +333,9 @@ class Ball {
                 impact = pickingInfoClone(hit);
             }
         }
-        if (!impact) {
+        /*if (!impact) {
             this.moving = false;
-        }
+        }*/
         return impact;
     }
 
@@ -344,17 +347,31 @@ class Ball {
             this.setDir(MathUtils.reflectVector(this.direction, normal));
     }
 
-    update(deltaT: number, paddle1: Paddle, paddle2: Paddle) {
-        const currentTime = this.services.TimeService!.getTimestamp();
-        if (!this.moving && currentTime >= this.startMovingTime && currentTime - deltaT < this.startMovingTime) {
+    updateMovingState(currentTime: number) {
+        if (currentTime < this.startMovingTime) {
+            this.moving = false;
+        }
+        else
+            this.moving = true;
+    }
+
+    getStartingDeltaT(currentTime: number, deltaT: number): number {
+        this.updateMovingState(currentTime);
+        if (currentTime >= this.startMovingTime && currentTime - deltaT < this.startMovingTime) {
             this.moving = true;
             deltaT = currentTime - this.startMovingTime;
-            console.log("Ball started at time:", currentTime - deltaT, "startMovingTime:", this.startMovingTime);
+            //console.log("Ball started at time:", currentTime, "startMovingTime:", this.startMovingTime, "deltaT:", deltaT);
         }
+        return deltaT;
+    }
+
+    update(currentTime: number,deltaT: number, paddle1: Paddle, paddle2: Paddle) {
+        deltaT = this.getStartingDeltaT(currentTime, deltaT);
         this.move(deltaT, paddle1, paddle2);
     }
 
     dispose() {
+        console.log("Disposing ball.");
         this.moving = false;
         this.services.Collision!.remove(this.model);
         this.model.dispose();

@@ -95,7 +95,6 @@ class TruthManager {
         let deltaT : number;
 
         while (p1Index < p1Inputs.length || p2Index < p2Inputs.length) {
-            
             const p1NextInput = p1Inputs[p1Index];
             const p2NextInput = p2Inputs[p2Index];
 
@@ -130,7 +129,7 @@ class TruthManager {
             deltaT = nextEventTime - lastFrameTime;
             
             if (deltaT > 0) {
-                ball.update(deltaT, p1.paddle, p2.paddle);
+                ball.update(nextEventTime, deltaT, p1.paddle, p2.paddle);
                 p1.update(deltaT);
                 p2.update(deltaT);
             }
@@ -149,7 +148,7 @@ class TruthManager {
 
         deltaT = currentTime - lastFrameTime;
         if (deltaT > 0) {
-            ball.update(deltaT, p1.paddle, p2.paddle);
+            ball.update(currentTime, deltaT, p1.paddle, p2.paddle);
             p1.update(deltaT);
             p2.update(deltaT);
         }
@@ -165,7 +164,6 @@ class TruthManager {
         this.deltaT = time - this.lastFrameTime;
 
         if (this.deltaT >= this.frameDuration) {
-
             // let p1Inputs = this.p1InputBuffer.getStatesInRange(this.lastFrameTime, time);
             // this.computePlayerInputs(this.game.player1!, p1Inputs, this.lastFrameTime, time);
 
@@ -185,6 +183,8 @@ class TruthManager {
 
             this.serverGameStateHistory.addState(this.getGameState(game));
             
+            //console.log("Gamestate at time ", time, ": ", this.getGameState(game));
+
             this.lastFrameTime = time;
         }
     }
