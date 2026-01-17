@@ -22,6 +22,13 @@ class GameService {
         return GameService.instance;
     }
 
+    public isRunning(): boolean {
+        if (this.gameInstance) {
+            return true;
+        }
+        return false;
+    }
+
     public launchGame(game : String): void {
         this.stopGame();
         if (game === "PongOnline") {
