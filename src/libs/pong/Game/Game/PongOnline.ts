@@ -55,7 +55,7 @@ class PongOnline extends Game {
 
     async drawScene(): Promise<void> {
 
-        let gl = new GlowLayer("glow", Services.Scene, {
+        const gl = new GlowLayer("glow", Services.Scene, {
             blurKernelSize: 32,
             mainTextureRatio: 0.25
         });
@@ -67,7 +67,7 @@ class PongOnline extends Game {
         this.walls = [new Wall(), new Wall()];
         this.walls.forEach(wall => Services.Scene!.addMesh(wall.model));
         //this.ball = new Ball();
-        var camera: ArcRotateCamera = new ArcRotateCamera("Camera", 0, Math.PI / 4, 10, Vector3.Zero(), Services.Scene);
+        const camera: ArcRotateCamera = new ArcRotateCamera("Camera", 0, Math.PI / 4, 10, Vector3.Zero(), Services.Scene);
         camera.attachControl(Services.Canvas, true);
 
         //var light2: SpotLight = new SpotLight("spotLight", new Vector3(0, 10, 0), new Vector3(0, -1, 0), Math.PI / 2, 20, Services.Scene);
@@ -81,12 +81,12 @@ class PongOnline extends Game {
         // hemiLight.groundColor = new Color3(0, 0, 0);
 
 
-        let ground = MeshBuilder.CreateBox("ground", { width: this.width, height: this.height, depth: 0.1 }, Services.Scene);
+        const ground = MeshBuilder.CreateBox("ground", { width: this.width, height: this.height, depth: 0.1 }, Services.Scene);
         ground.position = new Vector3(0, -0.05, 0);
         ground.rotate(Vector3.Right(), Math.PI / 2);
         ground.isPickable = false;
 
-        let groundMaterial = new StandardMaterial("groundMat", Services.Scene);
+        const groundMaterial = new StandardMaterial("groundMat", Services.Scene);
         groundMaterial.diffuseColor = new Color3(0.4, 0.4, 0.4);
         ground.material = groundMaterial;
 
@@ -191,7 +191,7 @@ class PongOnline extends Game {
 
     public async synchronizeTimeWithServer(serverTimestamp: number): Promise<void> {
         try {
-            let timeAheadOfServ = 50;
+            const timeAheadOfServ = 50;
             let measuringTime = performance.now();
             const latency: number = await this.measureLatency();
             measuringTime = performance.now() - measuringTime;
@@ -282,9 +282,13 @@ class PongOnline extends Game {
     private onDeathBarHit = (payload: DeathBarPayload) => {
         if (payload.deathBar.owner == this.player1) {
             this.player2!.scoreUp();
+            Services.EventBus!.emit("Game:ScoreUpdated", { player1Score: this.player1!.score, player2Score: this.player2!.score, scoreToWin: 5 });
+            console.log("Player 2 score :", this.player2!.score);
         }
         else if (payload.deathBar.owner == this.player2) {
             this.player1!.scoreUp();
+            Services.EventBus!.emit("Game:ScoreUpdated", { player1Score: this.player1!.score, player2Score: this.player2!.score, scoreToWin: 5 });
+            console.log("Player 1 score :", this.player1!.score);
         }
         this.ball!.setFullPos(new Vector3(0, -100, 0));
         //this.ball = new Ball();

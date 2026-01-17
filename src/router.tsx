@@ -5,7 +5,6 @@ import { Home } from './pages/home';
 
 import { NotFoundPage } from './pages/errors/notFoundPage';
 import { MainLayout } from './layout/mainLayout';
-// import { Game } from './pages/game';
 import { ConnexionLayout } from './layout/connexionLayout';
 import { Login } from './pages/login';
 import { Register } from './pages/register';
@@ -19,10 +18,19 @@ import { Game } from './pages/game';
 import { GuestLayout } from './layout/GuestLayout';
 import { AuthenticatedLayout } from './layout/AuthenticatedLayout';
 import { SetUsernameLayout } from './layout/SetUsernameLayout';
+import { GameProvider } from './context/GameProvider';
+
+function GameLayout({ children }: { children: any }) {
+	return (
+		<GameProvider>
+			<MainLayout>{children}</MainLayout>
+		</GameProvider>
+	);
+}
 
 const routes = [
 	{
-		layout: MainLayout,
+		layout: GameLayout,
 		routes: [
 			{
 				path: '/',

@@ -1,83 +1,11 @@
-// =============================================================================
-// Game Page
-// =============================================================================
-//
-// This page renders the Pong game canvas and manages the game lifecycle.
-// It integrates with the matchmaking flow by reading the gameId from URL.
-//
-// ## URL Format
-//
-// /game?id={gameId}
-//
-// The gameId is provided by the matchmaking service when a match is confirmed.
-//
-// ## Flow
-//
-// 1. User completes matchmaking -> receives gameId
-// 2. Navigation to /game?id={gameId}
-// 3. usePong extracts gameId and initializes game
-// 4. Game connects to Game Service
-// 5. When both players are connected, game starts
-// 6. On game end, navigates back to dashboard
-//
-// ## Victory Condition
-//
-// First player to reach 5 points wins the game.
-//
-// ## Error States
-//
-// - Missing gameId: Redirects to /matchmaking
-// - Connection error: Shows error message then redirects
-// - Game engine error: Shows error message
-//
-// =============================================================================
 
-import { createElement, useState, useEffect } from 'my-react';
-import { useNavigate, useParams } from 'my-react-router';
-import { usePong, type GameMode } from '../../hook/usePong';
-import Services from '../../libs/pong/Game/Services/Services';
+import { createElement, useEffect } from 'my-react';
+import { useNavigate, useQuery } from 'my-react-router';
+import { useGame } from '../../hook/useGame';	
 
-// =============================================================================
-// Props
-// =============================================================================
-
-/**
- * Props for the Game component.
- */
-interface GameProps {
-	/**
-	 * Game mode to launch.
-	 * - 'background': AI vs AI, used as animated background (no overlays)
-	 * - 'online': Real game with matchmaking and WebSocket
-	 * - 'local': Local 2-player game
-	 * @default 'online'
-	 */
-	mode?: GameMode;
-}
-
-// =============================================================================
-// Types
-// =============================================================================
-
-/**
- * Score update event payload from the game engine.
- */
-interface ScoreUpdateEvent {
-	player1Score: number;
-	player2Score: number;
-	scoreToWin: number;
-	player1Id: string;
-	player2Id: string;
-	lastScoredBy: string | null;
-}
-
-/**
- * Loading overlay component.
- * Displayed while the game is initializing or connecting.
- */
 function LoadingOverlay() {
 	return (
-		<div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+		<div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
 			<div className="flex flex-col items-center gap-4">
 				{/* Animated spinner */}
 				<div className="relative h-16 w-16">
@@ -107,7 +35,7 @@ function ScoreOverlay({
 	scoreToWin: number;
 }) {
 	return (
-		<div className="pointer-events-none absolute top-4 left-1/2 z-10 -translate-x-1/2">
+		<div className="pointer-events-none absolute top-4 left-1/2 z-30 -translate-x-1/2">
 			<div className="flex flex-col items-center gap-1">
 				{/* Score display */}
 				<div className="flex items-center gap-6 rounded-lg border border-cyan-500/40 bg-slate-950/80 px-8 py-3 backdrop-blur-md">
@@ -142,7 +70,7 @@ function ScoreOverlay({
  */
 function ErrorOverlay({ message, onRetry }: { message: string; onRetry: () => void }) {
 	return (
-		<div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm">
+		<div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm">
 			<div className="flex max-w-md flex-col items-center gap-6 p-8">
 				{/* Error icon */}
 				<div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-red-500 bg-red-500/20">
@@ -178,79 +106,63 @@ function ErrorOverlay({ message, onRetry }: { message: string; onRetry: () => vo
 	);
 }
 
+// =============================================================================
+// Main Game Page Component
+// =============================================================================
+
 /**
- * Main Game component.
- *
- * Renders the Pong game canvas with overlay states for loading and errors.
- * Supports three modes:
- * - 'background': AI vs AI for animated background (no overlays)
- * - 'online': Real game with matchmaking and WebSocket
- * - 'local': Local 2-player game
+ * Game page component.
+ * 
+ * This page switches the game to online mode and displays the game overlays.
+ * The actual game canvas is rendered in MainLayout via GameProvider.
  */
-export const Game = ({ mode = 'online' }: GameProps) => {
+export const Game = () => {
 	const navigate = useNavigate();
-	const params = useParams();
-	const { gameRef, error, isLoading, gameId } = usePong({ mode });
+	const query = useQuery();
+	const { setMode, mode, error, isLoading, gameId, scores } = useGame();
 
-	// In background mode, we don't show any overlays
-	const isBackgroundMode = mode === 'background';
+	// Get gameId from URL query
+	const urlGameId = query.get('id');
 
-	// Track current scores via event bus
-	const [scores, setScores] = useState({
-		player1Score: 0,
-		player2Score: 0,
-		scoreToWin: 5,
-	});
-
-	// Listen to score updates from the game engine
+	// Switch to online mode on mount, back to background on unmount
 	useEffect(() => {
-		const handleScoreUpdate = (event: ScoreUpdateEvent) => {
-			setScores({
-				player1Score: event.player1Score,
-				player2Score: event.player2Score,
-				scoreToWin: event.scoreToWin,
-			});
-		};
+		console.log('[GamePage] Mounting - switching to online mode with gameId:', urlGameId);
+		setMode('online', urlGameId);
 
-		// Subscribe to score updates
-		Services.EventBus?.on('Game:ScoreUpdated', handleScoreUpdate);
-
-		// Cleanup on unmount
 		return () => {
-			Services.EventBus?.off('Game:ScoreUpdated', handleScoreUpdate);
+			console.log("A");
+			console.log('[GamePage] Unmounting - switching back to background mode');
+			setMode('background');
 		};
-	}, []);
+	}, [setMode, urlGameId]);
 
 	/**
 	 * Handles retry action - navigates back to matchmaking.
 	 */
 	const handleRetry = () => {
+		setMode('background');
 		navigate('/matchmaking');
 	};
 
-	// Background mode: just render the canvas, no overlays
-	if (isBackgroundMode) {
-		return (
-			<div className="relative h-full w-full overflow-hidden">
-				<canvas ref={gameRef} id="gameCanvas" className="block size-full blur-sm" />
-			</div>
-		);
-	}
+	/**
+	 * Handles exit action - switches back to background mode and navigates to dashboard.
+	 */
+	const handleExit = () => {
+		console.log('[GamePage] Exit clicked - switching to background mode');
+		setMode('background');
+		navigate('/dashboard');
+	};
 
-	// Online/Local mode: render canvas with overlays
 	return (
-		<div className="relative h-full w-full overflow-hidden bg-slate-950">
-			{/* Game canvas - always rendered, but may be hidden by overlays */}
-			<canvas ref={gameRef} id="gameCanvas" className={`block h-full w-full ${isLoading || error ? 'blur-sm' : ''}`} />
-
+		<div className="pointer-events-none absolute inset-0 z-25">
 			{/* Loading overlay */}
 			{isLoading && !error && <LoadingOverlay />}
 
 			{/* Error overlay */}
 			{error && <ErrorOverlay message={error} onRetry={handleRetry} />}
 
-			{/* Score overlay (shown during gameplay for online mode) */}
-			{!isLoading && !error && gameId && (
+			{/* Score overlay (shown during gameplay) */}
+			{!isLoading && !error && mode === 'online' && (
 				<ScoreOverlay
 					player1Score={scores.player1Score}
 					player2Score={scores.player2Score}
@@ -260,7 +172,7 @@ export const Game = ({ mode = 'online' }: GameProps) => {
 
 			{/* Game info overlay (shown during gameplay for online mode) */}
 			{!isLoading && !error && gameId && (
-				<div className="pointer-events-none absolute top-4 left-4 z-10">
+				<div className="pointer-events-none absolute top-4 left-4 z-30">
 					<div className="rounded border border-cyan-500/30 bg-slate-950/60 px-3 py-1.5 backdrop-blur-sm">
 						<p className="font-mono text-xs text-cyan-400">
 							Game: <span className="text-white">{gameId.slice(0, 8)}...</span>
@@ -269,10 +181,10 @@ export const Game = ({ mode = 'online' }: GameProps) => {
 				</div>
 			)}
 
-			{/* Back button (always visible in online/local mode) */}
-			<div className="absolute top-4 right-4 z-20">
+			{/* Back button - needs pointer-events-auto to be clickable */}
+			<div className="pointer-events-auto absolute top-4 right-4 z-30">
 				<button
-					onClick={() => navigate('/dashboard')}
+					onClick={handleExit}
 					className="rounded border border-gray-500/50 bg-slate-950/60 px-3 py-1.5 text-xs text-gray-400 backdrop-blur-sm transition-all hover:border-cyan-500/50 hover:text-cyan-400"
 				>
 					← Exit
