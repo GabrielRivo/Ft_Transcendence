@@ -8,20 +8,21 @@ export type ParticipantStatus = 'ACTIVE' | 'ELIMINATED' | 'DISQUALIFIED';
 export interface Participant {
     id: string;
     alias: string;
-    type: 'guest' | 'registered';
+    type: 'guest' | 'user';
     userId: number | null;
     avatar?: string;
 }
 
 // Structure d'un match dans l'arbre
 export interface BracketMatch {
-    id: string;
+    id: number;
     round: number;
     status: MatchStatus;
     player1Id: string | null;
     player2Id: string | null;
     winnerId: string | null;
     score: [number, number] | null;
+    nextMatchId: number | null;
     gameId?: string;
     startTime?: string;
     endTime?: string;
