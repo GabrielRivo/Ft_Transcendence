@@ -27,7 +27,6 @@ export function Register() {
 		setErrors([]);
 		setConfirmError(null);
 
-		// Validate with AJV
 		const result = validate({ email, password });
 		if (!result.valid) {
 			setErrors(result.errors);
@@ -35,7 +34,6 @@ export function Register() {
 			return;
 		}
 
-		// Check password confirmation
 		if (password !== confirmPassword) {
 			setConfirmError('Les mots de passe ne correspondent pas');
 			toast('Les mots de passe ne correspondent pas', 'error');

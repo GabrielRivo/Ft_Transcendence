@@ -4,6 +4,7 @@ import GameService from "./GameService";
 import EventBus from "./EventBus";
 import CollisionService from "./CollisionService";
 import TimeService from "./TimeService";
+import AssetCache from "./AssetCache";
 // import SocketService from "./SocketService";
 
 class ServicesSingleton {
@@ -17,6 +18,7 @@ class ServicesSingleton {
     GameService?: GameService;
     Collision?: CollisionService;
     TimeService?: TimeService;
+    AssetCache = AssetCache;
 
     private constructor() {
     }

@@ -1,4 +1,4 @@
-import { Engine, Scene, ImportMeshAsync, MeshBuilder, StandardMaterial, SpotLight, Color3, ArcRotateCamera, Vector2, Vector3, HemisphericLight, GlowLayer, PBRMaterial } from "@babylonjs/core";
+import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer } from "@babylonjs/core";
 import Services from "../Services/Services";
 import type { DeathBarPayload, GameState } from "../globalType";
 import Player from "../Player";
@@ -29,6 +29,7 @@ class PongOnline extends Game {
     private gameJoined: boolean = false;
 
     private isDisposed: boolean = false;
+    private glowLayer?: GlowLayer;
 
     constructor() {
         super();
@@ -54,12 +55,13 @@ class PongOnline extends Game {
     }
 
     async drawScene(): Promise<void> {
+        if (this.isDisposed || !Services.Scene) return;
 
-        const gl = new GlowLayer("glow", Services.Scene, {
+        this.glowLayer = new GlowLayer("glow", Services.Scene, {
             blurKernelSize: 32,
             mainTextureRatio: 0.25
         });
-        gl.intensity = 0.3;
+        this.glowLayer.intensity = 0.3;
 
         this.player1 = new Player(undefined);
         this.player2 = new Player(undefined);
@@ -100,17 +102,19 @@ class PongOnline extends Game {
         this.walls[0].model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
         this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 
-        const background = await ImportMeshAsync("./models/pong.glb", Services.Scene!);
-        background.meshes.forEach(mesh => {
-            mesh.isPickable = false;
-
-            // const mat = mesh.material as PBRMaterial;
-            // if (mat) {
-            // 	if (mat.albedoColor.toLuminance() < 0.01) {
-            // 		mat.albedoColor = new Color3(0.02, 0.02, 0.05); // Gris bleuté très profond
-            // 	}
-            // }
-        });
+        // Load 3D background model from cache
+        if (this.isDisposed || !Services.Scene) return;
+        try {
+            const meshes = await Services.AssetCache.loadModel('pong-background', './models/pong.glb', Services.Scene);
+            if (this.isDisposed) return; // Check again after async operation
+            meshes.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+        } catch (e) {
+            if (!this.isDisposed) {
+                console.error('[PongOnline] Failed to load pong.glb:', e);
+            }
+        }
     }
 
     launch(): void {
@@ -364,11 +368,15 @@ class PongOnline extends Game {
 
     dispose(): void {
         console.log("Disposing Pong game instance.");
+        this.isDisposed = true;
+
         Services.Engine!.stopRenderLoop(this.renderLoop);
         Services.Engine!.stopRenderLoop(this.stoppedRenderLoop);
         Services.Engine!.stopRenderLoop();
 
-        this.isDisposed = true;
+        // Dispose glow layer first to avoid postProcessManager errors
+        this.glowLayer?.dispose();
+        this.glowLayer = undefined;
 
         this.player1?.dispose();
         this.player2?.dispose();

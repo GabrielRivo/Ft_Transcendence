@@ -7,13 +7,10 @@ function LoadingOverlay() {
 	return (
 		<div className="pointer-events-auto absolute inset-0 z-30 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm">
 			<div className="flex flex-col items-center gap-4">
-				{/* Animated spinner */}
 				<div className="relative h-16 w-16">
 					<div className="absolute inset-0 animate-ping rounded-full border-2 border-cyan-500/30" />
 					<div className="absolute inset-2 animate-spin rounded-full border-2 border-cyan-500 border-t-transparent" />
 				</div>
-
-				{/* Loading text */}
 				<p className="font-pirulen text-lg tracking-widest text-cyan-400">LOADING</p>
 				<p className="text-sm text-gray-400">Connecting to game server...</p>
 			</div>
@@ -21,10 +18,6 @@ function LoadingOverlay() {
 	);
 }
 
-/**
- * Score display overlay component.
- * Shows the current scores during gameplay with victory condition.
- */
 function ScoreOverlay({
 	player1Score,
 	player2Score,

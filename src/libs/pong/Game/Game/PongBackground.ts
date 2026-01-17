@@ -33,7 +33,6 @@ import {
 	GlowLayer,
 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
-import { SceneLoader } from '@babylonjs/core';
 import Services from '../Services/Services';
 import { DeathBarPayload } from '../globalType';
 import Player from '../Player';
@@ -102,6 +101,7 @@ class PongBackground extends Game {
 	height: number = 12;
 
 	isDisposed: boolean = false;
+	private glowLayer?: GlowLayer;
 
 	// -------------------------------------------------------------------------
 	// Constructor
@@ -145,12 +145,14 @@ class PongBackground extends Game {
 	 * ground, lighting, and loads the 3D background model.
 	 */
 	async drawScene(): Promise<void> {
+		if (this.isDisposed || !Services.Scene) return;
+
 		// Set up glow effect layer for neon aesthetics
-		const gl = new GlowLayer('glow', Services.Scene, {
+		this.glowLayer = new GlowLayer('glow', Services.Scene, {
 			blurKernelSize: 32,
 			mainTextureRatio: 0.25,
 		});
-		gl.intensity = 0.3;
+		this.glowLayer.intensity = 0.3;
 
 		// Create game objects
 		this.player1 = new Player(undefined);
@@ -199,14 +201,19 @@ class PongBackground extends Game {
 		this.ball = new Ball();
 		this.ball.generate(0);
 		this.ball.startDirectionRandom();
-		// Load 3D background model
+		
+		// Load 3D background model from cache
+		if (this.isDisposed || !Services.Scene) return;
 		try {
-			const background = await SceneLoader.ImportMeshAsync('', './models/', 'pong.glb', Services.Scene!);
-			background.meshes.forEach((mesh) => {
+			const meshes = await Services.AssetCache.loadModel('pong-background', './models/pong.glb', Services.Scene);
+			if (this.isDisposed) return; // Check again after async operation
+			meshes.forEach((mesh) => {
 				mesh.isPickable = false;
 			});
 		} catch (e) {
-			console.error('[PongBackground] Failed to load pong.glb:', e);
+			if (!this.isDisposed) {
+				console.error('[PongBackground] Failed to load pong.glb:', e);
+			}
 		}
 	}
 
@@ -330,6 +337,10 @@ class PongBackground extends Game {
 
 		// Stop render loop
 		Services.Engine!.stopRenderLoop(this.renderLoop);
+
+		// Dispose glow layer first to avoid postProcessManager errors
+		this.glowLayer?.dispose();
+		this.glowLayer = undefined;
 
 		// Dispose game objects
 		this.player1?.dispose();
