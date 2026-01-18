@@ -1,9 +1,9 @@
 
-import { Scene, Vector3, Mesh, MeshBuilder, Color4, Ray, Effect, PickingInfo, StandardMaterial, Color3} from "@babylonjs/core";
+import { Scene, Vector3, Mesh, MeshBuilder, Color4, Ray, Effect, PickingInfo, StandardMaterial, Color3 } from "@babylonjs/core";
 import MathUtils from "./MathUtils.js";
 import Services from "./Services/Services.js";
 
-import {OwnedMesh} from "./globalType.js";
+import { OwnedMesh } from "./globalType.js";
 import DeathBar from "./DeathBar.js";
 import Paddle from "./Paddle.js";
 
@@ -23,7 +23,7 @@ class Ball {
 
     constructor(services: Services, model?: Mesh) {
         this.services = services;
-        this.model = model ?? MeshBuilder.CreateSphere("ball", { diameter: this.diameter});
+        this.model = model ?? MeshBuilder.CreateSphere("ball", { diameter: this.diameter });
         // this.setFullDir(new Vector3(1, 0, 1));
         this.startDirection();
         //this.model.setDirection(this.direction);
@@ -46,9 +46,9 @@ class Ball {
         this.position = position;
         this.model.position.copyFrom(position);
     }
-	getPosition() : Vector3 {
-		return this.position;
-	}
+    getPosition(): Vector3 {
+        return this.position.clone();
+    }
 
     setDir(direction: Vector3) {
         this.direction = direction.normalize();
@@ -57,15 +57,15 @@ class Ball {
         this.direction = direction.normalize();
         this.model.setDirection(this.direction);
     }
-	getDirection() : Vector3 {
-		return this.direction;
-	}
+    getDirection(): Vector3 {
+        return this.direction.clone();
+    }
 
     speedUp() {
         if (this.speed < this.maxSpeed)
             this.speed *= this.acceleration;
     }
-    getSpeed() : number {
+    getSpeed(): number {
         return this.speed;
     }
     setSpeed(speed: number) {
@@ -74,14 +74,14 @@ class Ball {
 
     startDirection() {
         // let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4);
-        let angle : number = Math.PI;
+        let angle: number = Math.PI;
         this.setFullDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
     }
 
     setMoving(moving: boolean) {
         this.moving = moving;
     }
-    isMoving() : boolean {
+    isMoving(): boolean {
         return this.moving;
     }
 
@@ -92,7 +92,7 @@ class Ball {
         this.moving = false;
 
         const currentTime = this.services.TimeService!.getTimestamp();
-        
+
         this.startMovingTime = currentTime + delay;
         console.log("Ball will start moving at time:", this.startMovingTime, "current time:", currentTime);
     }
@@ -101,23 +101,22 @@ class Ball {
     private static readonly EPSILON = 1e-10;
 
     move(deltaT: number, paddle1: Paddle, paddle2: Paddle) {
-        if (!this.moving)
-        {
+        if (!this.moving) {
             //console.log("Ball not moving, skipping move.");
             return;
         }
         const currentTime = this.services.TimeService!.getTimestamp() - deltaT;
         let remainingDeltaT = deltaT / 1000;
-        
+
         // let distance : number = this.speed * deltaT;
         // let displacement : Vector3 = this.direction.scale(distance);
         // let newPos : Vector3 = this.position.add(displacement);
-        let distance : number;
-        let displacement : Vector3;
-        let newPos : Vector3 = this.position;
-        
-        let ray : Ray;
-        
+        let distance: number;
+        let displacement: Vector3;
+        let newPos: Vector3 = this.position;
+
+        let ray: Ray;
+
 
         const initPaddlePos1 = paddle1.getPosition();
         const initPaddlePos2 = paddle2.getPosition();
@@ -132,7 +131,7 @@ class Ball {
 
             deltaT = remainingDeltaT;
             //console.log("Ball hit detected with mesh: " + hit.pickedMesh.name);
-            
+
             distance = this.speed * deltaT;
             displacement = this.direction.scale(distance);
             newPos = this.position.add(displacement);
@@ -141,7 +140,7 @@ class Ball {
             let paddle1CollisionTime = this.findRelativeCollisionTime(paddle1, displacement, deltaT);
             let paddle2CollisionTime = this.findRelativeCollisionTime(paddle2, displacement, deltaT);
             let otherCollisionTime = this.findCollisionTime(distance, deltaT);
-            
+
             // Tri explicite pour garantir le déterminisme
             let collisionTimes = [
                 { time: paddle1CollisionTime, id: 0 },
@@ -151,7 +150,7 @@ class Ball {
                 const diff = a.time - b.time;
                 return Math.abs(diff) < Ball.EPSILON ? a.id - b.id : diff;
             });
-            
+
             deltaT = collisionTimes[0]!.time;
 
 
@@ -166,8 +165,7 @@ class Ball {
                 //console.log("paddle1CollisionTime: ", paddle1CollisionTime, ", paddle2CollisionTime: ", paddle2CollisionTime, ", otherCollisionTime: ", otherCollisionTime);
                 //console.log("paddle1CollisionTime: " + paddle1CollisionTime + ", paddle2CollisionTime: " + paddle2CollisionTime + ", otherCollisionTime: " + otherCollisionTime);
                 //this.test = false;
-                if (this.test)
-                {
+                if (this.test) {
                     console.log("Collision at : ", currentTime, " + ", deltaT);
                     this.test = false;
                 }
@@ -186,6 +184,8 @@ class Ball {
                 this.setPos(newPos);
                 break;
             }
+
+            //console.log("Collision happened near the center of the paddle of : ", hit.pickedMesh.position.subtract(hit.pickedPoint!));
 
             //console.log("DeltaT : ", deltaT, " RemainingDeltaT : ", remainingDeltaT, " Distance : ", distance, " Hit mesh : ", hit.pickedMesh.name);
             //console.log("Paddle1Time: ", paddle1CollisionTime, " Paddle2Time: ", paddle2CollisionTime, " OtherTime: ", otherCollisionTime);
@@ -223,14 +223,13 @@ class Ball {
         //this.setFullPos(newPos);
         paddle1.setPosition(initPaddlePos1);
         paddle2.setPosition(initPaddlePos2);
-        if (!this.moving)
-        {
+        if (!this.moving) {
             newPos = this.position;
         }
         this.setPos(newPos);
     }
 
-    public findCollisionTime(distance: number, deltaT: number) : number {
+    public findCollisionTime(distance: number, deltaT: number): number {
 
         const rayLen = distance + (this.diameter / 2);
 
@@ -246,13 +245,13 @@ class Ball {
         return deltaT;
     }
 
-    public findRelativeCollisionTime(paddle: Paddle, displacement: Vector3, deltaT: number) : number {
+    public findRelativeCollisionTime(paddle: Paddle, displacement: Vector3, deltaT: number): number {
 
         const paddleDisplacement = paddle.getDirection().scale(paddle.getSpeed() * deltaT);
 
         const relativeDisplacement = displacement.subtract(paddleDisplacement);
         const relativeDist = relativeDisplacement.length();
-        
+
         if (relativeDist < Ball.EPSILON) {
             return deltaT;
         }
@@ -268,8 +267,7 @@ class Ball {
             //console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + relativeDist);
 
             const timeToCollision = (traveledDistance / relativeDist) * deltaT;
-            if (timeToCollision < 0)
-            {
+            if (timeToCollision < 0) {
                 //console.log("Negative time to collision detected! : " + timeToCollision);
                 return 0;
             }
@@ -278,7 +276,7 @@ class Ball {
         return deltaT;
     }
 
-    public hitRay(ray: Ray) : PickingInfo | null {
+    public hitRay(ray: Ray): PickingInfo | null {
         let overlapping = this.services.Collision!.isInside(this.position, "paddle");
         let hit = this.services.Scene!.pickWithRay(ray, (mesh) => mesh !== this.model && mesh.isPickable && !overlapping.find(m => m === mesh));
         if (hit && hit.pickedMesh) {
@@ -288,15 +286,14 @@ class Ball {
     }
 
     hit(hitInfo: PickingInfo) {
-        const pickedMesh : OwnedMesh = hitInfo.pickedMesh as OwnedMesh;
-        const name : string = pickedMesh.name;
+        const pickedMesh: OwnedMesh = hitInfo.pickedMesh as OwnedMesh;
+        const name: string = pickedMesh.name;
 
         if (name === "deathBar" || name === "paddle" || name === "wall") {
             let impact = this.findRadialImpact(pickedMesh);
             if (impact) {
                 let normalVec = impact.getNormal(true);
-                if (impact.pickedPoint && normalVec)
-                {
+                if (impact.pickedPoint && normalVec) {
                     pickedMesh.owner.onBallHit(this, impact);
                     //this.bounce(impact);
                 }
@@ -308,28 +305,28 @@ class Ball {
         }
     }
 
-    findRadialImpact(collidedMesh : OwnedMesh) : PickingInfo | null {
+    findRadialImpact(collidedMesh: OwnedMesh): PickingInfo | null {
         const radius = this.diameter / 2;
-        let ray : Ray = new Ray(this.position, this.direction, radius + 0.1);//1
+        let ray: Ray = new Ray(this.position, this.direction, radius + 0.1);//1
         const accuracy = 8;
 
-        let shortestDist : number = radius + 0.1;//1
-        let impact : PickingInfo | null = null;
-        
-        let rayDirection : Vector3;
+        let shortestDist: number = radius + 0.1;//1
+        let impact: PickingInfo | null = null;
+
+        let rayDirection: Vector3;
         const left = new Vector3(this.direction.z, 0, -this.direction.x);
-        const overlapping : Mesh[] = this.services.Collision!.isInside(this.position, "paddle");
+        const overlapping: Mesh[] = this.services.Collision!.isInside(this.position, "paddle");
 
         for (let i = 0; i <= accuracy; i++) {
-            let step : number = i / accuracy;
-            let angle : number = -Math.PI / 2 + step * Math.PI;
+            let step: number = i / accuracy;
+            let angle: number = -Math.PI / 2 + step * Math.PI;
 
             rayDirection = this.direction.scale(Math.cos(angle)).add(left.scale(Math.sin(angle))).normalize();
             ray.direction = rayDirection;
             let hit = this.services.Scene!.pickWithRay(ray, (mesh) => mesh !== this.model && mesh.isPickable && !overlapping?.find(m => m === mesh));
-        
+
             if (hit && hit.pickedMesh && hit.pickedMesh === collidedMesh && hit.distance < shortestDist) {
-                shortestDist = hit.distance; 
+                shortestDist = hit.distance;
                 impact = pickingInfoClone(hit);
             }
         }
@@ -340,7 +337,7 @@ class Ball {
     }
 
     bounce(hitInfo: PickingInfo) {
-        let normal : Vector3 | null = hitInfo.getNormal(true);
+        let normal: Vector3 | null = hitInfo.getNormal(true);
         if (!normal)
             console.log("No normal found for bounce!");
         else
@@ -365,9 +362,10 @@ class Ball {
         return deltaT;
     }
 
-    update(currentTime: number,deltaT: number, paddle1: Paddle, paddle2: Paddle) {
+    update(currentTime: number, deltaT: number, paddle1: Paddle, paddle2: Paddle) {
         deltaT = this.getStartingDeltaT(currentTime, deltaT);
         this.move(deltaT, paddle1, paddle2);
+        this.model.computeWorldMatrix(true);
     }
 
     dispose() {

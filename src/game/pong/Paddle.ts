@@ -35,7 +35,7 @@ class Paddle {
         this.direction = direction;
     }
 	getDirection() : Vector3 {
-		return this.direction;
+		return this.direction.clone();
 	}
     setModelDirection(modelDirection: Vector3) {
         this.modelDirection = modelDirection;
@@ -46,7 +46,7 @@ class Paddle {
 	}
 
     getPosition() : Vector3 {
-		return this.model.position;
+		return this.model.position.clone();
 	}
     setPosition(position: Vector3) {
         this.model.position.copyFrom(position);
@@ -94,6 +94,7 @@ class Paddle {
         //ball.bounce(hitInfo);
         ball.speedUp();
         ball.owner = this.owner;
+        console.log("Ball hit by paddle, new direction : ", newDir, " angle : ", angle);
     }
 
     update(deltaT: number) {
