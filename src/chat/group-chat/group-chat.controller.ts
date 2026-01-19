@@ -1,31 +1,52 @@
-import { Controller, Get, Inject, Post, Body, BodySchema } from 'my-fastify-decorators';
+import { Body, BodySchema, Controller, Delete, Get, Inject, Param, Post } from 'my-fastify-decorators';
+import { CreateGroupDto, CreateGroupSchema, GroupMemberDto, GroupMemberSchema } from './dto/createGroup.dto.js';
 import { GroupChatService } from './group-chat.service.js';
-import { AddUserToGroupSchema, AddUserGroup} from './dto/add_to_group.dto.js'
-
-const AUTH_SERVICE_URL = 'http://auth:3000';
 
 @Controller('/group')
-export class GroupChatController {
+export class GroupController {
 
 	@Inject(GroupChatService)
-	private chatService!: GroupChatService;
+	private groupService!: GroupChatService;
+
+	@Post('/create') 
+	@BodySchema(CreateGroupSchema)
+	async create_group(@Body() data: CreateGroupDto) {
+		return this.groupService.createGroup(data.ownerId, data.name);
+	}
+
+	@Get('/my-groups/:userId')
+	async get_my_groups(@Param('userId') userId: string) {
+		return this.groupService.getUserGroups(Number(userId));
+	}
+
+	@Get('/group/:groupId')
+	async get_group(@Param('groupId') groupId: string) {
+		const group = this.groupService.getGroupById(Number(groupId));
+		if (!group) {
+			return { success: false, message: "Group not found" };
+		}
+		const members = this.groupService.getGroupMembers(Number(groupId));
+		return { ...group, members };
+	}
 
 	@Get('/group_history')
-	async get_history() {
-		const history = this.chatService.getGroupHistory();
+	async get_history(groupId: number) {
+		const history = this.groupService.getGroupHistory(groupId);
 		return history.reverse();
+		// const history = this.chatService.getGroupHistory();
+		// return history.reverse();
 	}
 
 	@Post('/add_user')
-	@BodySchema(AddUserToGroupSchema)
-	async add_user(@Body() data: AddUserGroup){
+	@BodySchema(GroupMemberSchema)
+	async add_member(@Body() data: GroupMemberDto) {
 		try {
 				// const response = await fetch(`${AUTH_SERVICE_URL}/auth/user-by-username/${encodeURIComponent(data.userId  )}`);
 				
 				// if (!response.ok) {
 				// 	return { success: false, message: "User not found" };
 				// }
-			return this.chatService.addUserToGroup(data.groupId, data.senderId, data.userId)
+			return this.groupService.addMember(data.groupId, data.userId, data.otherId)
 			} catch (error: any) {
 				return { 
 					success: false,
@@ -34,39 +55,15 @@ export class GroupChatController {
 		}
 	}
 
-	@Get('/hello')
-	async coucou(){
-		return {
-			message : "coucou"
-		}
+	@Post('/remove-member')
+	@BodySchema(GroupMemberSchema)
+	async remove_member(@Body() data: GroupMemberDto & { removerId: number }) {
+		return this.groupService.removeMember(data.groupId, data.userId, data.removerId);
+	}
+
+	@Delete('/group')
+	async delete_group(@Body() data: { groupId: number; ownerId: number }) {
+		return this.groupService.deleteGroup(data.groupId, data.ownerId);
 	}
 }
 
-// @BodySchema(InviteByUsernameSchema)
-// 	async invite_by_username(@Body() data: InviteByUsernameDto) {
-// 		try {
-// 			const response = await fetch(`${AUTH_SERVICE_URL}/auth/user-by-username/${encodeURIComponent(data.targetUsername)}`);
-			
-// 			if (!response.ok) {
-// 				return { success: false, message: "User not found" };
-// 			}
-			
-// 			const targetUser = await response.json() as { id: number; username: string };
-			
-// 			const [blocked1, blocked2] = await Promise.all([
-// 				this.blockService.is_blocked(data.userId, targetUser.id),
-// 				this.blockService.is_blocked(targetUser.id, data.userId)
-// 			]);
-			
-// 			if (blocked1) {
-// 				return { success: false, message: "User blocked, can't add to friendlist" };
-// 			}
-// 			if (blocked2) {
-// 				return { success: false, message: "You can't add this user" };
-// 			}
-			
-// 			return this.friend_managementService.sendInvitation(data.userId, targetUser.id, data.senderUsername);
-// 		} catch (error: any) {
-// 			return { success: false, message: error.message || "Failed to send invitation" };
-// 		}
-// 	}

@@ -13,7 +13,7 @@ import {
 import { Socket } from 'socket.io';
 import { GeneralChatService } from './general-chat/general-chat.service.js';
 import { PrivateChatService } from './private-chat/private-chat.service.js';
-import { GroupChatService } from './group-chat/group-chat.service.js'
+import {GroupChatService } from './group-chat/group-chat.service.js'
 // import { BlockManagementService } from '../friend-management/block-management.service.js';
 import { ChatSchema, ChatDto } from './dto/chat.dto.js';
 import { group } from 'console';
@@ -150,7 +150,7 @@ export class ChatGateway {
 			console.log("[join_group]");
 			const groupId = parseInt(roomId.slice(6));
 			//await this.groupChatServie.getGroupHistory(groupId);
-			const messages = await this.groupChatServie.getGroupHistory(groupId);
+			const messages = await this.groupChatServie.getGroupHistory(groupId, user.id);
 			client.emit('group_history', messages);
 			console.log("messges : ", messages)
 		}
@@ -332,8 +332,8 @@ export class ChatGateway {
 			if (groupId < 0)
 				client.emit('error', { message: 'invalid group id' });
 			console.log("group");
+			this.groupChatServie.saveGroupMessage(groupId, user?.id, content); // nique tout
 			console.log("here@ room", roomId);
-			await this.groupChatServie.saveGroupMessage(groupId, user?.id, content); // nique tout
 			// recuperer les id?
 			// verifier si tout les id sont correctes -> negatif, same id ?
 			// le save private message sur le salon 
