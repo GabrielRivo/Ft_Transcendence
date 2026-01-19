@@ -33,6 +33,11 @@ export const matchmakingSocket: Socket = io(SOCKET_BASE_URL, {
 	path: '/api/matchmaking/',
 });
 
+// export const socialSocket: Socket = io(SOCKET_BASE_URL, {
+// 	...DEFAULT_SOCKET_OPTIONS,
+// 	path: '/api/social/ws',
+// });
+
 // deprecated voir pour enlever plus tard
 export const socket: Socket = gameSocket;
 
