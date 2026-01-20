@@ -2,12 +2,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-interface TournamentConfig {
-	minPlayers: number;
-	matchAcceptTimeout: number;
-	matchReadyTimeout: number;
-}
-
 export interface Config {
 	accessTokenName: string;
 	jwt: {
@@ -19,7 +13,6 @@ export interface Config {
 	};
 	gameServiceUrl: string;
 	rabbitmqUri: string;
-	tournament: TournamentConfig;
 }
 
 function loadConfiguration(): Readonly<Config> {
@@ -79,11 +72,6 @@ function loadConfiguration(): Readonly<Config> {
 		},
 		gameServiceUrl: gameServiceUrl as string,
 		rabbitmqUri: rabbitmqUri as string,
-		tournament: {
-			minPlayers: 4,
-			matchAcceptTimeout: 120000, // 2 minutes
-			matchReadyTimeout: 30000, // 30 secondes
-		},
 	};
 
 	return Object.freeze(config);
