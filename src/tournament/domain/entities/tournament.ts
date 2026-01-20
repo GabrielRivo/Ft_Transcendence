@@ -105,6 +105,18 @@ export class Tournament {
         return tournament;
     }
 
+    public updateMatchScore(matchId: string, scoreA: number, scoreB: number): void {
+        const match = this._matches.find(m => m.id === matchId);
+        if (!match) throw new MatchNotFoundException(matchId);
+
+        match.setScore(scoreA, scoreB);
+
+        if (match.status === 'FINISHED') {
+            this.propagateWinnerToNextRound(match);
+            this.addRecordedEvent(new MatchFinishedEvent(this.id, matchId, match.winner!.id));
+        }
+    }
+
     private start(): void {
         if (this._participants.length !== this.size) {
             throw new TournamentNotReadyToStartException(this._participants.length, this.size);
