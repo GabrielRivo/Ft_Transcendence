@@ -186,7 +186,7 @@ const EloHistogram = ({ userElo, allPlayersData }: EloHistogramProps) => {
     return () => {
       if (chartInstance.current) {
         chartInstance.current.destroy();
-        chartInstance.current = null;
+        chartInstance.current = null; 
       }
     };
   }, [userElo, allPlayersData]);
