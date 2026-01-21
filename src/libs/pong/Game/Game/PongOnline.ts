@@ -1,4 +1,4 @@
-import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer } from "@babylonjs/core";
+import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh } from "@babylonjs/core";
 import Services from "../Services/Services";
 import type { DeathBarPayload, GameState } from "../globalType";
 import Player from "../Player";
@@ -61,10 +61,25 @@ class PongOnline extends Game {
             mainTextureRatio: 0.25
         });
         this.glowLayer.intensity = 0.3;
-
+        
         this.player1 = new Player(undefined);
         this.player2 = new Player(undefined);
-        this.ball = new Ball();
+        if (this.isDisposed || !Services.Scene) return;
+        let ballMesh : Mesh | undefined = undefined;
+        /*try {
+            const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
+            if (this.isDisposed) return; // Check again after async operation
+            ballMeshs.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+            ballMesh = ballMeshs[0]! as Mesh;
+        } catch (e) {
+            if (!this.isDisposed) {
+                console.error('[PongOnline] Failed to load pong.glb:', e);
+            }
+        }
+        ballMesh!.scaling = new Vector3(0.5, 0.5, 0.5);*/
+        this.ball = new Ball(ballMesh);
         this.walls = [new Wall(), new Wall()];
         this.walls.forEach(wall => Services.Scene!.addMesh(wall.model));
         //this.ball = new Ball();
@@ -96,8 +111,12 @@ class PongOnline extends Game {
         this.player2.paddle.setModelDirection(new Vector3(0, 0, -1));
         this.player1.paddle.setFullPosition(new Vector3(0, 0.15, -this.height / 2 + 2));
         this.player2.paddle.setFullPosition(new Vector3(0, 0.15, this.height / 2 - 2));
+        this.player1.paddle.setTriggerPosition(new Vector3(0, 0.15, -this.height / 2 + 2));
+        this.player2.paddle.setTriggerPosition(new Vector3(0, 0.15, this.height / 2 - 2));
+        this.player1.paddle.trigger2.position = new Vector3(0, 2.15, -this.height / 2 + 2 - 0.15);
         this.player1.deathBar.model.position = new Vector3(0, 0.125, -this.height / 2 + 1);
         this.player2.deathBar.model.position = new Vector3(0, 0.125, this.height / 2 - 1);
+        this.player2.paddle.trigger2.position = new Vector3(0, 2.15, this.height / 2 - 2 + 0.15);
         this.walls[0].model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
         this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 

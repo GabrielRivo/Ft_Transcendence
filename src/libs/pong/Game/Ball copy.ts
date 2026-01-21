@@ -144,9 +144,6 @@ class Ball {
         const initPaddleDir1 = paddle1.getDirection();
         const initPaddleDir2 = paddle2.getDirection();
 
-        let excludedMeshes: Mesh[] = [];
-        excludedMeshes.push(this.model, paddle1.model, paddle2.model);
-
         let loopCount = 0;
         while (remainingDeltaT > Ball.EPSILON && this.moving) {
             loopCount++;
@@ -160,34 +157,62 @@ class Ball {
             
             distance = this.speed * deltaT;
             displacement = this.direction.scale(distance);
-            //newPos = this.position.add(displacement);
+            newPos = this.position.add(displacement);
 
 
-            //let paddle1CollisionTime = this.findRelativeCollisionTime(paddle1, displacement, deltaT);
-            //let paddle2CollisionTime = this.findRelativeCollisionTime(paddle2, displacement, deltaT);
-            let CollisionTime = this.findCollisionTime(distance, deltaT, excludedMeshes);
+            let paddle1CollisionTime = this.findRelativeCollisionTime(paddle1, displacement, deltaT);
+            let paddle2CollisionTime = this.findRelativeCollisionTime(paddle2, displacement, deltaT);
+            let otherCollisionTime = this.findCollisionTime(distance, deltaT);
             
-            /*let collisionTimes = [
+            // Tri explicite pour garantir le déterminisme
+            let collisionTimes = [
                 { time: paddle1CollisionTime, id: 0 },
                 { time: paddle2CollisionTime, id: 1 },
                 { time: otherCollisionTime, id: 2 }
             ].sort((a, b) => {
                 const diff = a.time - b.time;
                 return Math.abs(diff) < Ball.EPSILON ? a.id - b.id : diff;
-            });*/
+            });
             
-            deltaT = CollisionTime;
+            deltaT = collisionTimes[0].time;
 
+
+
+            if (Math.abs(deltaT - remainingDeltaT) < Ball.EPSILON) {
+                //console.log("No collision detected within remaining deltaT.");
+                //console.log("paddle1CollisionTime: " + paddle1CollisionTime + ", paddle2CollisionTime: " + paddle2CollisionTime + ", otherCollisionTime: " + otherCollisionTime);
+                //console.log("Continuing with deltaT: " + deltaT);
+            }
+            else {
+                //console.log("COLLISION detected, adjusting deltaT to: " + deltaT);
+                //console.log("paddle1CollisionTime: ", paddle1CollisionTime, ", paddle2CollisionTime: ", paddle2CollisionTime, ", otherCollisionTime: ", otherCollisionTime);
+                //console.log("paddle1CollisionTime: " + paddle1CollisionTime + ", paddle2CollisionTime: " + paddle2CollisionTime + ", otherCollisionTime: " + otherCollisionTime);
+                //this.test = false;
+                
+                if (deltaT === paddle1CollisionTime && this.testId < 4) {
+                    console.log("================================")
+                    console.log("Test collision ID : ", this.testId++);
+                    console.log("Simulation start time: ", currentTime);
+                    console.log("Player 1 collision time: ", currentTime + paddle1CollisionTime * 1000);
+                    //console.log("Paddle adjusted to : ", currentTime + paddle1CollisionTime);
+                    paddle1.update(deltaT);
+                    console.log("Impact position paddle 1: ", paddle1.getPosition());
+                    paddle1.setPosition(initPaddlePos1);
+                    paddle1.setDirection(initPaddleDir1);
+
+                    console.log("================================", '\n', '\n')
+                }
+            }
             paddle1.update(deltaT * 1000);
             paddle2.update(deltaT * 1000);
 
             distance = this.speed * deltaT;
             displacement = this.direction.scale(distance);
-            newPos = this.position.add(displacement); // distance parcourue sur deltaT
+            newPos = this.position.add(displacement);
 
-            ray = new Ray(this.position, this.direction, distance + (this.diameter / 2) + 0.001);
+            ray = new Ray(this.position, this.direction, distance + (this.diameter / 2) + 0.01);
 
-            let hit = this.hitRay(ray, excludedMeshes);
+            let hit = this.hitRay(ray);
             if (!hit || !hit.pickedMesh) {
                 this.setPos(newPos);
                 break;
@@ -199,18 +224,13 @@ class Ball {
             let traveledDistance = hit.distance - (this.diameter / 2);
             this.setPos(this.direction.scale(traveledDistance).add(this.position));
 
-            if (!this.hit(hit)) {
-                this.setPos(newPos);
-            }
-            //console.log("Ball move loop  deltaT estimated to : ", deltaT);
-            //console.log("Ball collided with ", hit.pickedMesh.name, " at distance ", traveledDistance, " deltaT adjusted to ", deltaT);
-            if (hit.pickedMesh.name === "paddleTrigger")
-                excludedMeshes.push(hit.pickedMesh as OwnedMesh);
+            this.hit(hit);
 
             remainingDeltaT -= deltaT;
             if (Math.abs(remainingDeltaT) < Ball.EPSILON) {
                 remainingDeltaT = 0;
             }
+
         }
        
         paddle1.setPosition(initPaddlePos1);
@@ -224,14 +244,14 @@ class Ball {
         this.setPos(newPos);
     }
 
-    public findCollisionTime(distance: number, deltaT: number, excludedMeshes: Mesh[]) : number {
+    public findCollisionTime(distance: number, deltaT: number) : number {
 
         const rayLen = distance + (this.diameter / 2);
 
         const ray = new Ray(this.position, this.direction, rayLen);
-        let hit = this.hitRay(ray, excludedMeshes);
+        let hit = this.hitRay(ray);
 
-        if (hit && hit.pickedMesh /*&& hit.pickedMesh.name !== "paddle"*/) {
+        if (hit && hit.pickedMesh && hit.pickedMesh.name !== "paddle") {
             const traveledDistance = hit.distance - (this.diameter / 2);
             //console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + distance);
             const timeToCollision = (traveledDistance / distance) * deltaT;
@@ -240,60 +260,79 @@ class Ball {
         return deltaT;
     }
 
+    public findRelativeCollisionTime(paddle: Paddle, displacement: Vector3, deltaT: number) : number {
 
-    public hitRay(ray: Ray, excludedMeshes: Mesh[]) : PickingInfo | null {
+        const paddleDisplacement = paddle.getDirection().scale(paddle.getSpeed() * deltaT);
+
+        const relativeDisplacement = displacement.subtract(paddleDisplacement);
+        const relativeDist = relativeDisplacement.length();
+        
+        if (relativeDist < Ball.EPSILON) {
+            return deltaT;
+        }
+
+        const rayDir = relativeDisplacement.normalize();
+        const rayLen = relativeDist + (this.diameter / 2);
+
+        const ray = new Ray(this.position, rayDir, rayLen);
+        let hit = this.hitRay(ray);
+
+        if (hit && hit.pickedMesh && (hit.pickedMesh === paddle.model)) {
+            const traveledDistance = hit.distance - (this.diameter / 2);
+            //console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + relativeDist);
+
+            const timeToCollision = (traveledDistance / relativeDist) * deltaT;
+            if (timeToCollision < 0)
+            {
+                //console.log("Negative time to collision detected! : " + timeToCollision);
+                return 0;
+            }
+            return timeToCollision;
+        }
+        return deltaT;
+    }
+
+    public hitRay(ray: Ray) : PickingInfo | null {
         let overlapping = Services.Collision!.isInside(this.position, "paddle");
-        overlapping.push(...Services.Collision!.isInside(this.position, "paddleTrigger"));
-        let hit = Services.Scene!.pickWithRay(ray, (mesh) => /*mesh !== this.model &&*/ mesh.isPickable && !overlapping.find(m => m === mesh) && !excludedMeshes.find(m => m === mesh));
+        let hit = Services.Scene!.pickWithRay(ray, (mesh) => mesh !== this.model && mesh.isPickable && !overlapping.find(m => m === mesh));
         if (hit && hit.pickedMesh) {
             return hit;
         }
         return null;
     }
 
-    hit(hitInfo: PickingInfo): boolean {
+    hit(hitInfo: PickingInfo) {
         const pickedMesh : OwnedMesh = hitInfo.pickedMesh as OwnedMesh;
         const name : string = pickedMesh.name;
 
-        if (name === "deathBar" || /*name === "paddle" ||*/ name === "wall" || name === "paddleTrigger") {
-            const impact = this.findRadialImpact(pickedMesh);
+        if (name === "deathBar" || name === "paddle" || name === "wall") {
+            let impact = this.findRadialImpact(pickedMesh);
             if (impact) {
-                const normalVec = impact.getNormal(true);
-                const impactMesh: OwnedMesh = impact.pickedMesh as OwnedMesh;
-                if (impactMesh && impact.pickedPoint && normalVec)
+                let normalVec = impact.getNormal(true);
+                if (impact.pickedPoint && normalVec)
                 {
                     if (this.displayEffect) {
                         this.shockwaveEffect.play(impact.pickedPoint, normalVec);
                         this.hitEffect.play(impact.pickedPoint, normalVec);
                     }
 
-                    /*if (impactMesh.name === "paddle")
-                    {
-                        this.bounce(impact);
-                        return true;
-                    }*/
-                    impactMesh.owner.onBallHit(this, impact);
+                    pickedMesh.owner.onBallHit(this, impact);
                     //this.bounce(impact);
-                    return true;
                 }
             }
             else {
-                if (pickedMesh.name === "paddleTrigger") {
-                    return false;
-                }
                 this.moving = false;
                 console.log("No radial impact found!");
             }
         }
-        return false;
     }
 
     findRadialImpact(collidedMesh : OwnedMesh) : PickingInfo | null {
         const radius = this.diameter / 2;
-        let ray : Ray = new Ray(this.position, this.direction, radius + 0.001); //+1 Test needed
+        let ray : Ray = new Ray(this.position, this.direction, radius + 0.1); //+1 Test needed
         const accuracy = 8;
 
-        let shortestDist : number = radius + 0.001; //+1
+        let shortestDist : number = radius + 0.1; //+1
         let impact : PickingInfo | null = null;
         
         let rayDirection : Vector3;
@@ -306,16 +345,14 @@ class Ball {
 
             rayDirection = this.direction.scale(Math.cos(angle)).add(left.scale(Math.sin(angle))).normalize();
             ray.direction = rayDirection;
-            let hit = Services.Scene!.pickWithRay(ray, (mesh) => mesh !== this.model && mesh.isPickable && !overlapping?.find(m => m === mesh) && mesh.name !== "paddleTrigger");
+            let hit = Services.Scene!.pickWithRay(ray, (mesh) => mesh !== this.model && mesh.isPickable && !overlapping?.find(m => m === mesh));
         
-            if (hit && hit.pickedMesh && (hit.pickedMesh === collidedMesh || collidedMesh.name === "paddleTrigger" && hit.pickedMesh.name === "paddle") && hit.distance < shortestDist) {
+            if (hit && hit.pickedMesh && hit.pickedMesh === collidedMesh && hit.distance < shortestDist) {
                 shortestDist = hit.distance; 
                 impact = pickingInfoClone(hit);
             }
         }
         if (!impact) {
-            if (collidedMesh.name === "paddleTrigger")
-                return null;
             this.findRadialImpactDebug();
             this.moving = false;
         }
@@ -348,7 +385,7 @@ class Ball {
 
             rayDirection = this.direction.scale(Math.cos(angle)).add(left.scale(Math.sin(angle))).normalize();
             ray.direction = rayDirection;
-            let hit = Services.Scene!.pickWithRay(ray, (mesh) => mesh !== this.model && mesh.isPickable && !overlapping?.find(m => m === mesh) && mesh.name !== "paddleTrigger");
+            let hit = Services.Scene!.pickWithRay(ray, (mesh) => mesh !== this.model && mesh.isPickable && !overlapping?.find(m => m === mesh));
         
 
             if (hit && hit.pickedMesh && hit.distance < shortestDist) {

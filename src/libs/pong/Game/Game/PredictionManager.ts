@@ -59,11 +59,13 @@ class PredictionManager {
 
     private setGameState(game: PongOnline, state: GameState): void {
         game.player1!.paddle.setFullPosition(state.p1.pos);
-        //game.player1!.paddle.setDirection(state.p1.dir);
+        game.player1!.paddle.setDirection(state.p1.dir); //a voir
+
         game.player2!.paddle.setFullPosition(state.p2.pos);
-        //game.player2!.paddle.setDirection(state.p2.dir);
+        game.player2!.paddle.setDirection(state.p2.dir); // a voir
+
         game.ball!.setFullPos(state.ball.pos);
-        game.ball!.setDir(state.ball.dir);
+        game.ball!.setFullDir(state.ball.dir);
         game.ball!.setSpeed(state.ball.speed);
     }
 
@@ -98,7 +100,7 @@ class PredictionManager {
             console.log(`Player 2 position prediction error: ${posDiffP2}`);
         }
         if (posDiffBall > 0.1 || dirDiffBall > 0.1 || speedDiffBall > 0.1) {
-            console.warn(`⚠️ RECONCILIATION BALL ⚠️`);
+            console.warn(`⚠️ RECONCILIATION BALL predicted : ${prediction.ball.pos} real : ${truth.ball.pos} ⚠️`);
             console.log(`- Pos Diff: ${posDiffBall.toFixed(4)} ${posDiffBall > 0.1 ? '❌' : '✅'}`);
             console.log(`- Dir Diff: ${dirDiffBall.toFixed(4)} ${dirDiffBall > 0.1 ? '❌' : '✅'}`);
             console.log(`- Spd Diff: ${speedDiffBall.toFixed(4)} ${speedDiffBall > 0.1 ? '❌' : '✅'}`);
@@ -116,7 +118,7 @@ class PredictionManager {
 
         let deltaT: number;
 
-        let firstInput = this.playerInputBuffer.getClosestState(lastFrameTime, 2000);
+        let firstInput = this.playerInputBuffer.getClosestState(lastFrameTime, 3000);
         if (firstInput) {
             this.inputManager.setPlayerDirection(player, firstInput, false);
         }
@@ -158,7 +160,7 @@ class PredictionManager {
             deltaT = nextEventTime - lastFrameTime;
 
             if (deltaT > 0) {
-                ball.update(nextEventTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle);
+                ball.update(nextEventTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle, lastFrameTime);
                 player.update(deltaT);
                 //console.log("1 call HERE to start the ball");
                 //console.log("Ball pos before update :", ball.getPosition());
@@ -179,7 +181,7 @@ class PredictionManager {
 
         deltaT = currentTime - lastFrameTime;
         if (deltaT > 0) {
-            ball.update(currentTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle);
+            ball.update(currentTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle, lastFrameTime);
             player.update(deltaT);
             //console.log("1 call HERE to make it right");
             //console.log("Ball pos before final update :", ball.getPosition());
@@ -218,7 +220,7 @@ class PredictionManager {
             }
 
             //console.log("Prediction Ball pos:", game.ball!.getPosition());
-            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle);
+            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle, Services.TimeService!.getTimestamp() - Services.TimeService!.getDeltaTime());
             game.player1!.update(Services.TimeService!.getDeltaTime());
             game.player2!.update(Services.TimeService!.getDeltaTime());
 
@@ -237,17 +239,17 @@ class PredictionManager {
 
             //this.setGameState(game, predictionState);
 
-            // if (latestServerState)
-            // {
-            //     this.setGameState(game, latestServerState);
-            // }
+            if (latestServerState)
+            {
+                this.setGameState(game, latestServerState);
+            }
 
             //this.clientGameStateHistory.addState(this.getGameState(game));
 
             this.lastFrameTime = time;
         }
         else {
-            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle);
+            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle, Services.TimeService!.getTimestamp() - Services.TimeService!.getDeltaTime());
             game.player1!.update(Services.TimeService!.getDeltaTime());
             game.player2!.update(Services.TimeService!.getDeltaTime());
         }

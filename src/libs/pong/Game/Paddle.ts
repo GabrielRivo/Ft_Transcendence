@@ -7,28 +7,40 @@ import MathUtils from "./MathUtils";
 
 class Paddle {
     model: OwnedMesh<Paddle>;
+    trigger: OwnedMesh<Paddle>;
+    trigger2: OwnedMesh<Paddle>;
     direction: Vector3 = new Vector3(0, 0, 0);
     position: Vector3 = new Vector3(0, 0, 0);
     modelDirection: Vector3 = new Vector3(0, 1, 0).normalize();
-    speed : number = 9; //9
+    speed : number = 4; //9
     owner: any;
 
     private visualOffset: Vector3 = new Vector3(0, 0, 0);
 
     constructor(owner?: any) {
         this.model = MeshBuilder.CreateBox("paddle", {size: 0.15, width: 1.2 , height: 0.15});
+        this.trigger = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
+        this.trigger2 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
 		// this.model = MeshBuilder.CreateBox("paddle", {size: 0.30, width: 5.0 , height: 0.30});
         let material = new StandardMaterial("playerMat", Services.Scene);
         material.emissiveColor = new Color3(0.8, 0, 0.2);
         this.model.material = material;
+        this.trigger.material = material;
+        this.trigger.visibility = 0.1;
+        this.trigger2.material = material;
+        this.trigger2.visibility = 0.1;
 
         this.model.isPickable = true;
         Services.Collision!.add(this.model);
+        Services.Collision!.add(this.trigger);
+        Services.Collision!.add(this.trigger2);
 
         this.direction = new Vector3(0, 0, 0);
 
         this.owner = owner;
         this.model.owner = this;
+        this.trigger.owner = this;
+        this.trigger2.owner = this;
     }
 
     getDirection(): Vector3 {
@@ -51,6 +63,9 @@ class Paddle {
     setFullPosition(position: Vector3) {
         this.position.copyFrom(position);
         this.model.position.copyFrom(position);
+    }
+    setTriggerPosition(position: Vector3) {
+        this.trigger.position.copyFrom(position);
     }
 
     getSpeed(): number {
@@ -96,7 +111,7 @@ class Paddle {
         //ball.bounce(hitInfo);
         ball.speedUp();
         ball.owner = this.owner;
-        console.log("Ball hit by paddle, new direction : ", newDir, " angle : ", angle);
+        //console.log("Ball hit by paddle, new direction : ", newDir, " angle : ", angle);
     }
 
     public reconcile(serverPos: Vector3): void {
@@ -125,6 +140,7 @@ class Paddle {
 
     dispose() {
         this.model.dispose();
+        this.trigger.dispose();
     }
 }
 
