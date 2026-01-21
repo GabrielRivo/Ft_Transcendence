@@ -28,3 +28,7 @@ reception message group OK
 
 
 ! pour les parties perso
+
+game controller
+CREATE GAME -> envoyer les ids
+START GAME 

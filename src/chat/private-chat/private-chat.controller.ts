@@ -1,12 +1,10 @@
 import { Controller, Get, Inject, Param, Delete, Body } from 'my-fastify-decorators';
 import { PrivateChatService } from './private-chat.service.js';
 
-
 interface DeleteChatPayload {
 	userId: number;
 	otherId: number;
 }
-
 
 const BLOCK_URL = 'http://social:3000';
 

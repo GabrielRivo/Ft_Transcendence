@@ -176,6 +176,7 @@ export class GroupChatService {
 			}
 		}
 	}
+
 	async getGroupHistory(groupId: number, userId : number) {
 		//return this.statemenGetGroupHistory.all({ groupId });
 		const rows = this.statemenGetGroupHistory.all({ groupId, userId }) as any[];
