@@ -239,10 +239,10 @@ class PredictionManager {
 
             //this.setGameState(game, predictionState);
 
-            if (latestServerState)
-            {
-                this.setGameState(game, latestServerState);
-            }
+            // if (latestServerState)
+            // {
+            //     this.setGameState(game, latestServerState);
+            // }
 
             //this.clientGameStateHistory.addState(this.getGameState(game));
 

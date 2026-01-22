@@ -111,12 +111,12 @@ class PongOnline extends Game {
         this.player2.paddle.setModelDirection(new Vector3(0, 0, -1));
         this.player1.paddle.setFullPosition(new Vector3(0, 0.15, -this.height / 2 + 2));
         this.player2.paddle.setFullPosition(new Vector3(0, 0.15, this.height / 2 - 2));
-        this.player1.paddle.setTriggerPosition(new Vector3(0, 0.15, -this.height / 2 + 2));
-        this.player2.paddle.setTriggerPosition(new Vector3(0, 0.15, this.height / 2 - 2));
-        this.player1.paddle.trigger2.position = new Vector3(0, 2.15, -this.height / 2 + 2 - 0.15);
+        this.player1.paddle.setTrigger1Position(new Vector3(0, 0.15, -this.height / 2 + 2));
+        this.player2.paddle.setTrigger1Position(new Vector3(0, 0.15, this.height / 2 - 2));
+        this.player1.paddle.setTrigger2Position(new Vector3(0, 0.15, -this.height / 2 + 2 - 0.15));
+        this.player2.paddle.setTrigger2Position(new Vector3(0, 0.15, this.height / 2 - 2 + 0.15));
         this.player1.deathBar.model.position = new Vector3(0, 0.125, -this.height / 2 + 1);
         this.player2.deathBar.model.position = new Vector3(0, 0.125, this.height / 2 - 1);
-        this.player2.paddle.trigger2.position = new Vector3(0, 2.15, this.height / 2 - 2 + 0.15);
         this.walls[0].model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
         this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 

@@ -7,7 +7,7 @@ import MathUtils from "./MathUtils";
 
 class Paddle {
     model: OwnedMesh<Paddle>;
-    trigger: OwnedMesh<Paddle>;
+    trigger1: OwnedMesh<Paddle>;
     trigger2: OwnedMesh<Paddle>;
     direction: Vector3 = new Vector3(0, 0, 0);
     position: Vector3 = new Vector3(0, 0, 0);
@@ -19,27 +19,27 @@ class Paddle {
 
     constructor(owner?: any) {
         this.model = MeshBuilder.CreateBox("paddle", {size: 0.15, width: 1.2 , height: 0.15});
-        this.trigger = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
+        this.trigger1 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
         this.trigger2 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
 		// this.model = MeshBuilder.CreateBox("paddle", {size: 0.30, width: 5.0 , height: 0.30});
         let material = new StandardMaterial("playerMat", Services.Scene);
         material.emissiveColor = new Color3(0.8, 0, 0.2);
         this.model.material = material;
-        this.trigger.material = material;
-        this.trigger.visibility = 0.1;
+        this.trigger1.material = material;
+        this.trigger1.visibility = 0;
         this.trigger2.material = material;
-        this.trigger2.visibility = 0.1;
+        this.trigger2.visibility = 0;
 
         this.model.isPickable = true;
         Services.Collision!.add(this.model);
-        Services.Collision!.add(this.trigger);
+        Services.Collision!.add(this.trigger1);
         Services.Collision!.add(this.trigger2);
 
         this.direction = new Vector3(0, 0, 0);
 
         this.owner = owner;
         this.model.owner = this;
-        this.trigger.owner = this;
+        this.trigger1.owner = this;
         this.trigger2.owner = this;
     }
 
@@ -64,8 +64,11 @@ class Paddle {
         this.position.copyFrom(position);
         this.model.position.copyFrom(position);
     }
-    setTriggerPosition(position: Vector3) {
-        this.trigger.position.copyFrom(position);
+    setTrigger1Position(position: Vector3) {
+        this.trigger1.position.copyFrom(position);
+    }
+    setTrigger2Position(position: Vector3) {
+        this.trigger2.position.copyFrom(position);
     }
 
     getSpeed(): number {
@@ -130,7 +133,7 @@ class Paddle {
 
     update(deltaT: number) {
         this.move(deltaT);
-        this.visualOffset = Vector3.Lerp(this.visualOffset, Vector3.Zero(), 0.05);
+        this.visualOffset = Vector3.Lerp(this.visualOffset, Vector3.Zero(), 0.03);
         if (this.visualOffset.lengthSquared() < 0.001) {
             this.visualOffset.setAll(0);
         }
@@ -140,7 +143,8 @@ class Paddle {
 
     dispose() {
         this.model.dispose();
-        this.trigger.dispose();
+        this.trigger1.dispose();
+        this.trigger2.dispose();
     }
 }
 

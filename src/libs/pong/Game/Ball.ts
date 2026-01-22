@@ -109,7 +109,7 @@ class Ball {
 
     public generate(delay: number) {
         this.startDirection();
-        this.setSpeed(3);
+        this.setSpeed(2);
         this.setFullPos(new Vector3(0, 0.125, 0));
         this.moving = false;
 
@@ -176,7 +176,10 @@ class Ball {
                 return Math.abs(diff) < Ball.EPSILON ? a.id - b.id : diff;
             });*/
             
-            deltaT = CollisionTime;
+            if (CollisionTime < 0)
+                deltaT = 0;
+            else
+                deltaT = CollisionTime;
 
             paddle1.update(deltaT * 1000);
             paddle2.update(deltaT * 1000);
@@ -201,13 +204,14 @@ class Ball {
 
             if (!this.hit(hit)) {
                 this.setPos(newPos);
+                //CollisionTime = deltaT;
             }
             //console.log("Ball move loop  deltaT estimated to : ", deltaT);
             //console.log("Ball collided with ", hit.pickedMesh.name, " at distance ", traveledDistance, " deltaT adjusted to ", deltaT);
             if (hit.pickedMesh.name === "paddleTrigger")
                 excludedMeshes.push(hit.pickedMesh as OwnedMesh);
 
-            remainingDeltaT -= deltaT;
+            remainingDeltaT -= deltaT;//CollisionTime;
             if (Math.abs(remainingDeltaT) < Ball.EPSILON) {
                 remainingDeltaT = 0;
             }
@@ -235,7 +239,13 @@ class Ball {
             const traveledDistance = hit.distance - (this.diameter / 2);
             //console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + distance);
             const timeToCollision = (traveledDistance / distance) * deltaT;
-            return Math.max(0, timeToCollision);
+            if (timeToCollision < 0 && hit.pickedMesh.name === "paddleTrigger")
+            {
+                excludedMeshes.push(hit.pickedMesh as OwnedMesh);
+                return this.findCollisionTime(distance, deltaT, excludedMeshes);
+            }
+            // return Math.max(0, timeToCollision);
+            return timeToCollision;
         }
         return deltaT;
     }
