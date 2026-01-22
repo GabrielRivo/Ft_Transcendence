@@ -31,7 +31,7 @@ class TruthManager {
         this.serverGameStateHistory = new History<GameState>(60);
 
         this.fps = 30;
-        this.frameDuration = Math.floor(1000 / this.fps);
+        this.frameDuration = Math.floor(1000 / this.fps - 1);
         this.lastFrameTime = services.TimeService!.getTimestamp();
         this.deltaT = 0;
 

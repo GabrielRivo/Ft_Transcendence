@@ -56,6 +56,7 @@ class CollidableService {
                 collisions.push(target);
             }
         });
+
         return collisions;
     }
 }

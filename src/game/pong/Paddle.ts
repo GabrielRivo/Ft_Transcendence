@@ -9,7 +9,8 @@ class Paddle {
     private services: Services;
 
     model: OwnedMesh<Paddle>;
-    trigger: OwnedMesh<Paddle>;
+    trigger1: OwnedMesh<Paddle>;
+    trigger2: OwnedMesh<Paddle>;
     direction: Vector3 = new Vector3(0, 0, 0);
     modelDirection: Vector3 = new Vector3(0, 1, 0).normalize();
     speed : number = 4;
@@ -18,23 +19,29 @@ class Paddle {
     constructor(services: Services, owner?: any) {
         this.services = services;
         this.model = MeshBuilder.CreateBox("paddle", {size: 0.15, width: 1.2 , height: 0.15});
-        this.trigger = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
+        this.trigger1 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
+        this.trigger2 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
 
 		// this.model = MeshBuilder.CreateBox("paddle", {size: 0.30, width: 5.0 , height: 0.30});
         let material = new StandardMaterial("playerMat", this.services.Scene);
         material.emissiveColor = new Color3(0.8, 0, 0.2);
         this.model.material = material;
-        this.trigger.material = material;
-        this.trigger.visibility = 0.2;
+        this.trigger1.material = material;
+        this.trigger1.visibility = 0;
+        this.trigger2.material = material;
+        this.trigger2.visibility = 0;
 
         this.model.isPickable = true;
         this.services.Collision!.add(this.model);
+        this.services.Collision!.add(this.trigger1);
+        this.services.Collision!.add(this.trigger2);
 
         this.direction = new Vector3(0, 0, 0);
 
         this.owner = owner;
         this.model.owner = this;
-        this.trigger.owner = this;
+        this.trigger1.owner = this;
+        this.trigger2.owner = this;
     }
 
     setDirection(direction: Vector3) {
@@ -57,9 +64,13 @@ class Paddle {
     setPosition(position: Vector3) {
         this.model.position.copyFrom(position);
     }
-    setTriggerPosition(position: Vector3) {
-        this.trigger.position.copyFrom(position);
-        this.trigger.computeWorldMatrix(true);
+    setTrigger1Position(position: Vector3) {
+        this.trigger1.position.copyFrom(position);
+        this.trigger1.computeWorldMatrix(true);
+    }
+    setTrigger2Position(position: Vector3) {
+        this.trigger2.position.copyFrom(position);
+        this.trigger2.computeWorldMatrix(true);
     }
 
     getSpeed(): number {
@@ -113,7 +124,8 @@ class Paddle {
 
     dispose() {
         this.model.dispose();
-        this.trigger.dispose();
+        this.trigger1.dispose();
+        this.trigger2.dispose();
     }
 }
 
