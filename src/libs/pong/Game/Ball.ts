@@ -145,7 +145,7 @@ class Ball {
         const initPaddleDir2 = paddle2.getDirection();
 
         let excludedMeshes: Mesh[] = [];
-        excludedMeshes.push(this.model, paddle1.model, paddle2.model);
+        excludedMeshes.push(this.model, paddle1.model, ...paddle1.model.getChildren() as Mesh[], paddle2.model, ...paddle2.model.getChildren() as Mesh[]);
 
         let loopCount = 0;
         while (remainingDeltaT > Ball.EPSILON && this.moving) {
@@ -265,6 +265,7 @@ class Ball {
         const pickedMesh : OwnedMesh = hitInfo.pickedMesh as OwnedMesh;
         const name : string = pickedMesh.name;
 
+        console.log("Ball hit detected with mesh: " + name);
         if (name === "deathBar" || /*name === "paddle" ||*/ name === "wall" || name === "paddleTrigger") {
             const impact = this.findRadialImpact(pickedMesh);
             if (impact) {

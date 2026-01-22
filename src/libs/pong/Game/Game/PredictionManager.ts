@@ -200,17 +200,7 @@ class PredictionManager {
 
         this.deltaT = time - this.lastFrameTime;
 
-        // if (this.test === true)
-        //     return;
         if (this.deltaT >= this.frameDuration) {
-
-            // if (this.test === false && time > 5000) {
-            //     console.warn("Resetting positions for testing");
-            //     // game.player1!.paddle.reconcile(new Vector3(0, 0.15, -Services.Dimensions!.y / 2 + 2));
-            //     // game.player2!.paddle.reconcile(new Vector3(0, 0.15, Services.Dimensions!.y / 2 - 2));
-            //     // game.ball!.reconcile(new Vector3(0, 0.125, 0), new Vector3(0, 0, -1), 4);
-            //     this.test = true;
-            // }
 
             this.inputManager.processLastInputs(this.game.clientPlayer!);
             const latestPlayerDirection = this.playerInputBuffer.getLatestState();
