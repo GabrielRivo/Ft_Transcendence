@@ -292,6 +292,7 @@ class PongOnline extends Game {
             camera.wheelDeltaPercentage = 0.01;
             camera.upperBetaLimit = Math.PI / 1.6;
             camera._panningMouseButton = -1;
+            camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
         } else if (payload.player === 2) {
             this.clientPlayer = this.player2;
             this.inputManager!.listenToPlayer2();
@@ -302,6 +303,7 @@ class PongOnline extends Game {
             camera.wheelDeltaPercentage = 0.01;
             camera.upperBetaLimit = Math.PI / 1.6;
             camera._panningMouseButton = -1;
+            camera.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
         }
     }
 
