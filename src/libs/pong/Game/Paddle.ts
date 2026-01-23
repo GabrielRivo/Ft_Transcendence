@@ -10,6 +10,7 @@ class Paddle {
     hitbox: OwnedMesh<Paddle>;
     trigger1: OwnedMesh<Paddle>;
     trigger2: OwnedMesh<Paddle>;
+    trigger3: OwnedMesh<Paddle>;
     direction: Vector3 = new Vector3(0, 0, 0);
     position: Vector3 = new Vector3(0, 0, 0);
     hitboxDirection: Vector3 = new Vector3(0, 1, 0).normalize();
@@ -34,6 +35,7 @@ class Paddle {
 
         this.trigger1 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
         this.trigger2 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
+        this.trigger3 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
 		// this.hitbox = MeshBuilder.CreateBox("paddle", {size: 0.30, width: 5.0 , height: 0.30});
         let material = new StandardMaterial("playerMat", Services.Scene);
         material.emissiveColor = new Color3(0.8, 0, 0.2);
@@ -41,14 +43,16 @@ class Paddle {
         material2.emissiveColor = new Color3(0, 0.2, 0.8);
         this.model.material = material2;
         this.model.isPickable = false;
-        this.model.visibility = 0.8;
+        this.model.visibility = 1;
 
         this.hitbox.material = material;
-        this.hitbox.visibility = 0.2;
+        this.hitbox.visibility = 0;
         this.trigger1.material = material;
         this.trigger1.visibility = 0;
         this.trigger2.material = material;
         this.trigger2.visibility = 0;
+        this.trigger3.material = material;
+        this.trigger3.visibility = 0;
 
         this.hitbox.isPickable = true;
         Services.Collision!.add(this.hitbox);
@@ -96,6 +100,9 @@ class Paddle {
     }
     setTrigger2Position(position: Vector3) {
         this.trigger2.position.copyFrom(position);
+    }
+    setTrigger3Position(position: Vector3) {
+        this.trigger3.position.copyFrom(position);
     }
 
     getSpeed(): number {

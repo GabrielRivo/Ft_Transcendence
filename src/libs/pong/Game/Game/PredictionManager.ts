@@ -37,6 +37,10 @@ class PredictionManager {
 
     }
 
+    resetLastFrameTime(): void {
+        this.lastFrameTime = Services.TimeService!.getTimestamp();
+    }
+
     private getGameState(game: PongOnline): GameState {
         return {
             timestamp: Services.TimeService!.getTimestamp(),
@@ -160,7 +164,7 @@ class PredictionManager {
             deltaT = nextEventTime - lastFrameTime;
 
             if (deltaT > 0) {
-                ball.update(nextEventTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle, lastFrameTime);
+                ball.update(nextEventTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle);
                 player.update(deltaT);
                 //console.log("1 call HERE to start the ball");
                 //console.log("Ball pos before update :", ball.getPosition());
@@ -181,7 +185,7 @@ class PredictionManager {
 
         deltaT = currentTime - lastFrameTime;
         if (deltaT > 0) {
-            ball.update(currentTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle, lastFrameTime);
+            ball.update(currentTime, deltaT, this.game.player1!.paddle, this.game.player2!.paddle);
             player.update(deltaT);
             //console.log("1 call HERE to make it right");
             //console.log("Ball pos before final update :", ball.getPosition());
@@ -209,7 +213,7 @@ class PredictionManager {
             }
 
             //console.log("Prediction Ball pos:", game.ball!.getPosition());
-            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle, Services.TimeService!.getTimestamp() - Services.TimeService!.getDeltaTime());
+            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle);
             game.player1!.update(Services.TimeService!.getDeltaTime());
             game.player2!.update(Services.TimeService!.getDeltaTime());
 
@@ -238,7 +242,7 @@ class PredictionManager {
             this.lastFrameTime = time;
         }
         else {
-            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle, Services.TimeService!.getTimestamp() - Services.TimeService!.getDeltaTime());
+            game.ball!.update(time, Services.TimeService!.getDeltaTime(), game.player1!.paddle, game.player2!.paddle);
             game.player1!.update(Services.TimeService!.getDeltaTime());
             game.player2!.update(Services.TimeService!.getDeltaTime());
         }

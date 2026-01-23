@@ -147,6 +147,9 @@ class PongLocal extends Game {
         this.ball!.update(Services.TimeService!.getTimestamp(), deltaT, this.player1!.paddle, this.player2!.paddle);
         this.player1!.update(deltaT);
         this.player2!.update(deltaT);
+        this.ball!.render();
+        this.player1!.paddle.render();
+        this.player2!.paddle.render();
         Services.Scene!.render();
     }
 

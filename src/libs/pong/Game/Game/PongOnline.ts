@@ -1,4 +1,4 @@
-import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh } from "@babylonjs/core";
+import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh, SetValueAction } from "@babylonjs/core";
 import Services from "../Services/Services";
 import type { DeathBarPayload, GameState } from "../globalType";
 import Player from "../Player";
@@ -83,8 +83,12 @@ class PongOnline extends Game {
         this.walls = [new Wall(), new Wall()];
         this.walls.forEach(wall => Services.Scene!.addMesh(wall.model));
         //this.ball = new Ball();
-        const camera: ArcRotateCamera = new ArcRotateCamera("Camera", 0, Math.PI / 4, 10, Vector3.Zero(), Services.Scene);
+        const camera: ArcRotateCamera = new ArcRotateCamera("Camera", 0, Math.PI / 4, 12, Vector3.Zero(), Services.Scene);
         camera.attachControl(Services.Canvas, true);
+        camera.lowerRadiusLimit = 8;
+        camera.upperRadiusLimit = 22;
+        camera.wheelDeltaPercentage = 0.01;
+        camera.upperBetaLimit = Math.PI / 1.6;
 
         //var light2: SpotLight = new SpotLight("spotLight", new Vector3(0, 10, 0), new Vector3(0, -1, 0), Math.PI / 2, 20, Services.Scene);
         //light2.intensity = 0;
@@ -124,8 +128,11 @@ class PongOnline extends Game {
         this.player1.paddle.setTrigger1Position(new Vector3(0, 0.15, -this.height / 2 + 2));
         this.player2.paddle.setTrigger1Position(new Vector3(0, 0.15, this.height / 2 - 2));
 
-        this.player1.paddle.setTrigger2Position(new Vector3(0, 0.15, -this.height / 2 + 2 - 0.15));
-        this.player2.paddle.setTrigger2Position(new Vector3(0, 0.15, this.height / 2 - 2 + 0.15));
+        this.player1.paddle.setTrigger2Position(new Vector3(0, 0.15, -this.height / 2 + 2 - 0.075));
+        this.player2.paddle.setTrigger2Position(new Vector3(0, 0.15, this.height / 2 - 2 + 0.075));
+
+        this.player1.paddle.setTrigger3Position(new Vector3(0, 0.15, -this.height / 2 + 2 - 0.15));
+        this.player2.paddle.setTrigger3Position(new Vector3(0, 0.15, this.height / 2 - 2 + 0.15));
 
         this.player1.deathBar.model.position = new Vector3(0, 0.125, -this.height / 2 + 1);
         this.player2.deathBar.model.position = new Vector3(0, 0.125, this.height / 2 - 1);
@@ -367,6 +374,8 @@ class PongOnline extends Game {
     run() {
         console.log("Game running.");
         this.isDisposed = false;
+        Services.TimeService!.update();
+        this.predictionManager!.resetLastFrameTime();
         Services.Engine!.stopRenderLoop(this.stoppedRenderLoop);
         Services.Engine!.runRenderLoop(this.renderLoop);
     }

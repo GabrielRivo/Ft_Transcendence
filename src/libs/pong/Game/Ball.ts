@@ -123,7 +123,7 @@ class Ball {
     private testId: number = 0;
     private static readonly EPSILON = 1e-10;
 
-    move(currentTime: number , deltaT: number, paddle1: Paddle, paddle2: Paddle) {
+    move(deltaT: number, paddle1: Paddle, paddle2: Paddle) {
         if (!this.moving)
             return;
 
@@ -480,9 +480,9 @@ class Ball {
         return deltaT;
     }
 
-    update(currentTime: number, deltaT: number, paddle1: Paddle, paddle2: Paddle, startingTime: number) {
+    update(currentTime: number, deltaT: number, paddle1: Paddle, paddle2: Paddle) {
         deltaT = this.getStartingDeltaT(currentTime, deltaT);
-        this.move(startingTime, deltaT, paddle1, paddle2);
+        this.move(deltaT, paddle1, paddle2);
     }
 
     render() {

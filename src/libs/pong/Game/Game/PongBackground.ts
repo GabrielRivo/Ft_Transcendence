@@ -309,6 +309,9 @@ class PongBackground extends Game {
 			if (this.player1.paddle && this.player2.paddle) {
 				this.ball.update(Services.TimeService!.getTimestamp(), Services.TimeService!.getDeltaTime(), this.player1.paddle, this.player2.paddle);
 				// console.log("Ball speed : ", this.ball.speed); // Décommente pour debug
+				this.ball.render();
+				this.player1.paddle.render();
+				this.player2.paddle.render();
 			}
 		}
 
