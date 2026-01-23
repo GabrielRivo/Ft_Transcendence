@@ -11,6 +11,7 @@ class Paddle {
     model: OwnedMesh<Paddle>;
     trigger1: OwnedMesh<Paddle>;
     trigger2: OwnedMesh<Paddle>;
+    trigger3: OwnedMesh<Paddle>;
     direction: Vector3 = new Vector3(0, 0, 0);
     modelDirection: Vector3 = new Vector3(0, 1, 0).normalize();
     speed : number = 4;
@@ -31,6 +32,7 @@ class Paddle {
 
         this.trigger1 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
         this.trigger2 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
+        this.trigger3 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
 
 		// this.model = MeshBuilder.CreateBox("paddle", {size: 0.30, width: 5.0 , height: 0.30});
         let material = new StandardMaterial("playerMat", this.services.Scene);
@@ -40,6 +42,8 @@ class Paddle {
         this.trigger1.visibility = 0;
         this.trigger2.material = material;
         this.trigger2.visibility = 0;
+        this.trigger3.material = material;
+        this.trigger3.visibility = 0;
 
         this.model.isPickable = true;
         this.services.Collision!.add(this.model);
@@ -81,6 +85,10 @@ class Paddle {
     setTrigger2Position(position: Vector3) {
         this.trigger2.position.copyFrom(position);
         this.trigger2.computeWorldMatrix(true);
+    }
+    setTrigger3Position(position: Vector3) {
+        this.trigger3.position.copyFrom(position);
+        this.trigger3.computeWorldMatrix(true);
     }
 
     getSpeed(): number {

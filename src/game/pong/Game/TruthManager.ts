@@ -37,6 +37,10 @@ class TruthManager {
 
     }
 
+    resetLastFrameTime(): void {
+        this.lastFrameTime =this.services.TimeService!.getTimestamp();
+    }
+
     private getGameState(game: Pong): GameState {
         return {
             timestamp: this.services.TimeService!.getTimestamp(),

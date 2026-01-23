@@ -83,8 +83,10 @@ class Pong extends Game {
         this.player2.paddle.setPosition(new Vector3(0, 0.15, this.height / 2 - 2));
         this.player1.paddle.setTrigger1Position(new Vector3(0, 0.15, -this.height / 2 + 2));
         this.player2.paddle.setTrigger1Position(new Vector3(0, 0.15, this.height / 2 - 2));
-        this.player1.paddle.setTrigger2Position(new Vector3(0, 0.15, -this.height / 2 + 2 - 0.15));
-        this.player2.paddle.setTrigger2Position(new Vector3(0, 0.15, this.height / 2 - 2 + 0.15));
+        this.player1.paddle.setTrigger2Position(new Vector3(0, 0.15, -this.height / 2 + 2 - 0.075));
+        this.player2.paddle.setTrigger2Position(new Vector3(0, 0.15, this.height / 2 - 2 + 0.075));
+        this.player1.paddle.setTrigger3Position(new Vector3(0, 0.15, -this.height / 2 + 2 - 0.15));
+        this.player2.paddle.setTrigger3Position(new Vector3(0, 0.15, this.height / 2 - 2 + 0.15));
         this.player1.deathBar.model.position = new Vector3(0, 0.125, -this.height / 2 + 1);
         this.player2.deathBar.model.position = new Vector3(0, 0.125, this.height / 2 - 1);
         this.walls[0]!.model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
@@ -201,14 +203,15 @@ class Pong extends Game {
         if (this.gameState === "waiting" || this.gameState === null) {
             this.gameState = "playing";
             this.services.TimeService!.update();
-            this.nsp!.to(this.id).emit('gameStarted', { timestamp: this.services.TimeService!.getTimestamp(), gameId: this.id, message: message || `Game ${this.id} is now running.` });
             console.log("Game started with timestamp:", this.services.TimeService!.getTimestamp());
             if (!this.ball) {
                 this.ball = new Ball(this.services);
                 this.ball.generate(1000);
                 this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp() });
             }
-
+            this.sendGameState();
+            this.nsp!.to(this.id).emit('gameStarted', { timestamp: this.services.TimeService!.getTimestamp(), gameId: this.id, message: message || `Game ${this.id} is now running.` });
+            this.truthManager!.resetLastFrameTime();
             this.services.Engine!.stopRenderLoop();
             this.services.Engine!.runRenderLoop(() => {
                 
