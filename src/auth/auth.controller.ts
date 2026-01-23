@@ -12,7 +12,8 @@ import {
 	Req,
 	Res,
 	UnauthorizedException,
-	UseGuards
+	UseGuards,
+	InjectPlugin
 } from 'my-fastify-decorators';
 
 import config from '../config.js';
@@ -24,6 +25,7 @@ import { SetUsernameDto, SetUsernameSchema } from './dto/setUsername.dto.js';
 import { AuthGuard } from './guards/auth.guard.js';
 import type { ProviderKeys } from './providers.js';
 import { providers } from './providers.js';
+import { RabbitMQClient } from 'my-fastify-decorators-microservices';
 
 // Extend FastifyRequest to include user from AuthGuard
 interface AuthenticatedRequest extends FastifyRequest {
@@ -34,6 +36,9 @@ interface AuthenticatedRequest extends FastifyRequest {
 export class AuthController {
 	@Inject(AuthService)
 	private authService!: AuthService;
+
+	@InjectPlugin('mq')
+	private mq!: RabbitMQClient;
 
 	// Warning: a delete plus tard
 	@Inject(DbExchangeService)
@@ -90,6 +95,11 @@ export class AuthController {
 		return { valid: true };
 	}
 
+	@Get('/send-mail')
+	async sendMail() {
+		this.mq.emit('user_created', { email: 'test@test.com' }, 'mail_queue');
+		return { success: true, message: 'Mail sent' };
+	}
 
 	@Get('/me')
 	async me(@Req() req: FastifyRequest) {
