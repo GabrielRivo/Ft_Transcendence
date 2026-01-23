@@ -1,0 +1,31 @@
+{
+	"name": "my-fastify-decorators-microservice",
+	"version": "0.0.1",
+	"description": "Microservice decorators for Fastify v5",
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"types": "dist/index.d.ts",
+	"main": "dist/index.js",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "tsc -p tsconfig.json"
+	},
+	"peerDependencies": {
+		"reflect-metadata": "^0.2.0"
+	},
+	"devDependencies": {
+		"@types/node": "^24.5.2",
+		"typescript": "^5.9.2"
+	},
+	"license": "MIT",
+	"dependencies": {
+		"amqplib": "^0.10.9"
+	}
+}
