@@ -52,3 +52,7 @@
 	path = apps/worker-mail
 	url = git@github.com:thetranscendence/worker-mail.git
 	branch = main
+[submodule "packages/my-fastify-decorators-microservices"]
+	path = packages/my-fastify-decorators-microservices
+	url = git@github.com:thetranscendence/my-fastify-decorators-microservices.git
+	branch = main

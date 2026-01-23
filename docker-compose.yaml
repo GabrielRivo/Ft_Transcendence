@@ -133,6 +133,7 @@ services:
       - auth-node-modules:/app/node_modules
       # Persist SQLite database (mounted to db/ subfolder to not overwrite data/init.sql)
       - auth-data:/app/apps/auth/db
+      - ./packages/my-fastify-decorators-microservices:/app/packages/my-fastify-decorators-microservices
     networks:
       - transcendence-network
     depends_on:
@@ -159,6 +160,7 @@ services:
       - ./apps/user:/app/apps/user
       - ./packages/my-fastify-decorators:/app/packages/my-fastify-decorators
       - ./packages/my-class-validator:/app/packages/my-class-validator
+      - ./packages/my-fastify-decorators-microservices:/app/packages/my-fastify-decorators-microservices
       - user-node-modules:/app/node_modules
       - user-data:/app/apps/user/db
     networks:
@@ -319,6 +321,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
+      RESEND_API_KEY: ${RESEND_API_KEY}
       RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
     volumes:
       - ./package.json:/app/package.json:ro
@@ -329,6 +332,30 @@ services:
       - ./packages/my-class-validator:/app/packages/my-class-validator
       - social-node-modules:/app/node_modules
       - social-data:/app/apps/social/db
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  worker-mail:
+    build:
+      context: .
+      dockerfile: apps/worker-mail/Dockerfile.dev
+    container_name: transcendence-worker-mail
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+      RESEND_API_KEY: ${RESEND_API_KEY}
+    volumes:
+      - ./package.json:/app/package.json:ro
+      - ./pnpm-workspace.yaml:/app/pnpm-workspace.yaml:ro
+      - ./pnpm-lock.yaml:/app/pnpm-lock.yaml:ro
+      - ./apps/worker-mail:/app/apps/worker-mail
+      - ./packages/my-fastify-decorators:/app/packages/my-fastify-decorators
+      - ./packages/my-fastify-decorators-microservices:/app/packages/my-fastify-decorators-microservices
+      - worker-mail-node-modules:/app/node_modules
     networks:
       - transcendence-network
     depends_on:
@@ -381,7 +408,9 @@ volumes:
     name: transcendence-frontend-node-modules
   social-node-modules:
     name: transcendence-social-node-modules
-  
+  worker-mail-node-modules:
+    name: transcendence-worker-mail-node-modules
+
   # SQLite database volumes (persistent data)
   auth-data:
     name: transcendence-auth-data
