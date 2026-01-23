@@ -1,5 +1,5 @@
 {
-	"name": "my-fastify-decorators-microservice",
+	"name": "my-fastify-decorators-microservices",
 	"version": "0.0.1",
 	"description": "Microservice decorators for Fastify v5",
 	"type": "module",
