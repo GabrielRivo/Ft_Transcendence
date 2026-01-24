@@ -1,10 +1,20 @@
-import { generateSchema, IsBoolean, IsNumber, IsRequired, IsString, Minimum } from 'my-class-validator';
+import { generateSchema, IsBoolean, IsNumber, IsRequired, IsString, Minimum, Maximum } from 'my-class-validator';
 
 export class CreateUserHistoryDto {
 	@IsRequired({ message: 'game id is requiered' })
 	@IsNumber()
-	@Minimum(0, {message : 'negative scores id'})
+	@Minimum(0, {message : 'negative game id'})
 	game_id: number;
+
+	// @IsRequired({ message: 'elo player 1 is requiered' })
+	// @IsNumber()
+	// @Minimum(0, {message : 'negative elo'})
+	// player1_elo: number;
+
+	// @IsRequired({ message: 'elo player 2 is requiered' })
+	// @IsNumber()
+	// @Minimum(0, {message : 'negative elo'})
+	// player2_elo: number;
 
 	@IsRequired({ message: 'player 1 id is requiered' })
 	@IsNumber()
@@ -18,12 +28,14 @@ export class CreateUserHistoryDto {
 
 	@IsRequired({ message: 'score player 1 is requiered' })
 	@IsNumber()
-	@Minimum(0, {message : 'negative scores for player 1'})
+	@Minimum(0, {message : 'negative score for player 1'})
+	@Maximum(5, {message : 'invalid score for player 1'})
 	score_player1: number;
 
 	@IsRequired({ message: 'score player 2 is requiered' })
 	@IsNumber()
-	@Minimum(0, {message : 'negative scores for player 2'})
+	@Minimum(0, {message : 'negative score for player 2'})
+	@Maximum(5, {message : 'invalid score for player 2'})
 	score_player2: number;
 
 	@IsRequired({ message: 'hit player 2 is requiered' })
@@ -49,6 +61,12 @@ export class CreateUserHistoryDto {
 	@IsRequired({ message: 'ranked or tournament is requiered' })
 	@IsString()
 	game_type: string;
+
+	@IsNumber({ message: 'need the value for 1' })
+	gain_player1: number;
+
+	@IsNumber({ message: 'need the value for 2' })
+	gain_player2: number;
 
 	@IsNumber({ message: 'need a number' })
 	@Minimum(0, {message : 'negative id'})

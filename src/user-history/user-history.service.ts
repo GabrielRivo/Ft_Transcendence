@@ -1,20 +1,25 @@
 import Database, { Statement } from 'better-sqlite3';
 import { BadRequestException, InjectPlugin, Service } from 'my-fastify-decorators';
 
-const addMatchHistoryStatement: string = `INSERT INTO game_history (game_id, player1_id, player2_id, score_player1,
-												score_player2, hit_player1, hit_player2, winner_id, duration_seconds, game_type, tournament_id, is_final)
-										VALUES (@game_id, @player1_id, @player2_id, @score_player1,
-												@score_player2, @hit_player1, @hit_player2 @winner_id, @duration_seconds, @game_type, @tournament_id, @is_final);`;
+const addMatchHistoryStatement: string = 
+	`INSERT INTO game_history (game_id, player1_id, player2_id, score_player1,
+		score_player2, hit_player1, hit_player2, winner_id, duration_seconds, game_type, 
+		gain_player1, gain_player2, tournament_id, is_final)
+	VALUES (@game_id, @player1_id, @player2_id, @score_player1,
+		@score_player2, @hit_player1, @hit_player2, @winner_id, @duration_seconds, 
+		@game_type, @gain_player1, @gain_player2, @tournament_id, @is_final);`;
 
-const getMatchHistory: string = `SELECT * FROM game_history
-									WHERE player1_id = ? OR player2_id = ? ORDER BY created_at DESC;`;
+const getMatchHistory: string = 
+	`SELECT * FROM game_history
+	WHERE player1_id = ? OR player2_id = ? ORDER BY created_at DESC;`;
 
-const updateUserGlobalStats: string = `UPDATE user_stats
-										SET average_score = ((average_score * total_games) + @new_score) / (total_games + 1),
-										total_games = total_games + 1,wins = wins + @is_win,losses = losses + @is_loss, tournament_played = tournament_played + @is_new_tournament,
-										tournament_won = tournament_won + @won_tournament,
-										average_game_duration_in_seconde = ((average_game_duration_in_seconde * total_games) + @duration) / (total_games + 1)
-										WHERE user_id = @user_id`;
+const updateUserGlobalStats: string = 
+	`UPDATE user_stats
+	SET average_score = ((average_score * total_games) + @new_score) / (total_games + 1),
+	total_games = total_games + 1, wins = wins + @is_win, losses = losses + @is_loss, tournament_played = tournament_played + @is_new_tournament,
+	tournament_won = tournament_won + @won_tournament, elo = elo + @elo_gain, winrate = wins / losses * 100,
+	average_game_duration_in_seconde = ((average_game_duration_in_seconde * total_games) + @duration) / (total_games + 1)
+	WHERE user_id = @user_id`;
 
 const isTournamentExists: string = `SELECT 1 FROM tournament WHERE tournament_id = ?`;
 const isGameIdValid: string = `SELECT 1 FROM game_history WHERE game_id = ?`;
@@ -38,6 +43,8 @@ export class UserHistoryService {
 		duration_seconds: number;
 		game_type: string;
 		tournament_id: number | null;
+		gain_player1: number | null;
+    	gain_player2: number | null; 
 		is_final: boolean;
 	}>;
 
@@ -74,6 +81,8 @@ export class UserHistoryService {
 		score_player2: number,
 		hit_player1: number,
 		hit_player2: number,
+		gain_player1: number | null,
+		gain_player2: number | null,
 		winner_id: number,
 		duration_seconds: number,
 		game_type: string,
@@ -109,8 +118,10 @@ export class UserHistoryService {
 			throw new BadRequestException("Ranked can't have tournament id");
 		}
 		if (game_type === 'ranked' && is_final) {
-			throw new BadRequestException("Ranked can't have final ");
+			throw new BadRequestException("Ranked can't have final");
 		}
+		if (game_type === 'ranked' && (gain_player1 == null || gain_player2 == null))
+			throw new BadRequestException("Ranked needs gain value");
 
 		const player1Exists = this.statementIsUserExists.get(player1_id);
 		if (!player1Exists) {
@@ -142,6 +153,7 @@ export class UserHistoryService {
 			new_score: score_player1,
 			is_win: winner_id === player1_id ? 1 : 0,
 			is_loss: winner_id === player1_id ? 0 : 1,
+			elo_gain: gain_player1,
 			duration: duration_seconds,
 			is_new_tournament: is_new_T_p1,
 			won_tournament: is_final && winner_id === player1_id ? 1 : 0,
@@ -151,6 +163,7 @@ export class UserHistoryService {
 			new_score: score_player2,
 			is_win: winner_id === player2_id ? 1 : 0,
 			is_loss: winner_id === player2_id ? 0 : 1,
+			elo_gain: gain_player2,
 			duration: duration_seconds,
 			is_new_tournament: is_new_T_p2,
 			won_tournament: is_final && winner_id === player2_id ? 1 : 0,
@@ -167,6 +180,8 @@ export class UserHistoryService {
 			winner_id,
 			duration_seconds,
 			game_type,
+			gain_player1,
+    		gain_player2,
 			tournament_id,
 			is_final: finalStatus ? 1 : 0,
 		};

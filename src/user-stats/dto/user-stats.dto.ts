@@ -21,6 +21,14 @@ export class CreateGameStatDto {
 	@IsNumber()
 	score_player2: number;
 
+	@IsRequired({ message: 'number hit player 1 is requiered' })
+	@IsNumber()
+	hit_player1: number;
+
+	@IsRequired({ message: 'number hit player 2 is requiered' })
+	@IsNumber()
+	hit_player2: number;
+
 	@IsRequired({ message: 'winner id is requiered' })
 	@IsNumber()
 	winner_id: number;
