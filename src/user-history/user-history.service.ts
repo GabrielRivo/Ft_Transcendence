@@ -1,5 +1,6 @@
 import Database, { Statement } from 'better-sqlite3';
-import { BadRequestException, InjectPlugin, Service } from 'my-fastify-decorators';
+import { BadRequestException, Inject, InjectPlugin, Service } from 'my-fastify-decorators';
+import { UserStatsService } from '../user-stats/user-stats.service.js';
 
 const addMatchHistoryStatement: string = 
 	`INSERT INTO game_history (game_id, player1_id, player2_id, score_player1,
@@ -13,14 +14,6 @@ const getMatchHistory: string =
 	`SELECT * FROM game_history
 	WHERE player1_id = ? OR player2_id = ? ORDER BY created_at DESC;`;
 
-const updateUserGlobalStats: string = 
-	`UPDATE user_stats
-	SET average_score = ((average_score * total_games) + @new_score) / (total_games + 1),
-	total_games = total_games + 1, wins = wins + @is_win, losses = losses + @is_loss, tournament_played = tournament_played + @is_new_tournament,
-	tournament_won = tournament_won + @won_tournament, elo = elo + @elo_gain, winrate = wins / losses * 100,
-	average_game_duration_in_seconde = ((average_game_duration_in_seconde * total_games) + @duration) / (total_games + 1)
-	WHERE user_id = @user_id`;
-
 const isTournamentExists: string = `SELECT 1 FROM tournament WHERE tournament_id = ?`;
 const isGameIdValid: string = `SELECT 1 FROM game_history WHERE game_id = ?`;
 const isUserExists: string = `SELECT 1 FROM user_stats WHERE user_id = ?`;
@@ -30,6 +23,9 @@ const updateTournamentWinner = `UPDATE tournament SET winner_id = ?, status = 'c
 export class UserHistoryService {
 	@InjectPlugin('db')
 	private db!: Database.Database;
+
+	@Inject(UserStatsService)
+	private userStatsService!: UserStatsService;
 
 	private statementAddMatchtoHistory: Statement<{
 		game_id: number;
@@ -53,7 +49,6 @@ export class UserHistoryService {
 	private statementIsUserExists!: Statement;
 	private statementIsTournamentExists!: Statement;
 	private statementMatchTransaction!: (match: any, p1: any, p2: any, isFinal: any) => void;
-	private statementUpdateStats!: Statement;
 
 	onModuleInit() {
 		this.statementAddMatchtoHistory = this.db.prepare(addMatchHistoryStatement);
@@ -61,12 +56,11 @@ export class UserHistoryService {
 		this.statementisGameIdValid = this.db.prepare(isGameIdValid);
 		this.statementIsUserExists = this.db.prepare(isUserExists);
 		this.statementIsTournamentExists = this.db.prepare(isTournamentExists);
-		this.statementUpdateStats = this.db.prepare(updateUserGlobalStats);
 
 		this.statementMatchTransaction = this.db.transaction((match, p1, p2, isFinal) => {
 			this.statementAddMatchtoHistory.run(match);
-			this.statementUpdateStats.run(p1);
-			this.statementUpdateStats.run(p2);
+			this.userStatsService.updateUserGlobalStats(p1.user_id, p1);
+			this.userStatsService.updateUserGlobalStats(p2.user_id, p2);
 			if (isFinal && match.tournament_id) {
 				this.db.prepare(updateTournamentWinner).run(match.winner_id, match.tournament_id);
 			}
@@ -152,23 +146,23 @@ export class UserHistoryService {
 		}
 		const p1Stats = {
 			user_id: player1_id,
-			new_score: score_player1,
-			is_win: winner_id === player1_id ? 1 : 0,
-			is_loss: winner_id === player1_id ? 0 : 1,
+			score: score_player1,
+			win: winner_id === player1_id,
+			loss: winner_id !== player1_id,
 			elo_gain: gain_player1,
 			duration: duration_seconds,
-			is_new_tournament: is_new_T_p1,
-			won_tournament: is_final && winner_id === player1_id ? 1 : 0,
+			isTournament: is_new_T_p1,
+			wonTournament: is_final && winner_id === player1_id,
 		};
 		const p2Stats = {
 			user_id: player2_id,
-			new_score: score_player2,
-			is_win: winner_id === player2_id ? 1 : 0,
-			is_loss: winner_id === player2_id ? 0 : 1,
+			score: score_player2,
+			win: winner_id === player2_id,
+			loss: winner_id !== player2_id,
 			elo_gain: gain_player2,
 			duration: duration_seconds,
-			is_new_tournament: is_new_T_p2,
-			won_tournament: is_final && winner_id === player2_id ? 1 : 0,
+			isTournament: is_new_T_p2,
+			wonTournament: is_final && winner_id === player2_id,
 		};
 
 		const matchData = {
@@ -183,7 +177,7 @@ export class UserHistoryService {
 			duration_seconds,
 			game_type,
 			gain_player1,
-    		gain_player2,
+			gain_player2,
 			tournament_id,
 			is_final: finalStatus ? 1 : 0,
 		};

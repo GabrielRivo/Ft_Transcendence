@@ -59,14 +59,15 @@ export class UserStatsService {
 
 	updateStats(current: UserStatsValues, match: any): UserStatsValues {
 		const n = current.total_games + 1;
-		console.log(current.elo, "elo")
+		const newWins = current.wins + (match.win ? 1 : 0);
+		const newLosses = current.losses + (match.loss ? 1 : 0);
 		return {
 			user_id: current.user_id,
 			elo: current.elo + match.elo_gain,
 			total_games: n,
-			wins: current.wins + (match.win ? 1 : 0),
-			losses: current.losses + (match.loss ? 1 : 0),
-			winrate: this.getWinrate(current.wins, current.losses),
+			wins: newWins,
+			losses: newLosses,
+			winrate: this.getWinrate(newWins, newLosses),
 			tournament_played: current.tournament_played + (match.isTournament ? 1 : 0),
 			tournament_won: current.tournament_won + (match.wonTournament ? 1 : 0),
 			average_score: Math.round((current.average_score * current.total_games + match.score) / n),
@@ -76,7 +77,7 @@ export class UserStatsService {
 		};
 	}
 
-	async updateUserGlobalStats(userId: number, matchData: any) {
+	updateUserGlobalStats(userId: number, matchData: any) {
 		const current = (this.statementGetStats.get(userId) as UserStatsValues) || {
 			user_id: userId,
 			elo: 1000,
