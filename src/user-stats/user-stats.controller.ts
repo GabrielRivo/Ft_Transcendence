@@ -33,6 +33,11 @@ export class UserStatsController {
 		}
 	}
 
+	@Get('/all-elos')
+	getAllElos() {
+		return this.statsService.getAllElos();
+	}
+
 	// @Post('/add')
 	// @BodySchema(CreateGameStatSchema)
 	// async addMatch(@Body() data: CreateGameStatDto) {
