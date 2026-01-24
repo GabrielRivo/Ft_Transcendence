@@ -56,3 +56,7 @@
 	path = packages/my-fastify-decorators-microservices
 	url = git@github.com:thetranscendence/my-fastify-decorators-microservices.git
 	branch = main
+[submodule "apps/stats"]
+	path = apps/stats
+	url = git@github.com:thetranscendence/UserStats.git
+	branch = main
