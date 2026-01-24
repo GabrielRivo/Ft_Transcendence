@@ -153,8 +153,8 @@ class Pong extends Game {
         }
         this.nsp!.to(this.id).emit('score', {player1Score: this.player1!.score, player2Score: this.player2!.score});
 
-
-        if (this.player1!.score >= 500 || this.player2!.score >= 500) {
+        this.ball!.setFullPos(new Vector3(0, -100, 0));
+        if (this.player1!.score >= 5 || this.player2!.score >= 5) {
 
             setTimeout(() => {
                 this.dispose();

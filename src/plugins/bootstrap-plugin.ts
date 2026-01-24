@@ -8,3 +8,4 @@ async function bootstrapPlugin(fastify: FastifyInstance) {
 }
 
 export default fp(bootstrapPlugin);
+  
