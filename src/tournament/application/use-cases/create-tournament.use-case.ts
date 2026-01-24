@@ -2,8 +2,6 @@ import { randomUUID } from "crypto";
 import { Inject, Service } from 'my-fastify-decorators';
 import { Tournament } from '../../domain/entities/tournament.js';
 import { Participant } from '../../domain/value-objects/participant.js';
-import { TournamentRepository } from '../../domain/ports/tournament.repository.js';
-import { TournamentEventsPublisher } from '../../domain/ports/tournament-events-publisher.js';
 import { CreateTournamentDto } from '../dtos/create-tournament.dto.js';
 import { SqliteTournamentRepository } from '@/tournament/infrastructure/repositories/sqlite-tournament.repository.js';
 import { SocketTournamentEventsPublisher } from '@/tournament/infrastructure/publishers/socket-tournament-events.publisher.js';
