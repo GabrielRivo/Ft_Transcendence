@@ -14,7 +14,7 @@ import { CreateGameStatDto, CreateGameStatSchema } from './dto/user-stats.dto.js
 import { UserStatsService } from './user-stats.service.js';
 
 @Controller('/')
-export class UserStatsController {
+export class UserStatsController { 
 	@Inject(UserHistoryService)
 	private userHistoryService!: UserHistoryService;
 
