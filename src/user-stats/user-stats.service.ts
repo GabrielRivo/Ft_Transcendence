@@ -7,7 +7,7 @@ export interface UserStatsValues {
 	total_games: number;
 	wins: number;
 	losses: number;
-	winrate: number;
+	winrate: number | null;
 	tournament_played: number;
 	tournament_won: number;
 	average_score: number;
@@ -46,7 +46,18 @@ export class UserStatsService {
 		return rows.map((r) => r.elo);
 	}
 
-	private updateStats(current: UserStatsValues, match: any): UserStatsValues {
+	getWinrate(wins: number, losses: number)
+	{
+		if (wins == 0)
+			return (0);
+		if (losses == 0 && wins != 0)
+			return (100); 
+		if (losses == 0 && wins == 0)
+			return (null)
+		return (wins / losses * 100);
+	}
+
+	updateStats(current: UserStatsValues, match: any): UserStatsValues {
 		const n = current.total_games + 1;
 		console.log(current.elo, "elo")
 		return {
@@ -55,7 +66,7 @@ export class UserStatsService {
 			total_games: n,
 			wins: current.wins + (match.win ? 1 : 0),
 			losses: current.losses + (match.loss ? 1 : 0),
-			winrate: current.wins / 0 * 100,
+			winrate: this.getWinrate(current.wins, current.losses),
 			tournament_played: current.tournament_played + (match.isTournament ? 1 : 0),
 			tournament_won: current.tournament_won + (match.wonTournament ? 1 : 0),
 			average_score: Math.round((current.average_score * current.total_games + match.score) / n),
