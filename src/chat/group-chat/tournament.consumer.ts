@@ -92,7 +92,8 @@ export class TournamentConsumer {
 
         if (aggregateId) {
             console.log(`[TournamentConsumer] Deleting system message for tournament ${aggregateId}`);
-            await this.generalChatService.deleteTournamentSystemMessage(aggregateId);
+            const result = await this.generalChatService.deleteTournamentSystemMessage(aggregateId);
+            console.log(`[TournamentConsumer] Deletion result:`, result);
 
             // Emit to hub to refresh chat or remove message (if client supports removing specific message)
             // Since we don't have a 'message_deleted' event yet in general chat, we might just rely on reload or next fetch.

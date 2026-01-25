@@ -111,6 +111,8 @@ export class ChatGateway {
 			roomId: 'hub',
 			created_at: msg.created_at,
 		}));
+		console.log(`[ChatGateway] Sending hub history. Count: ${formattedHistory.length}`);
+		// console.log(JSON.stringify(formattedHistory, null, 2)); 
 		client.emit('hub_history', formattedHistory);
 	}
 
@@ -298,7 +300,7 @@ export class ChatGateway {
 			console.log(user1, user2);
 			await this.privateChatService.savePrivateMessage(user1, user2, content, user?.id);
 		}
-		
+
 		const messageData = {
 			userId: user.id,
 			username: user.username,
