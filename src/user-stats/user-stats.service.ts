@@ -38,7 +38,7 @@ export class UserStatsService {
 			updated_at = CURRENT_TIMESTAMP`);
 	}
 	async getGlobalStats(userId: number) {
-		return this.statementGetStats.get(userId) as UserStatsValues | undefined;
+		return this.statementGetStats.get(userId) as UserStatsValues;
 	}
 
 	getAllElos(): number[] {
@@ -46,15 +46,17 @@ export class UserStatsService {
 		return rows.map((r) => r.elo);
 	}
 
-	getWinrate(wins: number, losses: number)
+	getWinrate(wins: number, losses: number, n: number)
 	{
+		if (n == 0)
+			return (null);
 		if (wins == 0)
 			return (0);
 		if (losses == 0 && wins != 0)
 			return (100); 
 		if (losses == 0 && wins == 0)
 			return (null)
-		return (wins / losses * 100);
+		return (wins / n * 100);
 	}
 
 	updateStats(current: UserStatsValues, match: any): UserStatsValues {
@@ -67,7 +69,7 @@ export class UserStatsService {
 			total_games: n,
 			wins: newWins,
 			losses: newLosses,
-			winrate: this.getWinrate(newWins, newLosses),
+			winrate: this.getWinrate(newWins, newLosses, n),
 			tournament_played: current.tournament_played + (match.isTournament ? 1 : 0),
 			tournament_won: current.tournament_won + (match.wonTournament ? 1 : 0),
 			average_score: Math.round((current.average_score * current.total_games + match.score) / n),
