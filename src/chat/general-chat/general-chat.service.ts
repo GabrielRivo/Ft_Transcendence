@@ -1,8 +1,6 @@
 import Database, { Statement } from 'better-sqlite3';
 import { InjectPlugin, Service } from 'my-fastify-decorators';
 
-const BLOCK_URL = 'http://user:3000';
-
 @Service()
 export class GeneralChatService {
 	@InjectPlugin('db')
@@ -47,28 +45,17 @@ export class GeneralChatService {
 		}
 	}
 
-	async getGeneralHistory(currentUserId: number) {
+		async getGeneralHistory() {
 		const rows = this.statementGetGeneralHistory.all() as any[];
 		console.log(`[GeneralChatService] getGeneralHistory fetched ${rows.length} rows.`);
-		// Debug: check if tournament message exists
 		const tournamentMsgs = rows.filter(r => r.msgContent.includes('[JOIN_TOURNAMENT'));
 		if (tournamentMsgs.length > 0) {
 			console.log(`[GeneralChatService] Found tournament messages in history:`, tournamentMsgs);
 		}
-		const filteredHistory = [];
-		for (const msg of rows) {
-			const res = await fetch(`${BLOCK_URL}/friend-management/block?userId=${currentUserId}&otherId=${msg.userId}`);
-			if (!res.ok) {
-				console.error(`Error with friend service ${res.status}`);
-			}
-			else {
-				const data = await res.json() as { isBlocked: boolean };
-				if (data.isBlocked === false) {
-					filteredHistory.push(msg);
-				}
-			}
-		}
-		return filteredHistory;
+		const history = []
+		for (const msg of rows) 
+				history.push(msg);
+			return history;
 	}
 
 	getAllGeneralHistory() {

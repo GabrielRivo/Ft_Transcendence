@@ -14,9 +14,7 @@ import { Socket } from 'socket.io';
 import { GeneralChatService } from './general-chat/general-chat.service.js';
 import { PrivateChatService } from './private-chat/private-chat.service.js';
 import { GroupChatService } from './group-chat/group-chat.service.js'
-// import { BlockManagementService } from '../friend-management/block-management.service.js';
 import { ChatSchema, ChatDto } from './dto/chat.dto.js';
-// import { group } from 'console';
 
 @WebSocketGateway()
 export class ChatGateway {
@@ -25,9 +23,6 @@ export class ChatGateway {
 
 	@Inject(PrivateChatService)
 	private privateChatService!: PrivateChatService;
-
-	// @Inject(BlockManagementService)
-	// private blockService!: BlockManagementService;
 
 	@Inject(GroupChatService)
 	private groupChatServie!: GroupChatService;
@@ -103,7 +98,7 @@ export class ChatGateway {
 		console.log("[get_hub_history]");
 		if (!user?.id) return;
 
-		const history = await this.generalChatService.getGeneralHistory(user.id);
+		const history = await this.generalChatService.getGeneralHistory();
 		const formattedHistory = history.map((msg: any) => ({
 			userId: msg.userId,
 			username: msg.username || 'Unknown',
@@ -112,7 +107,6 @@ export class ChatGateway {
 			created_at: msg.created_at,
 		}));
 		console.log(`[ChatGateway] Sending hub history. Count: ${formattedHistory.length}`);
-		// console.log(JSON.stringify(formattedHistory, null, 2)); 
 		client.emit('hub_history', formattedHistory);
 	}
 
@@ -147,20 +141,13 @@ export class ChatGateway {
 			await this.handleGetHubHistory(client, user);
 		}
 
-		// start test
 		if (roomId.startsWith("group")) {
 			console.log("[join_group]");
 			const groupId = parseInt(roomId.slice(6));
-			//await this.groupChatServie.getGroupHistory(groupId);
 			const messages = await this.groupChatServie.getGroupHistory(groupId, user.id);
 			client.emit('group_history', messages);
 			console.log("messges : ", messages)
 		}
-
-
-		//
-
-
 
 		// Envoyer la liste des utilisateurs
 		const users = await this.getUsersInRoom(client, roomId);
@@ -238,18 +225,10 @@ export class ChatGateway {
 		@MessageBody() data: { friendId: number; content: string },
 		@JWTBody() user: any
 	) {
-		console.log("[send_private_message]");
-		console.log("MESSAGESSE")
 		if (!user?.id) return;
 
 		const fromId = user.id;
 		const { friendId, content } = data;
-
-		console.log('Handshake Auth:', client.handshake.auth);
-		console.log('Handshake Query:', client.handshake.query);
-		console.log('Client Data:', client.data);
-		console.log("MESSAGEE")
-		console.log('Client Auth:', (client as any).user || (client as any).data);
 
 		await this.privateChatService.savePrivateMessage(fromId, friendId, content, fromId);
 		const roomId = `room_${Math.min(fromId, friendId)}_${Math.max(fromId, friendId)}`;
@@ -272,7 +251,6 @@ export class ChatGateway {
 		@MessageBody() body: ChatDto,
 		@JWTBody() user: any
 	) {
-		console.log("[message]");
 		if (!user?.id) {
 			client.emit('error', { message: 'Authentication required' });
 			return;
@@ -285,7 +263,7 @@ export class ChatGateway {
 			content, roomId
 		)
 
-		if (roomId.startsWith("room")) { // if room_5_a_6?
+		if (roomId.startsWith("room")) { 
 			const users = roomId.slice(5).split("_").map((i) => !Number.isNaN(parseInt(i)) && parseInt(i));
 			if (users.length != 2) {
 				client.emit('error', { message: 'invalid user number' });
@@ -308,24 +286,7 @@ export class ChatGateway {
 			roomId: targetRoom,
 			created_at: new Date().toISOString(),
 		};
-
-		// bloc de test
-		// const testdata = {
-		// 	userId: user.id,
-		// 	username: user.username,
-		// 	msgContent: "le message lul",
-		// 	roomId: "group_1",
-		// 	created_at: new Date().toISOString(),
-		// };
-
-		//client.nsp.in(targetRoom).emit('message', messageData);
-		//client.nsp.in("group_1").emit('message', messageData);
-
-
-		// fin du test
-
 		console.log("sender : ", user.id)
-		// test pour group
 		if (roomId.startsWith("group")) {
 			const groupId = parseInt(roomId.slice(6));
 			console.log("room id : ", groupId);
@@ -335,14 +296,8 @@ export class ChatGateway {
 			if (groupId < 0)
 				client.emit('error', { message: 'invalid group id' });
 			console.log("group");
-			this.groupChatServie.saveGroupMessage(groupId, user?.id, content); // nique tout
+			this.groupChatServie.saveGroupMessage(groupId, user?.id, content);
 			console.log("here@ room", roomId);
-			// recuperer les id?
-			// verifier si tout les id sont correctes -> negatif, same id ?
-			// le save private message sur le salon 
-			// -> emit aux autres users?
-			// !! pour les bloqued users, pas testablr actuellement
-			//client.nsp.in(targetRoom).emit('message', messageData);
 		}
 		console.log("room : ", roomId);
 
@@ -355,21 +310,3 @@ export class ChatGateway {
 		client.nsp.in(targetRoom).emit('message', messageData);
 	}
 }
-
-// gestion des amis : par son username -> get l'id par le user managemement 
-// table de demande d'ami : rajouter pending : si accepter -> enable, sinon delete
-// si la  personne est connectee : notif pop up par les sockets 
-
-
-
-// table des users. : pour le block et add 
-
-// join all chat -> quand un user se connecte : connection a tout ses chans (amis, general, tournoi)
-// id : id 1 + id 2
-// pour le general : id 0?
-
-// tournois : id specifique si doublons ? != historique OK
-
-
-// pour les group chat : limiter a 16 users : taille max des tournois + stockage 
-// plus facile 

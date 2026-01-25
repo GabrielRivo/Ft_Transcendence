@@ -116,7 +116,6 @@ export class GroupChatService {
 		}
 		this.emitToUser(userId, 'group_invite', { groupId });
 		this.emitToUser(otherId, 'group_list_update', {});
-		// USER EXIST
 		return { success: true, message: "Member added" };
 	}
 
@@ -192,14 +191,12 @@ export class GroupChatService {
 		const rows = this.statemenGetGroupHistory.all({ groupId, userId }) as any[];
 		const filteredHistory = [];
 		for (const msg of rows) {
-			// console.log("mess : ", userId, msg.userId)
 			const res = await fetch(`${BLOCK_URL}/friend-management/block?userId=${userId}&otherId=${msg.userId}`);
 			if (!res.ok) {
 				console.error(`Error with friend service ${res.status}`);
 			} else {
 				const data = await res.json() as { isBlocked: boolean };
 				if (data.isBlocked === false) {
-					// console.log("false")
 					filteredHistory.push(msg);
 				}
 			}
