@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { createElement, useCallback, useEffect, useRef, useState } from 'my-react';
-import { Link, useNavigate, useParams, useLocation } from 'my-react-router';
+import { Link, useNavigate, useParams, useQuery } from 'my-react-router';
 import { ButtonStyle4 } from '@/components/ui/button/style4';
 import { ButtonStyle3 } from '@/components/ui/button/style3';
 import { CardStyle2 } from '@/components/ui/card/style2';
@@ -9,6 +9,8 @@ import { tournamentSocket } from '@libs/socket';
 import { useToast } from '@hook/useToast';
 import { useValidation, ValidationError } from '@hook/useValidation';
 import { CreateTournamentSchema } from '../../dto';
+import { Modal } from '@/components/ui/modal/index';
+import { useAuth } from '@/hook/useAuth';
 
 const TOURNAMENT_TYPES = ['public', 'private'] as const;
 const TOURNAMENT_SIZES = [4, 8, 16] as const;
@@ -26,6 +28,7 @@ interface TournamentResponse {
 	id: string;
 	name: string;
 	size: number;
+	ownerId: string;
 	visibility: TournamentVisibility;
 	status: TournamentStatus;
 	participants: TournamentParticipant[];
@@ -43,22 +46,23 @@ interface LocationState {
 export function TournamentPlayersPage() {
 	const params = useParams();
 	const navigate = useNavigate();
-	const location = useLocation<LocationState>();
+	const query = useQuery();
 	const { toast } = useToast();
+	const { user } = useAuth();
 	const { validate, getFieldError } = useValidation(CreateTournamentSchema);
 
 	const [tournamentName, setTournamentName] = useState('');
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [errors, setErrors] = useState<ValidationError[]>([]);
 
-	// Initialize from location state if available (from AuthGuard redirect)
-	const initialId = location.state?.activeTournamentId || null;
+	const initialId = null;
 	const [createdTournamentId, setCreatedTournamentId] = useState<string | null>(initialId);
 
 	const [tournament, setTournament] = useState<TournamentResponse | null>(null);
 	const [isLoadingTournament, setIsLoadingTournament] = useState(false);
 	const [loadError, setLoadError] = useState<string | null>(null);
 	const activeTournamentIdRef = useRef<string | null>(null);
+	const [showCancelModal, setShowCancelModal] = useState(false);
 
 	const tournamentType = params.tournamentType ?? '';
 	const playersCount = Number(params.playersCount);
@@ -73,15 +77,22 @@ export function TournamentPlayersPage() {
 				if (result.ok && result.data && result.data.id) {
 					console.log('[Frontend] Found active tournament:', result.data.id);
 					setCreatedTournamentId(result.data.id);
+					// Optionally update URL if needed, but maybe not automatically to avoid loops
 				}
 			} catch (e) {
 				console.error('Failed to check active tournament', e);
 			}
 		};
 
-		if (!createdTournamentId) {
+		const queryId = query.get('id');
+		if (queryId) {
+			setCreatedTournamentId(queryId);
 			checkActiveTournament();
 		}
+
+		return () => {
+			console.log('[Frontend] TournamentPlayersPage unmounted');
+		};
 	}, []);
 
 	useEffect(() => {
@@ -167,6 +178,7 @@ export function TournamentPlayersPage() {
 		setCreatedTournamentId(result.data.id);
 		toast('Tournament created', 'success');
 		setIsSubmitting(false);
+		navigate(`/play/tournament/${tournamentType}/${playersCount}?id=${result.data.id}`);
 	};
 
 	const handleRetryLoad = () => {
@@ -177,23 +189,51 @@ export function TournamentPlayersPage() {
 
 	const nameError = getFieldError(errors, 'name');
 
+
 	useEffect(() => {
 		if (!tournament || !tournament.id) return;
 
+		// Log connection status
+		console.log('[Frontend] Connection status:', tournamentSocket.connected);
+		tournamentSocket.on('connect', () => {
+			console.log('[Frontend] Socket connected:', tournamentSocket.id);
+			if (tournament?.id) {
+				console.log('[Frontend] Emitting listen_tournament after connect');
+				tournamentSocket.emit('listen_tournament', {
+					tournamentId: tournament.id,
+					displayName: 'Guest'
+				});
+			}
+		});
+
+		tournamentSocket.on('connect_error', (err) => {
+			console.error('[Frontend] Socket connection error:', err);
+		});
+
+		if (tournament?.id) {
+			console.log('[Frontend] Listening to tournament events for:', tournament.id);
+			tournamentSocket.emit('listen_tournament', {
+				tournamentId: tournament.id,
+				displayName: 'Guest' // Display name is required by DTO but not used for listening
+			});
+		}
+
 		const onPlayerJoined = (data: any) => {
-			console.log('[Frontend] Player joined event:', data);
-			if (data.tournamentId === tournament.id) {
+			console.log('[Frontend] PlayerJoined event:', data);
+			if (data.aggregateId === tournament?.id || data.tournamentId === tournament?.id) {
+				const playerId = data.playerId || data.participantId;
+				console.log('[Frontend] Processing join for player:', playerId);
 				setTournament((prev) => {
 					if (!prev) return null;
 					// Check if player already exists
-					if (prev.participants.some(p => p.id === data.participantId)) return prev;
+					if (prev.participants.some(p => p.id === playerId)) return prev;
 
 					return {
 						...prev,
 						participants: [
 							...prev.participants,
 							{
-								id: data.participantId,
+								id: playerId,
 								displayName: data.displayName,
 								type: 'USER' // Default to USER for now
 							}
@@ -204,22 +244,68 @@ export function TournamentPlayersPage() {
 			}
 		};
 
+		const onPlayerLeft = (data: any) => {
+			console.log('[Frontend] PlayerLeft event:', data);
+			if (data.aggregateId === tournament?.id) {
+				const playerId = data.playerId;
+				if (user && String(user.id) === playerId) {
+					// Current user left (e.g. from another tab), redirect
+					navigate('/play');
+					return;
+				}
+
+				setTournament((prev) => {
+					if (!prev) return null;
+					return {
+						...prev,
+						participants: prev.participants.filter(p => p.id !== playerId)
+					};
+				});
+			}
+		}
+
 		const onTournamentStarted = (data: any) => {
-			console.log('[Frontend] Tournament started event:', data);
-			if (data.tournamentId === tournament.id) {
+			console.log('[Frontend] TournamentStarted event:', data);
+			if (data.aggregateId === tournament?.id || data.tournamentId === tournament?.id) {
 				setTournament(prev => prev ? ({ ...prev, status: 'STARTED' }) : null);
 				toast('Tournament started!', 'success');
 			}
 		};
 
+		const onTournamentCancelled = (data: any) => {
+			console.log('[Frontend] TournamentCancelled event:', data);
+			if (data.aggregateId === tournament?.id || data.tournamentId === tournament?.id) {
+				setTournament(prev => prev ? ({ ...prev, status: 'CANCELED' }) : null);
+				// Show modal only if NOT the one who initiated (owner check might be tricky here if we don't have ownerId easily accessible, 
+				// but usually the cancel action redirects the owner immediately. 
+				// We'll show the modal to everyone remaining on the page.)
+				setShowCancelModal(true);
+			}
+		};
+
+		// Listen for both PascalCase (Backend standard) and potential snake_case equivalents just in case
+		tournamentSocket.on('PlayerJoined', onPlayerJoined);
+		tournamentSocket.on('PlayerLeft', onPlayerLeft);
+		tournamentSocket.on('TournamentStarted', onTournamentStarted);
+		tournamentSocket.on('TournamentCancelled', onTournamentCancelled);
 		tournamentSocket.on('player_joined', onPlayerJoined);
+		tournamentSocket.on('player_left', onPlayerLeft);
 		tournamentSocket.on('tournament_started', onTournamentStarted);
+		tournamentSocket.on('tournament_cancelled', onTournamentCancelled);
 
 		return () => {
+			tournamentSocket.off('PlayerJoined', onPlayerJoined);
+			tournamentSocket.off('PlayerLeft', onPlayerLeft);
+			tournamentSocket.off('TournamentStarted', onTournamentStarted);
+			tournamentSocket.off('TournamentCancelled', onTournamentCancelled);
 			tournamentSocket.off('player_joined', onPlayerJoined);
+			tournamentSocket.off('player_left', onPlayerLeft);
 			tournamentSocket.off('tournament_started', onTournamentStarted);
+			tournamentSocket.off('tournament_cancelled', onTournamentCancelled);
+			tournamentSocket.off('connect');
+			tournamentSocket.off('connect_error');
 		};
-	}, [tournament?.id, toast]);
+	}, [tournament?.id, toast, user]);
 
 	const handleCancelTournament = async () => {
 		if (!tournament?.id) return;
@@ -244,9 +330,41 @@ export function TournamentPlayersPage() {
 		}
 	};
 
+	const handleLeaveTournament = async () => {
+		if (!tournament?.id) return;
+
+		try {
+			const result = await fetchJsonWithAuth(`/api/tournament/${tournament.id}/leave`, {
+				method: 'POST',
+				body: JSON.stringify({}),
+			});
+
+			if (result.ok) {
+				toast('You left the tournament', 'success');
+				setCreatedTournamentId(null);
+				setTournament(null);
+				navigate('/play');
+			} else {
+				toast(result.error || 'Failed to leave tournament', 'error');
+			}
+		} catch (error) {
+			console.error('Failed to leave tournament', error);
+			toast('An error occurred', 'error');
+		}
+	};
+
+	const handleCloseModal = () => {
+		console.log('[Frontend] Closing modal manually');
+		setShowCancelModal(false);
+		console.log('[Frontend] Navigating to /play');
+		navigate('/play');
+	};
+
 	if (!isValidType || !isValidSize) {
 		return null;
 	}
+
+	const isOwner = user && tournament && String(user.id) === tournament.ownerId;
 
 	return (
 		<div className="relative size-full">
@@ -357,17 +475,44 @@ export function TournamentPlayersPage() {
 							)}
 
 							<div className="mt-2 flex flex-col items-center gap-2">
-								<button
-									onClick={handleCancelTournament}
-									className="text-center font-pirulen text-xs font-bold tracking-widest text-red-400 hover:text-red-300 transition-colors"
-								>
-									Cancel Tournament
-								</button>
+								{isOwner ? (
+									<button
+										onClick={handleCancelTournament}
+										className="text-center font-pirulen text-xs font-bold tracking-widest text-red-400 hover:text-red-300 transition-colors"
+									>
+										Cancel Tournament
+									</button>
+								) : (
+									<button
+										onClick={handleLeaveTournament}
+										className="text-center font-pirulen text-xs font-bold tracking-widest text-red-400 hover:text-red-300 transition-colors"
+									>
+										Leave Tournament
+									</button>
+								)}
 							</div>
 						</div>
 					</CardStyle2>
 				)}
 			</div>
-		</div>
+			{
+				showCancelModal && (
+					<Modal
+						variant="cyan"
+						title="Tournament Cancelled"
+						onClose={handleCloseModal}
+					>
+						<div className="flex flex-col gap-4 text-center">
+							<p className="text-gray-300">
+								The tournament has been cancelled by the host.
+							</p>
+							<ButtonStyle3 onClick={handleCloseModal}>
+								Return to Play
+							</ButtonStyle3>
+						</div>
+					</Modal>
+				)
+			}
+		</div >
 	);
 }
