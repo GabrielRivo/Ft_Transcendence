@@ -62,7 +62,7 @@ export function ProfileSlugPage() {
 		if (!profile) return;
 
 		setIsSendingRequest(true);
-		const result = await fetchJsonWithAuth('/api/social/friend-request', {
+		const result = await fetchJsonWithAuth('/api/user/friend-request', {
 			method: 'POST',
 			body: JSON.stringify({ username: profile.username }),
 		});
@@ -79,7 +79,7 @@ export function ProfileSlugPage() {
 	const handleRemoveFriend = async () => {
 		if (!profile) return;
 
-		const result = await fetchJsonWithAuth(`/api/social/friend/${profile.id}`, {
+		const result = await fetchJsonWithAuth(`/api/user/friend/${profile.id}`, {
 			method: 'DELETE',
 		});
 

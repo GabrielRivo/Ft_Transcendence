@@ -10,7 +10,7 @@ import { ChatRoomUsersPanel } from './ChatRoomUsersPanel';
 export function ChatSection() {
 	const { connected, currentRoom, messages, roomUsers, sendMessage, joinRoom, joinPrivateRoom, joinGroupRoom } =
 		useChat();
-	const { friends, loading: friendsLoading } = useFriends();
+	const { friends, loading: friendsLoading, removeFriend } = useFriends();
 	const { groups, loading: groupsLoading } = useGroups();
 
 	const handleSelectHub = () => {
@@ -62,6 +62,7 @@ export function ChatSection() {
 					onSelectHub={handleSelectHub}
 					onSelectFriend={handleSelectFriend}
 					onSelectGroup={handleSelectGroup}
+					onRemoveFriend={removeFriend}
 				/>
 			</div>
 

@@ -63,7 +63,7 @@ export function ChatRoomUsersPanel({ roomUsers, currentRoom }: { roomUsers: Room
 										console.log('Profil', roomUser.username)
 									},
 									onToggleFriend: () => {
-										fetchWithAuth(`/api/social/friend-management/invite`, {
+										fetchWithAuth(`/api/user/friend-management/invite`, {
 											method: 'POST',
 											headers: {
 												'Content-Type': 'application/json',
@@ -79,7 +79,7 @@ export function ChatRoomUsersPanel({ roomUsers, currentRoom }: { roomUsers: Room
 										console.log('Add friend', roomUser.username)
 									},
 									onBlock: () => {
-										fetchWithAuth(`/api/social/friend-management/block`, {
+										fetchWithAuth(`/api/user/friend-management/block`, {
 											method: 'POST',
 											headers: {
 												'Content-Type': 'application/json',
