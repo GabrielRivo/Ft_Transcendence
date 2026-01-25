@@ -101,7 +101,20 @@ export function ChatSidebarPanel({
 									isSelected={currentRoom.includes(String(friend.id))}
 									onClick={() => onSelectFriend(friend.id)}
 									contextMenuCallbacks={{
-										onChallenge: () => {																				
+										onChallenge: () => {
+											fetchWithAuth(`/api/user/friend-management/challenge`, {
+												method: 'POST',
+												headers: {
+													'Content-Type': 'application/json',
+												},
+												body: JSON.stringify({
+													otherId: friend.id
+												}),																	
+											}).then(data => data.json()).then(data => {
+												toast(data.message, data.success ? 'success' : 'error')
+											}).catch(e => {
+												toast('Network error', 'error')
+											})
 											console.log('Défier', friend.username)
 										},
 										onInviteTournament: () => {
@@ -111,7 +124,7 @@ export function ChatSidebarPanel({
 											navigate(`/statistics/${friend.id}`)
 										},
 										onProfile: () => {
-											navigate(`/profil/${friend.id}`)
+											navigate(`/profile/${friend.id}`)
 											console.log('Profil', friend.username)
 										},
 										onToggleFriend: async () => {
