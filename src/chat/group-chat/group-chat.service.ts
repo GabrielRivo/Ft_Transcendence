@@ -100,7 +100,7 @@ export class GroupChatService {
 	addMember(groupId: number, userId: number, otherId: number): { success: boolean; message: string } {
 		const canInvite = this.isMember(groupId, userId);
 		if (!canInvite) {
-			return { success: false, message: "You are not a member of this group" }; //A CHANGER
+			return { success: false, message: "You haven't the permission to invite!" };
 		}
 
 		const members = this.getGroupMembers(groupId);
@@ -126,20 +126,11 @@ export class GroupChatService {
 			return { success: false, message: "Group not found" };
 		}
 
-		// if (group.ownerId !== userId) {
-		// 	console.log("owner : ", group.ownerId, "remover :")
-		// 	return { success: false, message: "You don't have permission to remove this member" };
-		// }
-
 		if (otherId != userId) {
 			console.log("user : ", userId, "leave")
 			return { success: false, message: "You don't have permission to remove this member" };
 		}
-
-		// if (otherId === group.ownerId) {
-		// 	return { success: false, message: "Owner cannot leave. Delete the group instead." };
-		// }
-
+		
 		const result = this.statementRemoveMember.run({ groupId, userId: otherId });
 		if (result.changes === 0) {
 			return { success: false, message: "User is not a member" };
