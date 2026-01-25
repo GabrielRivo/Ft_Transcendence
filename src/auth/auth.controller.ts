@@ -171,11 +171,11 @@ export class AuthController {
 		return { success: true, message: 'Username set successfully' };
 	}
 
-	//warning: dangereux faire attention
-	@Get('/users')
-	async getAllUsers() {
-		return this.dbExchangeService.getAllUsers();
-	}
+	// //warning: dangereux faire attention
+	// @Get('/users')
+	// async getAllUsers() {
+	// 	return this.dbExchangeService.getAllUsers();
+	// }
 
 	@Get('/user-by-username/:username')
 	async getUserByUsername(@Param('username') username: string) {

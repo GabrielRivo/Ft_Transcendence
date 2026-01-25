@@ -1,5 +1,5 @@
-import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
+import fp from 'fastify-plugin';
 import { RabbitMQClient } from 'my-fastify-decorators-microservices';
 
 declare module 'fastify' {
@@ -13,10 +13,18 @@ async function rabbitmqPlugin(fastify: FastifyInstance) {
 
 
     const client = new RabbitMQClient({
-        urls,
-        queue: 'mail_queue'
+        queue: 'auth.mail.queue',
+        urls
     });
 
+    const client2 = new RabbitMQClient({
+        queue: 'auth.users.queue',
+        urls,
+        exchange: {
+            name: 'auth.users.exchange',
+            type: 'fanout',
+        },
+    });
 
     // const server = new RabbitMQServer({
     //     urls,
@@ -25,11 +33,12 @@ async function rabbitmqPlugin(fastify: FastifyInstance) {
 
 
     fastify.decorate('mq', client);
-
+    fastify.decorate('users', client2);
 
     fastify.ready(async () => {
         try {
             await client.connect();
+            await client2.connect();
             // await server.listen()
         } catch (err) {
             console.error('RabbitMQ connection failed', err);
@@ -38,6 +47,7 @@ async function rabbitmqPlugin(fastify: FastifyInstance) {
 
     fastify.addHook('onClose', async () => {
         await client.close();
+        await client2.close();
         // await server.close();
     });
 }

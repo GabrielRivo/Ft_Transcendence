@@ -12,6 +12,7 @@ import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 
 import type { JWT } from '@fastify/jwt';
+import { RabbitMQClient } from 'my-fastify-decorators-microservices';
 import { ProviderBasic, ProviderKeys, providers } from './providers.js';
 
 export type JwtPayload = {
@@ -65,6 +66,12 @@ export class AuthService {
 	@InjectPlugin('jwt')
 	private jwt!: JWT;
 
+	@InjectPlugin('mq')
+	private mq!: RabbitMQClient;
+
+	@InjectPlugin('users')
+	private users!: RabbitMQClient;
+
 	async register(dto: RegisterDto): Promise<AuthTokens> {
 		const { email, password } = dto;
 		const existing = await this.dbExchange.existing(email);
@@ -75,8 +82,7 @@ export class AuthService {
 		const hashedPassword = await hashPassword(password);
 
 		const info = await this.dbExchange.addUser(email, hashedPassword);
-
-		// va demander un username plus tard
+		this.users.publish('user.created', { id: Number(info.lastInsertRowid), provider: 'email' });
 		return this.generateTokens(Number(info.lastInsertRowid), email, '', 'email', { noUsername: true });
 	}
 
@@ -229,6 +235,7 @@ export class AuthService {
 
 		if (!user) {
 			const info = await this.dbExchange.addUserByProviderId(provider, String(userData.id));
+			this.users.publish('user.created', { id: Number(info.lastInsertRowid), provider, avatar_url: userData.avatar_url });
 			user = { id: Number(info.lastInsertRowid), email: userData.email, password_hash: '', username: '' };
 		}
 
@@ -269,6 +276,11 @@ export class AuthService {
 			throw new UnauthorizedException('User not found');
 		}
 
+		try {
+		this.users.publish('user.updated.username', { id: userId, username });
+		} catch (error) {
+			console.error('Error publishing user.updated.username', error);
+		}
 		// Générer de nouveaux tokens avec le username
 		return this.generateTokens(user.id, user.email || '', username, 'email');
 	}
