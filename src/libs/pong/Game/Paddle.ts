@@ -19,7 +19,7 @@ class Paddle {
 
     private visualOffset: Vector3 = new Vector3(0, 0, 0);
 
-    constructor(owner?: any) {
+    constructor(owner: any, nbr: number) {
         this.model = MeshBuilder.CreateBox("paddle", {size: 0.15, width: 1.2 , height: 0.15});
 
         this.hitbox = MeshBuilder.CreateBox("paddle", {size: 0.15, width: 1.2 , height: 0.15});
@@ -37,11 +37,18 @@ class Paddle {
         this.trigger2 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
         this.trigger3 = MeshBuilder.CreateBox("paddleTrigger", {size: 0.15, width: 7 , height: 0.15});
 		// this.hitbox = MeshBuilder.CreateBox("paddle", {size: 0.30, width: 5.0 , height: 0.30});
-        let material = new StandardMaterial("playerMat", Services.Scene);
-        material.emissiveColor = new Color3(0.8, 0, 0.2);
-        let material2 = new StandardMaterial("playerMat2", Services.Scene);
-        material2.emissiveColor = new Color3(0, 0.2, 0.8);
-        this.model.material = material2;
+        let material: StandardMaterial;
+        if (nbr === 1) {
+            material = new StandardMaterial("playerMat1", Services.Scene);
+            //pink-red
+            material.emissiveColor = new Color3(0.8, 0, 0.8);
+        }
+        else {
+            material = new StandardMaterial("playerMat2", Services.Scene);
+            //cyan-blue
+            material.emissiveColor = new Color3(0.2, 0.8, 1);
+        }
+        this.model.material = material;
         this.model.isPickable = false;
         this.model.visibility = 1;
 
@@ -150,6 +157,7 @@ class Paddle {
         ball.speedUp();
         ball.owner = this.owner;
         //console.log("Ball hit by paddle, new direction : ", newDir, " angle : ", angle);
+        Services.EventBus!.emit("PaddleHitBall", {paddle: this, ball: ball});
     }
 
     public reconcile(predictedPos: Vector3, truthPos: Vector3): void {

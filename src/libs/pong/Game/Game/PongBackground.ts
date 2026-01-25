@@ -50,7 +50,7 @@ import BlackScreenEffect from '../Effects/BlackScreenEffect';
 const CAMERA_ROTATION_SPEED = 0.0005;
 
 /** AI paddle movement speed */
-const AI_SPEED = 0.08;
+const AI_SPEED = 0.15;
 
 /** AI reaction delay (makes it beatable and more natural) */
 const AI_REACTION_THRESHOLD = 0.3;
@@ -156,8 +156,8 @@ class PongBackground extends Game {
 		this.glowLayer.intensity = 0.3;
 
 		// Create game objects
-		this.player1 = new Player(undefined);
-		this.player2 = new Player(undefined);
+		this.player1 = new Player(1);
+		this.player2 = new Player(2);
 		this.walls = [new Wall(), new Wall()];
 		this.walls.forEach((wall) => Services.Scene!.addMesh(wall.model));
 		//this.ball = new Ball();
@@ -218,7 +218,7 @@ class PongBackground extends Game {
 		this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 
 		this.ball = new Ball();
-		this.ball.generate(0);
+		this.ball.generate(2000);
 		this.ball.startDirectionRandom();
 		
 		// Load 3D background model from cache
@@ -288,7 +288,7 @@ class PongBackground extends Game {
 	private onDeathBarHit = (_payload: DeathBarPayload): void => {
 		// Reset ball position
 		if (this.ball) {
-			this.ball.generate(1000);
+			this.ball.generate(2000);
 			this.ball.startDirectionRandom();
 		}
 	};
@@ -324,7 +324,7 @@ class PongBackground extends Game {
 			if (this.player1.paddle && this.player2.paddle) {
 				this.ball.update(Services.TimeService!.getTimestamp(), Services.TimeService!.getDeltaTime(), this.player1.paddle, this.player2.paddle);
 				// console.log("Ball speed : ", this.ball.speed); // Décommente pour debug
-				this.ball.render();
+				this.ball.render(Services.TimeService!.getDeltaTime());
 				this.player1.paddle.render();
 				this.player2.paddle.render();
 			}

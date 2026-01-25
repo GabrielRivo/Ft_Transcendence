@@ -30,9 +30,9 @@ class Player {
     speed : number = 7;
     score: number = 0;
 
-    constructor(id?: string) {
+    constructor(nbr: number, id?: string) {
         this.id = id ?? "player" + (idDefault++);
-        this.paddle = new Paddle(this);
+        this.paddle = new Paddle(this, nbr);
         this.paddle.owner = this;
         this.deathBar = new DeathBar(undefined, this);
         this.deathBar.owner = this;

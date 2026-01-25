@@ -1,4 +1,4 @@
-import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer } from "@babylonjs/core";
+import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh } from "@babylonjs/core";
 import Services from "../Services/Services";
 import { DeathBarPayload } from "../globalType";
 import Player from "../Player";
@@ -7,6 +7,9 @@ import Ball from "../Ball";
 import Wall from "../Wall";
 import InputManager from "../InputManagerLocal";
 import Game from "./Game";
+import BlackScreenEffect from "../Effects/BlackScreenEffect";
+import CameraShakeEffect from "../Effects/CameraShakeEffect";
+import ZoomEffect from "../Effects/ZoomEffect";
 
 import { socket } from "../../../socket";
 
@@ -19,6 +22,7 @@ class PongLocal extends Game {
     walls?: Wall[];
     width: number = 7;
     height: number = 12;
+    camera?: ArcRotateCamera;
 
     isDisposed: boolean = false;
     private glowLayer?: GlowLayer;
@@ -38,6 +42,8 @@ class PongLocal extends Game {
         this.inputManager.listenToP2();
         
         Services.EventBus!.on("DeathBarHit", this.onDeathBarHit);
+        Services.EventBus!.on("BallBounce", this.onBallBounce);
+        Services.EventBus!.on("PaddleHitBall", this.onPaddleHitBall);
 
         this.drawScene();
     }
@@ -51,18 +57,27 @@ class PongLocal extends Game {
 		});
 		this.glowLayer.intensity = 0.3;
 
-        this.player1 = new Player(undefined);
-        this.player2 = new Player(undefined);
+        this.player1 = new Player(1);
+        this.player2 = new Player(2);
+        if (this.isDisposed || !Services.Scene) return;
         this.walls = [new Wall(), new Wall()];
         this.walls.forEach(wall => Services.Scene!.addMesh(wall.model));
         //this.ball = new Ball();
-        const camera: ArcRotateCamera = new ArcRotateCamera("Camera", 0, Math.PI / 4, 10, Vector3.Zero(), Services.Scene);
+        const camera: ArcRotateCamera = new ArcRotateCamera("Camera", 0, Math.PI / 4, 11, Vector3.Zero(), Services.Scene);
         camera.attachControl(Services.Canvas, true);
         camera.lowerRadiusLimit = 8;
         camera.upperRadiusLimit = 22;
         camera.wheelDeltaPercentage = 0.01;
         camera.upperBetaLimit = Math.PI / 1.6;
         camera._panningMouseButton = -1;
+        this.camera = camera;
+
+        const blackScreen = new BlackScreenEffect(1, 0);
+        blackScreen.play();
+
+        const zoomEffect = new ZoomEffect(22, 11);
+        zoomEffect.play(camera);
+
 
         //var light2: SpotLight = new SpotLight("spotLight", new Vector3(0, 10, 0), new Vector3(0, -1, 0), Math.PI / 2, 20, Services.Scene);
         //light2.intensity = 0;
@@ -132,11 +147,32 @@ class PongLocal extends Game {
         this.run();
     }
 
+    private onBallBounce = (payload: any): void => {
+        let modifier = payload.ball.getSpeed() / 3;
+        let duration = 15;
+        let magnitude = 0.03 + 0.03 * modifier * 2;
+        const cameraShake = new CameraShakeEffect(magnitude, duration);
+        cameraShake.play(this.camera!);
+    }
+
+    private onPaddleHitBall = (payload: any): void => {
+        let modifier = payload.ball.getSpeed() / 3;
+        let duration = 25;
+        let magnitude = 0.05 + 0.05 * modifier / 2;
+        const cameraShake = new CameraShakeEffect(magnitude, duration);
+        cameraShake.play(this.camera!);
+    }
+
     private onDeathBarHit = (payload: DeathBarPayload) => {
-        if (payload.deathBar.owner == this.player1) {
+        this.ball!.setPos(new Vector3(0, -100, 0));
+        this.ball!.setModelPos(new Vector3(0, -100, 0));
+
+        const cameraShake = new CameraShakeEffect(0.3, 50);
+        cameraShake.play(this.camera!);
+        if (payload.deathBar.owner == this.player1 && this.player2!.score < 5) {
             this.player2!.scoreUp();
         }
-        else if (payload.deathBar.owner == this.player2) {
+        else if (payload.deathBar.owner == this.player2 && this.player1!.score < 5) {
             this.player1!.scoreUp();
         }
         
@@ -148,8 +184,11 @@ class PongLocal extends Game {
         });
 
         // Check for game end
-        if (this.player1!.score >= 5 || this.player2!.score >= 5) {
-            this.endGame();
+        if (this.player1!.score == 5 || this.player2!.score == 5) {
+            setTimeout(() => {
+                if (this.isDisposed) return;
+                this.endGame();
+            }, 8000);
             return;
         }
 
@@ -176,7 +215,7 @@ class PongLocal extends Game {
         this.ball!.update(Services.TimeService!.getTimestamp(), deltaT, this.player1!.paddle, this.player2!.paddle);
         this.player1!.update(deltaT);
         this.player2!.update(deltaT);
-        this.ball!.render();
+        this.ball!.render(deltaT);
         this.player1!.paddle.render();
         this.player2!.paddle.render();
         Services.Scene!.render();
@@ -195,8 +234,11 @@ class PongLocal extends Game {
     }
 
     private endGame() : void {
-        Services.EventBus!.emit("UI:MenuStateChange", "pongMenu");
-        Services.EventBus!.emit("Game:Ended", {name: "Pong", winnerId: null, score: {player1: this.player1!.score, player2: this.player2!.score}});
+        const blackScreen = new BlackScreenEffect(0, 1);
+        blackScreen.play();
+        setTimeout(() => {
+            Services.EventBus!.emit("Game:Ended", { name: "PongLocal", winnerId: null, score: { player1: this.player1!.score, player2: this.player2!.score } });
+        }, 1000);
     }
 
     dispose(): void {
@@ -219,6 +261,8 @@ class PongLocal extends Game {
         this.walls?.forEach(wall => wall.dispose());
         this.inputManager?.dispose();
         Services.EventBus!.off("DeathBarHit", this.onDeathBarHit);
+        Services.EventBus!.off("BallBounce", this.onBallBounce);
+        Services.EventBus!.off("PaddleHitBall", this.onPaddleHitBall);
         Services.Scene!.dispose();
 
         Services.Scene = undefined;

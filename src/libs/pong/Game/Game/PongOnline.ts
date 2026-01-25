@@ -1,6 +1,6 @@
-import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh, SetValueAction } from "@babylonjs/core";
+import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh, SetValueAction, Camera } from "@babylonjs/core";
 import Services from "../Services/Services";
-import type { DeathBarPayload, GameState } from "../globalType";
+import type { DeathBarPayload, GameState, OwnedMesh } from "../globalType";
 import Player from "../Player";
 import DeathBar from "../DeathBar";
 import Ball from "../Ball";
@@ -13,6 +13,9 @@ import InputManagerOnline from "../InputManagerOnline";
 import ZoomEffect from "../Effects/ZoomEffect";
 import BlackScreenEffect from "../Effects/BlackScreenEffect";
 import RotateCameraAlphaEffect from "../Effects/RotateCameraAlphaEffect";
+import CameraShakeEffect from "../Effects/CameraShakeEffect";
+import Paddle from "../Paddle";
+
 
 class PongOnline extends Game {
 
@@ -35,6 +38,8 @@ class PongOnline extends Game {
     private isDisposed: boolean = false;
     private glowLayer?: GlowLayer;
 
+    private connectionTimeoutId?: NodeJS.Timeout;
+
     constructor() {
         super();
         this.currentGameState = null;
@@ -52,6 +57,8 @@ class PongOnline extends Game {
         this.predictionManager = new PredictionManager(this);
 
         Services.EventBus!.on("DeathBarHit", this.onDeathBarHit);
+        Services.EventBus!.on("BallBounce", this.onBallBounce);
+        Services.EventBus!.on("PaddleHitBall", this.onPaddleHitBall);
 
         this.drawScene();
 
@@ -70,11 +77,11 @@ class PongOnline extends Game {
         });
         this.glowLayer.intensity = 0.3;
         
-        this.player1 = new Player(undefined);
-        this.player2 = new Player(undefined);
+        this.player1 = new Player(1);
+        this.player2 = new Player(2);
         if (this.isDisposed || !Services.Scene) return;
         let ballMesh : Mesh | undefined = undefined;
-        /*try {
+        try {
             const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
             if (this.isDisposed) return; // Check again after async operation
             ballMeshs.forEach(mesh => {
@@ -86,7 +93,6 @@ class PongOnline extends Game {
                 console.error('[PongOnline] Failed to load pong.glb:', e);
             }
         }
-        ballMesh!.scaling = new Vector3(0.5, 0.5, 0.5);*/
         this.ball = new Ball(ballMesh);
         this.walls = [new Wall(), new Wall()];
         this.walls.forEach(wall => Services.Scene!.addMesh(wall.model));
@@ -271,14 +277,14 @@ class PongOnline extends Game {
         //this.gameJoined = false;
         this.gameState = "waiting";
         this.processGameState();
-        let connectionTimeout;
+        //let connectionTimeout;
 
-        connectionTimeout = setTimeout(() => {
+        this.connectionTimeoutId = setTimeout(() => {
             this.endGame();
         }, 10000);
         socket.once("connect", () => {
             console.log("Reconnected to server, resuming game.");
-            clearTimeout(connectionTimeout);
+            clearTimeout(this.connectionTimeoutId);
             socket.on("connect_error", this.onServerLostConnection);
             socket.on("disconnect", this.onServerLostConnection);
             console.log("Resuming game after reconnection.");
@@ -292,12 +298,12 @@ class PongOnline extends Game {
         console.log("Game joined with payload:", payload, " timestamp:", performance.now());
         if (!this.gameJoined) {
             this.camera!.attachControl(Services.Canvas, true);
+            this.camera!.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
             this.camera!.lowerRadiusLimit = 8;
             this.camera!.upperRadiusLimit = 22;
             this.camera!.wheelDeltaPercentage = 0.01;
             this.camera!.upperBetaLimit = Math.PI / 1.6;
             this.camera!._panningMouseButton = -1;
-            this.camera!.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
             this.camera!.beta = Math.PI / 2.8;
             const zoomEffect = new ZoomEffect(22, 11);
             let rotateCameraAlphaEffect : RotateCameraAlphaEffect;
@@ -350,18 +356,36 @@ class PongOnline extends Game {
         if (!this.ball) return;
         const time = Services.TimeService!.getTimestamp();
         const deltaT = time - payload.timestamp;
-        this.ball.generate(1000 - deltaT);
+        this.ball.generate(2000 - deltaT);
     }
 
     private onScore = (payload: any): void => {
+        const cameraShake = new CameraShakeEffect(0.3, 50);
+        cameraShake.play(this.camera!);
         console.log("Score update from server:", payload);
         this.player1!.setScore(payload.player1Score);
         this.player2!.setScore(payload.player2Score);
         Services.EventBus!.emit("Game:ScoreUpdated", { player1Score: this.player1!.score, player2Score: this.player2!.score, scoreToWin: 5 });
 
-        if (this.player1!.score >= 5 || this.player2!.score >= 5) {
+        if (this.player1!.score == 5 || this.player2!.score == 5) {
             console.log("Game over detected from score update.");
         }
+    }
+
+    private onBallBounce = (payload: any): void => {
+        let modifier = payload.ball.getSpeed() / 3;
+        let duration = 15;
+        let magnitude = 0.03 + 0.03 * modifier * 2;
+        const cameraShake = new CameraShakeEffect(magnitude, duration);
+        cameraShake.play(this.camera!);
+    }
+
+    private onPaddleHitBall = (payload: any): void => {
+        let modifier = payload.ball.getSpeed() / 3;
+        let duration = 25;
+        let magnitude = 0.05 + 0.05 * modifier / 2;
+        const cameraShake = new CameraShakeEffect(magnitude, duration);
+        cameraShake.play(this.camera!);
     }
 
     private onDeathBarHit = (payload: DeathBarPayload) => {
@@ -446,6 +470,8 @@ class PongOnline extends Game {
         console.log("Disposing Pong game instance.");
         this.isDisposed = true;
 
+        this.connectionTimeoutId && clearTimeout(this.connectionTimeoutId);
+
         Services.Engine!.stopRenderLoop(this.renderLoop);
         Services.Engine!.stopRenderLoop(this.stoppedRenderLoop);
         Services.Engine!.stopRenderLoop();
@@ -460,6 +486,8 @@ class PongOnline extends Game {
         this.walls?.forEach(wall => wall.dispose());
         this.inputManager?.dispose();
         Services.EventBus!.off("DeathBarHit", this.onDeathBarHit);
+        Services.EventBus!.off("BallBounce", this.onBallBounce);
+        Services.EventBus!.off("PaddleHitBall", this.onPaddleHitBall);
         socket.off("connect");
         socket.off("connect_error", this.onServerLostConnection);
         socket.off("disconnect", this.onServerLostConnection);
