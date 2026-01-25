@@ -33,7 +33,7 @@ export class PrivateChatService {
 	const response = await fetch(`${FRIEND_URL}/social/is_friend`, {
 	method: 'POST',
 	headers: { 
-		'Content-Type': 'application/json'a
+		'Content-Type': 'application/json'
 		},
 		body: JSON.stringify({
 			userId: userId1, 
