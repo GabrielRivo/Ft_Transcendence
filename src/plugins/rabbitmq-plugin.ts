@@ -1,6 +1,6 @@
 import fp from 'fastify-plugin';
 import { FastifyInstance } from 'fastify';
-import { RabbitMQClient } from 'my-fastify-decorators-microservices';
+import { RabbitMQClient, RabbitMQServer } from 'my-fastify-decorators-microservices';
 
 declare module 'fastify' {
     interface FastifyInstance {
@@ -11,29 +11,33 @@ declare module 'fastify' {
 async function rabbitmqPlugin(fastify: FastifyInstance) {
     const urls = [process.env.RABBITMQ_URI!];
 
-
+    // Client for publishing tournament events
     const client = new RabbitMQClient({
         urls,
-        // queue: 'tournament_queue',
-        exchange : {
-            name : "tournament.fanout",
-            type  : "fanout"
+        exchange: {
+            name: 'tournament.fanout',
+            type: 'fanout'
         }
     });
 
-
-    // const server = new RabbitMQServer({
-    //     urls,
-    //     queue: 'auth_queue',
-    // });
-
+    // Server for subscribing to game events
+    const gameEventsSubscriber = new RabbitMQServer({
+        urls,
+        queue: 'tournament_game_events',
+        exchange: {
+            name: 'game.fanout',
+            type: 'fanout'
+        },
+        consumeMode: 'shared'
+    });
 
     fastify.decorate('mq', client);
-
 
     fastify.ready(async () => {
         try {
             await client.connect();
+            await gameEventsSubscriber.listen();
+            console.log('[Tournament] RabbitMQ client and game events subscriber connected');
         } catch (err) {
             console.error('RabbitMQ connection failed', err);
         }
@@ -41,7 +45,7 @@ async function rabbitmqPlugin(fastify: FastifyInstance) {
 
     fastify.addHook('onClose', async () => {
         await client.close();
-        // await server.close();
+        await gameEventsSubscriber.close();
     });
 }
 

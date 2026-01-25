@@ -4,6 +4,8 @@ import { Participant } from '../../domain/value-objects/participant.js';
 import { JoinTournamentDto } from '../dtos/join-tournament.dto.js';
 import { SqliteTournamentRepository } from '@/tournament/infrastructure/repositories/sqlite-tournament.repository.js';
 import { CompositeTournamentEventsPublisher } from '@/tournament/infrastructure/publishers/composite-tournament-events.publisher.js';
+import { TimerAdapter } from '../../infrastructure/adapters/timer.adapter.js';
+import { StartRoundUseCase } from './start-round.use-case.js';
 
 @Service()
 export class JoinTournamentUseCase {
@@ -12,6 +14,12 @@ export class JoinTournamentUseCase {
 
     @Inject(CompositeTournamentEventsPublisher)
     private publisher!: CompositeTournamentEventsPublisher;
+
+    @Inject(TimerAdapter)
+    private timer!: TimerAdapter;
+
+    @Inject(StartRoundUseCase)
+    private startRoundUseCase!: StartRoundUseCase;
 
     public async execute(
         tournamentId: string,
@@ -33,11 +41,21 @@ export class JoinTournamentUseCase {
             ? Participant.createGuest(userId, command.displayName)
             : Participant.createUser(userId, command.displayName);
 
+        const wasStarted = tournament.status === 'STARTED';
         tournament.join(participant);
+        const isStarted = tournament.status === 'STARTED';
 
         await this.repository.save(tournament);
 
         await this.publisher.publishAll(tournament.getRecordedEvents());
         tournament.clearRecordedEvents();
+
+        // If tournament just started, triggers the timer
+        if (!wasStarted && isStarted) {
+            console.log(`[JoinTournamentUseCase] Tournament ${tournament.id} started. Starting 30s timer.`);
+            this.timer.start(tournament.id, 30, async () => {
+                await this.startRoundUseCase.execute(tournament.id);
+            });
+        }
     }
 }

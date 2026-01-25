@@ -276,4 +276,16 @@ export class SqliteTournamentRepository extends TournamentRepository {
       });
     });
   }
+
+  public async findByMatchId(matchId: string): Promise<Tournament | null> {
+    const row = this.db.prepare(`
+      SELECT tournament_id
+      FROM matches
+      WHERE id = ?
+      LIMIT 1
+    `).get(matchId) as any;
+
+    if (!row) return null;
+    return this.findById(row.tournament_id);
+  }
 }

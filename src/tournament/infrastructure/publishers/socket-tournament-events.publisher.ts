@@ -35,6 +35,11 @@ export class SocketTournamentEventsPublisher extends TournamentEventsPublisher {
     }
   }
 
+  public publishTimer(tournamentId: string, timeRemaining: number): void {
+    const roomId = `tournament:${tournamentId}`;
+    this.io.to(roomId).emit('timer_update', { tournamentId, timeRemaining });
+  }
+
   private isLobbyEvent(eventName: TournamentEventType): boolean {
     return [
       TournamentEventType.CREATED,

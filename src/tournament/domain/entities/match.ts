@@ -1,7 +1,7 @@
 import { Participant } from "../value-objects/participant.js";
-import { 
-    InvalidMatchScoreException, 
-    MatchAlreadyFinishedException, 
+import {
+    InvalidMatchScoreException,
+    MatchAlreadyFinishedException,
     MatchAlreadyStartedException,
     MatchNotReadyException,
     PlayerNotInMatchException
@@ -9,6 +9,7 @@ import {
 
 export type MatchStatus = 'PENDING' | 'IN_PROGRESS' | 'FINISHED';
 export type WinReason = 'SCORE' | 'WALKOVER';
+const WIN_SCORE = 5;
 
 export interface MatchData {
     id: string;
@@ -91,7 +92,7 @@ export class Match {
         this._scoreA = scoreA;
         this._scoreB = scoreB;
 
-        const isScoreReached = this._scoreA >= 11 || this._scoreB >= 11;
+        const isScoreReached = this._scoreA >= WIN_SCORE || this._scoreB >= WIN_SCORE;
         if (isScoreReached) {
             const winner = this._scoreA > this._scoreB ? this._playerA! : this._playerB!;
             this.finishMatch(winner, 'SCORE');
@@ -137,6 +138,17 @@ export class Match {
 
     public isReady(): boolean {
         return this._playerA !== null && this._playerB !== null;
+    }
+
+    public finalize(winnerId: string, reason: WinReason = 'SCORE'): void {
+        if (this._status === 'FINISHED') return;
+
+        const winner = this._playerA?.id === winnerId ? this._playerA : this._playerB?.id === winnerId ? this._playerB : null;
+        if (!winner) {
+            throw new PlayerNotInMatchException(winnerId, this.id);
+        }
+
+        this.finishMatch(winner, reason);
     }
 
     private checkAutoStart(): void {

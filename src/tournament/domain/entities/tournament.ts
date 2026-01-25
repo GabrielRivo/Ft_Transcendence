@@ -9,7 +9,8 @@ import {
     TournamentCreatedEvent,
     TournamentFinishedEvent,
     TournamentStartedEvent,
-    PlayerLeftEvent
+    PlayerLeftEvent,
+    BracketUpdatedEvent
 } from "../events/tournament-events.js";
 import {
     DuplicateParticipantNameException,
@@ -127,16 +128,56 @@ export class Tournament {
         return tournament;
     }
 
-    public updateMatchScore(matchId: string, scoreA: number, scoreB: number): void {
+    public updateMatchScore(matchId: string, scoreA: number, scoreB: number, winnerId?: string | null): void {
         const match = this._matches.find(m => m.id === matchId);
         if (!match) throw new MatchNotFoundException(matchId);
 
         match.setScore(scoreA, scoreB);
 
+        if (winnerId) {
+            match.finalize(winnerId);
+        }
+
         if (match.status === 'FINISHED') {
+            // Ensure we haven't already processed this due to idempotent calls causing double events?
+            // propagateWinner checks if next match already set? 
+            // setScore is idempotent if status already finished? match.finalize guards.
+            // But logic inside propagate needs to be idempotent if called multiple times?
+            // Ideally propogate only if we JUST finished.
+            // But tournament entity is re-loaded from DB, so status is current. 
+            // We need to check if we already propagated?
+            // The check is implicit: if next match has us, we are good.
+            // But assume updateMatchScore called ONCE per event.
+
+            // To be safe against double event emission on reload?
+            // "RecordedEvents" are transient.
+
             this.propagateWinnerToNextRound(match);
             this.addRecordedEvent(new MatchFinishedEvent(this.id, matchId, match.winner!.id));
         }
+    }
+
+    public getCurrentRound(): number | null {
+        if (this._status === 'FINISHED') return null;
+        if (this._status === 'CREATED') return null;
+
+        // Find the first round that has at least one match not finished
+        // We assume rounds are 1, 2, 3...
+        const totalRounds = Math.log2(this.size);
+        for (let r = 1; r <= totalRounds; r++) {
+            const matchesInRound = this._matches.filter(m => m.round === r);
+            const allFinished = matchesInRound.every(m => m.status === 'FINISHED');
+            if (!allFinished) {
+                return r;
+            }
+        }
+        return null;
+    }
+
+    public isRoundFinished(round: number): boolean {
+        const matchesInRound = this._matches.filter(m => m.round === round);
+        if (matchesInRound.length === 0) return false; // Should not happen
+        return matchesInRound.every(m => m.status === 'FINISHED');
     }
 
     private start(): void {
@@ -200,6 +241,8 @@ export class Tournament {
 
         const slot = finishedMatch.position % 2 !== 0 ? 1 : 2;
         nextMatch.assignParticipant(slot, finishedMatch.winner!);
+
+        this.addRecordedEvent(new BracketUpdatedEvent(this.id));
     }
 
     private validateConfiguration(): void {

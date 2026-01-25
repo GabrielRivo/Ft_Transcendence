@@ -9,6 +9,7 @@ export enum TournamentEventType {
     CANCELLED = 'TournamentCancelled',
     MATCH_FINISHED = 'MatchFinished',
     FINISHED = 'TournamentFinished',
+    BRACKET_UPDATED = 'BracketUpdated',
 }
 
 export class TournamentCreatedEvent implements RecordedEvent {
@@ -86,4 +87,11 @@ export class PlayerLeftEvent implements RecordedEvent {
         public readonly name: string,
         public readonly ownerId: string
     ) { }
+}
+
+export class BracketUpdatedEvent implements RecordedEvent {
+    public readonly eventName = TournamentEventType.BRACKET_UPDATED;
+    public readonly occurredAt = new Date();
+
+    constructor(public readonly aggregateId: string) { }
 }

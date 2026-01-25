@@ -10,9 +10,13 @@ import { SocketTournamentEventsPublisher } from './infrastructure/publishers/soc
 import { RabbitMQTournamentEventsPublisher } from './infrastructure/publishers/rabbitmq-tournament-events.publisher.js';
 import { CompositeTournamentEventsPublisher } from './infrastructure/publishers/composite-tournament-events.publisher.js';
 import { JoinTournamentUseCase } from './application/use-cases/join-tournament.use-case.js';
+import { StartRoundUseCase } from './application/use-cases/start-round.use-case.js';
+import { HttpGameGateway } from './infrastructure/gateways/http-game.gateway.js';
+import { TimerAdapter } from './infrastructure/adapters/timer.adapter.js';
+import { TournamentEventsController } from './infrastructure/controllers/tournament-events.controller.js';
 
 @Module({
-    controllers: [TournamentController],
+    controllers: [TournamentController, TournamentEventsController],
     gateways: [TournamentGateway],
     providers: [
         SqliteTournamentRepository,
@@ -24,6 +28,9 @@ import { JoinTournamentUseCase } from './application/use-cases/join-tournament.u
         GetTournamentUseCase,
         ListTournamentsUseCase,
         JoinTournamentUseCase,
+        StartRoundUseCase,
+        HttpGameGateway,
+        TimerAdapter,
     ]
 })
 export class TournamentModule { }

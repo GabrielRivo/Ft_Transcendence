@@ -24,6 +24,12 @@ export class JoinTournamentPayload {
     displayName!: string;
 }
 
+export class ListenTournamentPayload {
+    @IsString()
+    @IsRequired()
+    tournamentId!: string;
+}
+
 @WebSocketGateway()
 export class TournamentGateway {
     @Inject(JoinTournamentUseCase)
@@ -64,10 +70,10 @@ export class TournamentGateway {
     }
 
     @SubscribeMessage('listen_tournament')
-    @SocketSchema(generateSchema(JoinTournamentPayload))
+    @SocketSchema(generateSchema(ListenTournamentPayload))
     public async handleListenTournament(
         @ConnectedSocket() socket: Socket,
-        @MessageBody() payload: JoinTournamentPayload
+        @MessageBody() payload: ListenTournamentPayload
     ) {
         console.log(`[TournamentGateway] Socket ${socket.id} requesting to join tournament room: tournament:${payload.tournamentId}`);
         const roomId = `tournament:${payload.tournamentId}`;
@@ -75,6 +81,18 @@ export class TournamentGateway {
         console.log(`[TournamentGateway] Socket ${socket.id} joined room ${roomId}`);
         const rooms = Array.from(socket.rooms);
         console.log(`[TournamentGateway] Socket ${socket.id} is now in rooms: ${JSON.stringify(rooms)}`);
+        return { status: 'success' };
+    }
+
+    @SubscribeMessage('leave_tournament')
+    @SocketSchema(generateSchema(ListenTournamentPayload))
+    public async handleLeaveTournament(
+        @ConnectedSocket() socket: Socket,
+        @MessageBody() payload: ListenTournamentPayload
+    ) {
+        const roomId = `tournament:${payload.tournamentId}`;
+        await socket.leave(roomId);
+        console.log(`[TournamentGateway] Socket ${socket.id} left room ${roomId}`);
         return { status: 'success' };
     }
 }
