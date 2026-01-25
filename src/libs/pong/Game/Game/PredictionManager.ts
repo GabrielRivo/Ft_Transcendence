@@ -69,7 +69,7 @@ class PredictionManager {
         game.player2!.paddle.setDirection(state.p2.dir); // a voir
 
         game.ball!.setPos(state.ball.pos);
-        game.ball!.setFullDir(state.ball.dir);
+        game.ball!.setDir(state.ball.dir);
         game.ball!.setSpeed(state.ball.speed);
     }
 
@@ -246,7 +246,7 @@ class PredictionManager {
             game.player1!.update(Services.TimeService!.getDeltaTime());
             game.player2!.update(Services.TimeService!.getDeltaTime());
         }
-        game.ball!.render();
+        game.ball!.render(Services.TimeService!.getDeltaTime());
         game.player1!.paddle.render();
         game.player2!.paddle.render();
     }

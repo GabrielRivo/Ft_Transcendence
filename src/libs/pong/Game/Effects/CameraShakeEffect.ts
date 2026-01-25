@@ -30,7 +30,7 @@ class CameraShakeEffect extends Effect {
 
     play(camera: ArcRotateCamera): void {
         
-        const origin = camera.target.clone();
+        const origin = Vector3.Zero();//camera.target.clone();
         const keys = [];
 
         for (let i = 0; i < this.duration; i++) {
@@ -52,7 +52,7 @@ class CameraShakeEffect extends Effect {
 
         keys.push({
             frame: this.duration,
-            value: origin
+            value: Vector3.Zero()
         });
 
         this.shakeAnimation.setKeys(keys);

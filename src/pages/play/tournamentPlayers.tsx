@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { createElement, useCallback, useEffect, useRef, useState } from 'my-react';
-import { Link, useNavigate, useParams, useLocation } from 'my-react-router';
+import { Link, useNavigate, useParams } from 'my-react-router';
 import { ButtonStyle4 } from '@/components/ui/button/style4';
 import { ButtonStyle3 } from '@/components/ui/button/style3';
 import { CardStyle2 } from '@/components/ui/card/style2';
@@ -43,7 +43,6 @@ interface LocationState {
 export function TournamentPlayersPage() {
 	const params = useParams();
 	const navigate = useNavigate();
-	const location = useLocation<LocationState>();
 	const { toast } = useToast();
 	const { validate, getFieldError } = useValidation(CreateTournamentSchema);
 

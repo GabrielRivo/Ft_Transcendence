@@ -77,11 +77,11 @@ class PongOnline extends Game {
         });
         this.glowLayer.intensity = 0.3;
         
-        this.player1 = new Player(undefined);
-        this.player2 = new Player(undefined);
+        this.player1 = new Player(1);
+        this.player2 = new Player(2);
         if (this.isDisposed || !Services.Scene) return;
         let ballMesh : Mesh | undefined = undefined;
-        /*try {
+        try {
             const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
             if (this.isDisposed) return; // Check again after async operation
             ballMeshs.forEach(mesh => {
@@ -93,7 +93,6 @@ class PongOnline extends Game {
                 console.error('[PongOnline] Failed to load pong.glb:', e);
             }
         }
-        ballMesh!.scaling = new Vector3(0.5, 0.5, 0.5);*/
         this.ball = new Ball(ballMesh);
         this.walls = [new Wall(), new Wall()];
         this.walls.forEach(wall => Services.Scene!.addMesh(wall.model));
@@ -299,12 +298,12 @@ class PongOnline extends Game {
         console.log("Game joined with payload:", payload, " timestamp:", performance.now());
         if (!this.gameJoined) {
             this.camera!.attachControl(Services.Canvas, true);
+            this.camera!.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
             this.camera!.lowerRadiusLimit = 8;
             this.camera!.upperRadiusLimit = 22;
             this.camera!.wheelDeltaPercentage = 0.01;
             this.camera!.upperBetaLimit = Math.PI / 1.6;
             this.camera!._panningMouseButton = -1;
-            this.camera!.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
             this.camera!.beta = Math.PI / 2.8;
             const zoomEffect = new ZoomEffect(22, 11);
             let rotateCameraAlphaEffect : RotateCameraAlphaEffect;
@@ -357,11 +356,11 @@ class PongOnline extends Game {
         if (!this.ball) return;
         const time = Services.TimeService!.getTimestamp();
         const deltaT = time - payload.timestamp;
-        this.ball.generate(3000 - deltaT);
+        this.ball.generate(2000 - deltaT);
     }
 
     private onScore = (payload: any): void => {
-        const cameraShake = new CameraShakeEffect(0.4, 40);
+        const cameraShake = new CameraShakeEffect(0.3, 50);
         cameraShake.play(this.camera!);
         console.log("Score update from server:", payload);
         this.player1!.setScore(payload.player1Score);
@@ -375,17 +374,17 @@ class PongOnline extends Game {
 
     private onBallBounce = (payload: any): void => {
         let modifier = payload.ball.getSpeed() / 3;
-        let duration = 0.12;
-        let magnitude = 7 + 7 * modifier / 3;
-        const cameraShake = new CameraShakeEffect(duration, magnitude);
+        let duration = 15;
+        let magnitude = 0.03 + 0.03 * modifier * 2;
+        const cameraShake = new CameraShakeEffect(magnitude, duration);
         cameraShake.play(this.camera!);
     }
 
     private onPaddleHitBall = (payload: any): void => {
         let modifier = payload.ball.getSpeed() / 3;
-        let duration = 0.15;
-        let magnitude = 10 + 10 * modifier / 3;
-        const cameraShake = new CameraShakeEffect(duration, magnitude);
+        let duration = 25;
+        let magnitude = 0.05 + 0.05 * modifier / 2;
+        const cameraShake = new CameraShakeEffect(magnitude, duration);
         cameraShake.play(this.camera!);
     }
 

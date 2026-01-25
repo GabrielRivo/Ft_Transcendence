@@ -1,5 +1,5 @@
 
-import { Scene, Vector3, Mesh, MeshBuilder, Color4, Ray, Effect, PickingInfo, StandardMaterial, Color3} from "@babylonjs/core";
+import { Scene, Vector3, Mesh, MeshBuilder, Color4, Ray, Effect, PickingInfo, StandardMaterial, Color3, Quaternion, Axis} from "@babylonjs/core";
 import HitEffect from "./Effects/HitEffect";
 import ShockwaveEffect from "./Effects/ShockwaveEffect";
 import MathUtils from "./MathUtils";
@@ -29,12 +29,16 @@ class Ball {
     owner: any;
 
     private visualOffset: Vector3 = new Vector3(0, 0, 0);
+    private totalDistance: number = 0;
 
     private generateTImeoutId: NodeJS.Timeout | null = null;
 
     constructor(model?: Mesh) {
         let white : Color4 = new Color4(1, 1, 1, 1);
         this.model = model ?? MeshBuilder.CreateSphere("ball", { diameter: this.diameter});
+        if (!this.model.rotationQuaternion) {
+            this.model.rotationQuaternion = new Quaternion();
+        }
 
         this.startDirection();
 
@@ -69,9 +73,8 @@ class Ball {
     setDir(direction: Vector3) {
         this.direction = direction.normalize();
     }
-    setFullDir(direction: Vector3) {
-        this.direction = direction.normalize();
-        this.model.setDirection(this.direction);
+    setModelDir(direction: Vector3) {
+        this.model.setDirection(direction);
     }
 
     getSpeed(): number {
@@ -89,13 +92,15 @@ class Ball {
     startDirection() {
         //let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4); // + ou moin PI pour le sens
         let angle : number = Math.PI;
-		this.setFullDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
+		this.setDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
+        this.setModelDir(this.direction);
     }
 
 	startDirectionRandom() {
         let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4); // + ou moin PI pour le sens
         //let angle : number = Math.PI;
-		this.setFullDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
+		this.setDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
+        this.setModelDir(this.direction);
     }
 
     setMoving(moving: boolean) {
@@ -110,6 +115,7 @@ class Ball {
 
     public generate(delay: number) {
         this.startDirection();
+        this.totalDistance = 0;
         this.setSpeed(3);
         this.setPos(new Vector3(0, 0.125, 0));
         this.setModelPos(this.position);
@@ -120,10 +126,16 @@ class Ball {
         
         this.startMovingTime = currentTime + delay;
 
+        this.model.getChildMeshes().forEach(mesh => {
+            mesh.isVisible = false;
+        });
         this.model.visibility = 0;
         this.generateTImeoutId = setTimeout(() => {
-            this.generateEffect.play(this.model);
             this.model.visibility = 1;
+            this.generateEffect.play(this.model);
+            this.model.getChildMeshes().forEach(mesh => {
+                mesh.isVisible = true;
+            });
         }, 1500);
     }
 
@@ -495,12 +507,22 @@ class Ball {
         this.move(deltaT, paddle1, paddle2);
     }
 
-    render() {
+    render(deltaT: number) {
         this.visualOffset = Vector3.Lerp(this.visualOffset, Vector3.Zero(), 0.3);
         if (this.visualOffset.lengthSquared() < 0.001) {
             this.visualOffset.setAll(0);
         }
-        this.model.setDirection(this.direction);
+
+
+        this.totalDistance += this.speed * (deltaT / 1000);
+        const radius = this.diameter / 2;
+        const rollingAngle = this.totalDistance / radius / 4;
+
+        const headingQuat = Quaternion.FromLookDirectionLH(this.direction, Vector3.Up());
+        const rollingQuat = Quaternion.RotationAxis(Axis.X, rollingAngle);
+
+        headingQuat.multiplyToRef(rollingQuat, this.model.rotationQuaternion!);
+
         this.model.position.copyFrom(this.position).addInPlace(this.visualOffset);
     }
 

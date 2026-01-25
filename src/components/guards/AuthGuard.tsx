@@ -1,5 +1,5 @@
 import { createElement, useEffect, useState, useRef, Element, FragmentComponent } from 'my-react';
-import { useNavigate, useLocation } from 'my-react-router';
+import { useNavigate } from 'my-react-router';
 import { useAuth } from '@hook/useAuth';
 import { useToast } from '@hook/useToast';
 import { fetchJsonWithAuth } from '@libs/fetchWithAuth';
@@ -18,7 +18,6 @@ interface ActiveTournamentResponse {
 export function AuthGuard({ children }: AuthGuardProps) {
 	const { isAuthenticated, user, loading } = useAuth();
 	const navigate = useNavigate();
-	const location = useLocation();
 	const { toast } = useToast();
 
 	const isPathMatch = (path: string, allowedPaths: string[]) => {
