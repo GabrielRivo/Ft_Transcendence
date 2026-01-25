@@ -145,16 +145,16 @@ class Pong extends Game {
     }
 
     private onDeathBarHit = (payload: DeathBarPayload) => {
-        if (payload.deathBar.owner == this.player1) {
+        this.ball!.setFullPos(new Vector3(0, -100, 0));
+        if (payload.deathBar.owner == this.player1 && this.player2!.score < 5) {
             this.player2!.scoreUp();
         }
-        else if (payload.deathBar.owner == this.player2) {
+        else if (payload.deathBar.owner == this.player2 && this.player1!.score < 5) {
             this.player1!.scoreUp();
         }
         this.nsp!.to(this.id).emit('score', {player1Score: this.player1!.score, player2Score: this.player2!.score});
 
-        this.ball!.setFullPos(new Vector3(0, -100, 0));
-        if (this.player1!.score >= 5 || this.player2!.score >= 5) {
+        if (this.player1!.score == 5 || this.player2!.score == 5) {
 
             setTimeout(() => {
                 this.dispose();
@@ -165,7 +165,7 @@ class Pong extends Game {
 
         //this.ball = new Ball(this.services);
         //this.ball.setFullPos(new Vector3(0, 0.125, 0));
-        this.ball!.generate(1000);
+        this.ball!.generate(2000);
         
         this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp() });
     }
@@ -206,7 +206,7 @@ class Pong extends Game {
             console.log("Game started with timestamp:", this.services.TimeService!.getTimestamp());
             if (!this.ball) {
                 this.ball = new Ball(this.services);
-                this.ball.generate(1000);
+                this.ball.generate(2000);
                 this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp() });
             }
             this.sendGameState();
