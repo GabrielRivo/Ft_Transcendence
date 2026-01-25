@@ -92,6 +92,11 @@ export function Modal({ onClose, children, title = false, variant = 'cyan' }: Mo
 		containerRef.current = document.createElement('div');
 	}
 
+	const onCloseRef = useRef(onClose);
+	useEffect(() => {
+		onCloseRef.current = onClose;
+	}, [onClose]);
+
 	useEffect(() => {
 		const container = containerRef.current;
 		if (container) {
@@ -101,7 +106,7 @@ export function Modal({ onClose, children, title = false, variant = 'cyan' }: Mo
 				if (e.key === 'Escape') {
 					e.preventDefault();
 					e.stopPropagation();
-					onClose();
+					onCloseRef.current();
 				}
 			};
 
@@ -114,7 +119,7 @@ export function Modal({ onClose, children, title = false, variant = 'cyan' }: Mo
 				}
 			};
 		}
-	}, [onClose]);
+	}, []);
 
 	const handleBackdropClick = (e: MouseEvent) => {
 		if (e.target === e.currentTarget) {
