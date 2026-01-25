@@ -6,6 +6,7 @@ import { ButtonStyle3 } from '../../components/ui/button/style3';
 import { ButtonStyle4 } from '../../components/ui/button/style4';
 import { Modal } from '../../components/ui/modal';
 import { fetchJsonWithAuth } from '../../libs/fetchWithAuth';
+import { ButtonStyle2 } from '@/components/ui/button/style2';
 
 interface UserStats {
 	wins: number;
@@ -321,6 +322,11 @@ export function ProfilePage() {
 									</div>
 								</div>
 							</div>
+						</div>
+						<div className="flex justify-center">
+							<Link to="/statistics/general">
+								<ButtonStyle2 className="bg-purple-500/50">View statistics</ButtonStyle2>
+							</Link>
 						</div>
 					</div>
 
