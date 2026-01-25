@@ -164,6 +164,8 @@ export class FriendManagementController {
 		}
 	}
 
+	
+
 	@Post('/challenge')
 	@BodySchema(FriendManagementSchema)
 	async send_challenge(@Body() data: FriendManagementDto, @JWTBody() user: { id: number; username: string }) {
@@ -186,14 +188,14 @@ export class FriendManagementController {
 	}
 
 	@Post('/accept_challenge')
-	@BodySchema(AddFriendSchema)
+	@BodySchema(FriendManagementSchema)
 	async accept_challenge(@Body() data: AddFriendDto, @JWTBody() user: { id: number; username: string }) {
 		return await this.friend_managementService.acceptChallenge(user.id, data.otherId, user.username);
 	}
 
 	@Post('/delete_match')
-	@BodySchema(AddFriendSchema)
-	async delete_match(@Body() data: AddFriendDto) {
-		return this.friend_managementService.deleteMatch(data.userId, data.otherId);
+	@BodySchema(FriendManagementSchema)
+	async delete_match(@Body() data: AddFriendDto, @JWTBody() user: { id: number }) {
+		return this.friend_managementService.deleteMatch(user.id, data.otherId);
 	}
 }

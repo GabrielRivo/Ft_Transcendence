@@ -25,3 +25,15 @@ CREATE TABLE IF NOT EXISTS challengeUser(
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (userId, otherId)
 );
+
+CREATE TABLE IF NOT EXISTS profiles (
+    userId INTEGER PRIMARY KEY,
+    username TEXT NOT NULL DEFAULT '',
+    bio TEXT NOT NULL DEFAULT '',
+    avatar TEXT DEFAULT NULL,
+    avatar_provider TEXT DEFAULT NULL,
+    self_hosted INTEGER NOT NULL DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_username ON profiles (username) WHERE username != '';
