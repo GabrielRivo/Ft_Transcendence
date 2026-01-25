@@ -1,7 +1,6 @@
 
 import Database, { Statement } from 'better-sqlite3';
 import { InjectPlugin, Service } from 'my-fastify-decorators';
-import { InjectPlugin, Service } from 'my-fastify-decorators';
 
 const FRIEND_URL = 'http://user:3000';
 

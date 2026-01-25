@@ -144,7 +144,7 @@ export class GroupChatService {
 	}
 
 	getGroupMembers(groupId: number): number[] {
-		const rows = this.statementGetGroupMembers.all({ groupId }) as { userId: number }[];
+		const rows = this.statementGetGroupMembers.all({ groupId }) as { userId: number } [];
 		return rows.map(r => r.userId);
 	}
 
