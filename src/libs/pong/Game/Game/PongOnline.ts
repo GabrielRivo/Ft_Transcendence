@@ -61,10 +61,9 @@ class PongOnline extends Game {
         Services.EventBus!.on("PaddleHitBall", this.onPaddleHitBall);
 
         this.drawScene();
-
     }
 
-    async drawScene(): Promise<void> {
+    drawScene(): void {
         if (this.isDisposed || !Services.Scene) return;
 
         this.camera = new ArcRotateCamera("Camera", 0, Math.PI / 2.8, 22, Vector3.Zero(), Services.Scene);
@@ -80,41 +79,9 @@ class PongOnline extends Game {
         this.player1 = new Player(1);
         this.player2 = new Player(2);
         if (this.isDisposed || !Services.Scene) return;
-        let ballMesh : Mesh | undefined = undefined;
-        try {
-            const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
-            if (this.isDisposed) return; // Check again after async operation
-            ballMeshs.forEach(mesh => {
-                mesh.isPickable = false;
-            });
-            ballMesh = ballMeshs[0]! as Mesh;
-        } catch (e) {
-            if (!this.isDisposed) {
-                console.error('[PongOnline] Failed to load pong.glb:', e);
-            }
-        }
-        this.ball = new Ball(ballMesh);
+        this.ball = new Ball();
         this.walls = [new Wall(), new Wall()];
         this.walls.forEach(wall => Services.Scene!.addMesh(wall.model));
-        //this.ball = new Ball();
-        // const camera: ArcRotateCamera = new ArcRotateCamera("Camera", 0, /*Math.PI / 4*/0, 22, Vector3.Zero(), Services.Scene);
-        // camera.attachControl(Services.Canvas, true);
-        // camera.lowerRadiusLimit = 8;
-        // camera.upperRadiusLimit = 22;
-        // camera.wheelDeltaPercentage = 0.01;
-        // camera.upperBetaLimit = Math.PI / 1.6;
-        // camera._panningMouseButton = -1;
-
-        //var light2: SpotLight = new SpotLight("spotLight", new Vector3(0, 10, 0), new Vector3(0, -1, 0), Math.PI / 2, 20, Services.Scene);
-        //light2.intensity = 0;
-
-        // const hemiLight = new HemisphericLight("hemiLight", new Vector3(0, 1, 0), Services.Scene);
-
-        // hemiLight.intensity = 0.30;
-        // //hemiLight.diffuse = new Color3(0.5, 0.6, 1);
-        // hemiLight.diffuse = new Color3(0.5, 0.5, 0.5);
-        // hemiLight.groundColor = new Color3(0, 0, 0);
-
 
         const ground = MeshBuilder.CreateBox("ground", { width: this.width, height: this.height, depth: 0.1 }, Services.Scene);
         ground.position = new Vector3(0, -0.05, 0);
@@ -154,6 +121,10 @@ class PongOnline extends Game {
         this.walls[0].model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
         this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 
+        this.loadGameAssets();
+    }
+
+    async loadGameAssets(): Promise<void> {
         // Load 3D background model from cache
         if (this.isDisposed || !Services.Scene) return;
         try {
@@ -166,6 +137,24 @@ class PongOnline extends Game {
             if (!this.isDisposed) {
                 console.error('[PongOnline] Failed to load pong.glb:', e);
             }
+        }
+        let ballMesh : Mesh | undefined = undefined;
+        if (this.isDisposed || !Services.Scene) return;
+        try {
+            const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
+            if (this.isDisposed) return; // Check again after async operation
+            ballMeshs.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+            ballMesh = ballMeshs[0]! as Mesh;
+        } catch (e) {
+            if (!this.isDisposed) {
+                console.error('[PongOnline] Failed to load pong.glb:', e);
+            }
+        }
+        if (this.isDisposed || !Services.Scene) return;
+        if (ballMesh && this.ball) {
+            this.ball.setModelMesh(ballMesh);
         }
     }
 

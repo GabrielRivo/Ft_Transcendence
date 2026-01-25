@@ -48,7 +48,7 @@ class PongLocal extends Game {
         this.drawScene();
     }
 
-    async drawScene() : Promise<void>  {
+    drawScene() : void  {
         if (this.isDisposed || !Services.Scene) return;
 
         this.glowLayer = new GlowLayer("glow", Services.Scene, {
@@ -124,19 +124,41 @@ class PongLocal extends Game {
         this.walls[0].model.position = new Vector3(-this.width / 2 - 0.1, 0.25, 0);
         this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 
-		// Load 3D background model from cache
-		if (this.isDisposed || !Services.Scene) return;
-		try {
-			const meshes = await Services.AssetCache.loadModel('pong-background', './models/pong.glb', Services.Scene);
-			if (this.isDisposed) return; // Check again after async operation
-			meshes.forEach(mesh => {
-				mesh.isPickable = false;
-			});
-		} catch (e) {
-			if (!this.isDisposed) {
-				console.error('[PongLocal] Failed to load pong.glb:', e);
-			}
-		}
+		this.loadGameAssets();
+    }
+
+    async loadGameAssets(): Promise<void> {
+        // Load 3D background model from cache
+        if (this.isDisposed || !Services.Scene) return;
+        try {
+            const meshes = await Services.AssetCache.loadModel('pong-background', './models/pong.glb', Services.Scene);
+            if (this.isDisposed) return; // Check again after async operation
+            meshes.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+        } catch (e) {
+            if (!this.isDisposed) {
+                console.error('[PongOnline] Failed to load pong.glb:', e);
+            }
+        }
+        let ballMesh : Mesh | undefined = undefined;
+        if (this.isDisposed || !Services.Scene) return;
+        try {
+            const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
+            if (this.isDisposed) return; // Check again after async operation
+            ballMeshs.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+            ballMesh = ballMeshs[0]! as Mesh;
+        } catch (e) {
+            if (!this.isDisposed) {
+                console.error('[PongOnline] Failed to load pong.glb:', e);
+            }
+        }
+        if (this.isDisposed || !Services.Scene) return;
+        if (ballMesh && this.ball) {
+            this.ball.setModelMesh(ballMesh);
+        }
     }
 
     launch() : void {

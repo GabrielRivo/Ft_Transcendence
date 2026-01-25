@@ -31,6 +31,7 @@ import {
 	Vector2,
 	Vector3,
 	GlowLayer,
+	Mesh,
 	ImportMeshAsync,
 } from '@babylonjs/core';
 import '@babylonjs/loaders/glTF';
@@ -145,7 +146,7 @@ class PongBackground extends Game {
 	 * Creates all visual elements including players, ball, walls,
 	 * ground, lighting, and loads the 3D background model.
 	 */
-	async drawScene(): Promise<void> {
+	drawScene(): void {
 		if (this.isDisposed || !Services.Scene) return;
 
 		// Set up glow effect layer for neon aesthetics
@@ -221,20 +222,42 @@ class PongBackground extends Game {
 		this.ball.generate(2000);
 		this.ball.startDirectionRandom();
 		
-		// Load 3D background model from cache
-		if (this.isDisposed || !Services.Scene) return;
-		try {
-			const meshes = await Services.AssetCache.loadModel('pong-background', './models/pong.glb', Services.Scene);
-			if (this.isDisposed) return; // Check again after async operation
-			meshes.forEach((mesh) => {
-				mesh.isPickable = false;
-			});
-		} catch (e) {
-			if (!this.isDisposed) {
-				console.error('[PongBackground] Failed to load pong.glb:', e);
-			}
-		}
+		this.loadGameAssets();
 	}
+
+	async loadGameAssets(): Promise<void> {
+        // Load 3D background model from cache
+        if (this.isDisposed || !Services.Scene) return;
+        try {
+            const meshes = await Services.AssetCache.loadModel('pong-background', './models/pong.glb', Services.Scene);
+            if (this.isDisposed) return; // Check again after async operation
+            meshes.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+        } catch (e) {
+            if (!this.isDisposed) {
+                console.error('[PongOnline] Failed to load pong.glb:', e);
+            }
+        }
+        let ballMesh : Mesh | undefined = undefined;
+        if (this.isDisposed || !Services.Scene) return;
+        try {
+            const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
+            if (this.isDisposed) return; // Check again after async operation
+            ballMeshs.forEach(mesh => {
+                mesh.isPickable = false;
+            });
+            ballMesh = ballMeshs[0]! as Mesh;
+        } catch (e) {
+            if (!this.isDisposed) {
+                console.error('[PongOnline] Failed to load pong.glb:', e);
+            }
+        }
+        if (this.isDisposed || !Services.Scene) return;
+        if (ballMesh && this.ball) {
+            this.ball.setModelMesh(ballMesh);
+        }
+    }
 
 	/**
 	 * Launches the game (prepares for start).

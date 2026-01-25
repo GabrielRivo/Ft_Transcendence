@@ -40,13 +40,13 @@ class Paddle {
         let material: StandardMaterial;
         if (nbr === 1) {
             material = new StandardMaterial("playerMat1", Services.Scene);
-            //pink-red
-            material.emissiveColor = new Color3(0.8, 0, 0.8);
+            //cyan-blue
+            material.emissiveColor = new Color3(0.2, 0.8, 1);
         }
         else {
             material = new StandardMaterial("playerMat2", Services.Scene);
-            //cyan-blue
-            material.emissiveColor = new Color3(0.2, 0.8, 1);
+            //pink-red
+            material.emissiveColor = new Color3(0.8, 0, 0.8);
         }
         this.model.material = material;
         this.model.isPickable = false;

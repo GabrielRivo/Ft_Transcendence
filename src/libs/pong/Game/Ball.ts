@@ -33,9 +33,9 @@ class Ball {
 
     private generateTImeoutId: NodeJS.Timeout | null = null;
 
-    constructor(model?: Mesh) {
+    constructor() {
         let white : Color4 = new Color4(1, 1, 1, 1);
-        this.model = model ?? MeshBuilder.CreateSphere("ball", { diameter: this.diameter});
+        this.model = MeshBuilder.CreateSphere("ball", { diameter: this.diameter});
         if (!this.model.rotationQuaternion) {
             this.model.rotationQuaternion = new Quaternion();
         }
@@ -45,6 +45,7 @@ class Ball {
         let material = new StandardMaterial("ballmat", Services.Scene);
         material.emissiveColor = new Color3(0, 1, 1);
         this.model.material = material;
+        this.model.visibility = 0;
         this.model.isPickable = false;
 
         Services.Collision!.add(this.model);
@@ -113,23 +114,40 @@ class Ball {
         return this.startMovingTime;
     }
 
+    setModelMesh(mesh: Mesh) {
+        const visibility = this.model.visibility;
+        this.model.dispose();
+        this.model = mesh as OwnedMesh;
+        if (visibility === 0) {
+            this.model.getChildMeshes().forEach(mesh => {
+                mesh.isVisible = false;
+            });
+        }
+        if (!this.model.rotationQuaternion) {
+            this.model.rotationQuaternion = new Quaternion();
+        }
+        this.model.isPickable = false;
+        Services.Collision!.add(this.model);
+        this.model.owner = this;
+    }
+
     public generate(delay: number) {
+        this.model.getChildMeshes().forEach(mesh => {
+            mesh.isVisible = false;
+        });
+        this.model.visibility = 0;
+
         this.startDirection();
         //this.totalDistance = 0;
         this.setSpeed(3);
         this.setPos(new Vector3(0, 0.125, 0));
         this.setModelPos(this.position);
         this.moving = false;
-   
 
         const currentTime = Services.TimeService!.getTimestamp();
         
         this.startMovingTime = currentTime + delay;
 
-        this.model.getChildMeshes().forEach(mesh => {
-            mesh.isVisible = false;
-        });
-        this.model.visibility = 0;
         this.generateTImeoutId = setTimeout(() => {
             this.model.visibility = 1;
             this.generateEffect.play(this.model);
