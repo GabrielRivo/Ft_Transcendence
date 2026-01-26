@@ -27,6 +27,19 @@ export class DbExchangeService {
 	private updateUsernamePrepare: Statement<{ userId: number; username: string }>;
 	private getUserByUsernamePrepare: Statement<{ username: string }>;
 
+	// 2FA TOTP prepared statements
+	private setTOTPSecretPrepare: Statement<{ userId: number; secret: string }>;
+	private enableTOTPPrepare: Statement<{ userId: number }>;
+	private disableTOTPPrepare: Statement<{ userId: number }>;
+	private getTOTPInfoPrepare: Statement<{ userId: number }>;
+
+	// Password reset OTP prepared statements
+	private storePasswordResetOTPPrepare: Statement<{ email: string; otp: string }>;
+	private getPasswordResetOTPPrepare: Statement<{ email: string }>;
+	private markOTPAsVerifiedPrepare: Statement<{ email: string; otp: string }>;
+	private deletePasswordResetOTPsPrepare: Statement<{ email: string }>;
+	private updateUserPasswordPrepare: Statement<{ email: string; password_hash: string }>;
+
 	@InjectPlugin('db')
 	private db!: Database;
 
@@ -62,6 +75,41 @@ export class DbExchangeService {
 		this.updateUsernamePrepare = this.db.prepare('UPDATE users SET username = @username WHERE id = @userId');
 		this.getUserByUsernamePrepare = this.db.prepare('SELECT * FROM users WHERE username = @username');
 
+		// 2FA TOTP prepared statements
+		this.setTOTPSecretPrepare = this.db.prepare(
+			'UPDATE users SET totp_secret = @secret, totp_pending = 1, totp_enabled = 0 WHERE id = @userId',
+		);
+		this.enableTOTPPrepare = this.db.prepare(
+			'UPDATE users SET totp_enabled = 1, totp_pending = 0 WHERE id = @userId',
+		);
+		this.disableTOTPPrepare = this.db.prepare(
+			'UPDATE users SET totp_secret = NULL, totp_enabled = 0, totp_pending = 0 WHERE id = @userId',
+		);
+		this.getTOTPInfoPrepare = this.db.prepare(
+			'SELECT totp_secret, totp_enabled, totp_pending FROM users WHERE id = @userId',
+		);
+
+		// Password reset OTP prepared statements
+		this.storePasswordResetOTPPrepare = this.db.prepare(
+			'INSERT INTO password_reset_otp (email, otp) VALUES (@email, @otp)',
+		);
+		this.getPasswordResetOTPPrepare = this.db.prepare(
+			`SELECT * FROM password_reset_otp 
+			 WHERE email = @email 
+			 AND verified = 0 
+			 AND datetime(created_at, '+10 minutes') > datetime('now') 
+			 ORDER BY created_at DESC 
+			 LIMIT 1`,
+		);
+		this.markOTPAsVerifiedPrepare = this.db.prepare(
+			'UPDATE password_reset_otp SET verified = 1 WHERE email = @email AND otp = @otp',
+		);
+		this.deletePasswordResetOTPsPrepare = this.db.prepare(
+			'DELETE FROM password_reset_otp WHERE email = @email',
+		);
+		this.updateUserPasswordPrepare = this.db.prepare(
+			"UPDATE users SET password_hash = @password_hash WHERE email = @email AND provider = 'email'",
+		);
 	}
 
 	async existing(email: string) {
@@ -137,6 +185,26 @@ export class DbExchangeService {
 	async getUserByUsername(username: string) {
 		return this.getUserByUsernamePrepare.get({ username }) as
 			| { id: number; username: string }
+			| undefined;
+	}
+
+	// ---------------------- 2FA TOTP Methods ----------------------
+
+	async setTOTPSecret(userId: number, secret: string) {
+		return this.setTOTPSecretPrepare.run({ userId, secret }) as RunResult;
+	}
+
+	async enableTOTP(userId: number) {
+		return this.enableTOTPPrepare.run({ userId }) as RunResult;
+	}
+
+	async disableTOTP(userId: number) {
+		return this.disableTOTPPrepare.run({ userId }) as RunResult;
+	}
+
+	async getTOTPInfo(userId: number) {
+		return this.getTOTPInfoPrepare.get({ userId }) as
+			| { totp_secret: string | null; totp_enabled: number; totp_pending: number }
 			| undefined;
 	}
 }

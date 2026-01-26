@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(64) NOT NULL,
     provider TEXT CHECK(provider IN ('github', 'google', 'email', 'discord')) DEFAULT 'email', -- # Warning: check provider
     provider_id TEXT,
+    totp_secret TEXT DEFAULT NULL,
+    totp_enabled INTEGER DEFAULT 0,
+    totp_pending INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -42,3 +45,16 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_tokens_token ON refresh_tokens(token);
 CREATE INDEX IF NOT EXISTS idx_tokens_user ON refresh_tokens(user_id);
+
+-- --------------------------------------------------------
+-- Table: password_reset_otp
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_otp (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL COLLATE NOCASE,
+    otp VARCHAR(6) NOT NULL,
+    verified INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_email ON password_reset_otp(email);

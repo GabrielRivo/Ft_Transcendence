@@ -3,6 +3,7 @@ import {
 	Body,
 	BodySchema,
 	Controller,
+	Delete,
 	Get,
 	Inject,
 	InjectPlugin,
@@ -23,6 +24,7 @@ import { DbExchangeService } from './dbExchange.service.js';
 import { LoginDto, LoginSchema } from './dto/login.dto.js';
 import { RegisterDto, RegisterSchema } from './dto/register.dto.js';
 import { SetUsernameDto, SetUsernameSchema } from './dto/setUsername.dto.js';
+import { TwoFAVerifyDto, TwoFAVerifySchema } from './dto/twofa.dto.js';
 
 import { RabbitMQClient } from 'my-fastify-decorators-microservices';
 import {
@@ -96,7 +98,11 @@ export class AuthController {
 		}
 
 		const payload = this.authService.verifyAccessToken(accessToken);
-		// this.authService.verifyAccessToken(accessToken);
+
+		// Si 2FA activée mais non vérifiée, rejeter la requête
+		if (payload.twoFA && !payload.twoFAVerified) {
+			throw new UnauthorizedException('2FA verification required');
+		}
 
 		res.header('X-User-Id', String(payload.id));
 		res.header('X-User-Email', payload.email || '');
@@ -129,12 +135,23 @@ export class AuthController {
 	@Post('/refresh')
 	async refresh(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
 		const refreshToken = (req.cookies as Record<string, string>)[config.refreshTokenName];
+		const accessToken = (req.cookies as Record<string, string>)[config.accessTokenName];
 
 		if (!refreshToken) {
 			throw new UnauthorizedException('No refresh token');
 		}
 
-		const tokens = await this.authService.refresh(refreshToken);
+		// Essayer de récupérer le payload actuel pour conserver l'état 2FA
+		let currentPayload;
+		if (accessToken) {
+			try {
+				currentPayload = this.authService.verifyAccessToken(accessToken);
+			} catch {
+				// Token expiré ou invalide, on continue sans le payload
+			}
+		}
+
+		const tokens = await this.authService.refresh(refreshToken, currentPayload);
 		this.setAuthCookies(res, tokens);
 		return { success: true, message: 'Token refreshed' };
 	}
@@ -232,5 +249,83 @@ export class AuthController {
 	@Get('/test/totp/get')
 	async verifyTOTP(@Query('buffer') buffer: string) {
 		return { code: getTOTP(base32ToBuffer(buffer), 6, 30, 'sha1') };
+	}
+
+	// ---------------------- 2FA Endpoints ----------------------
+
+	/**
+	 * Initie l'activation de la 2FA
+	 * Retourne le lien otpauth:// pour générer le QR code
+	 */
+	@Post('/2fa/enable')
+	@UseGuards(AuthGuard)
+	async enable2FA(@Req() req: AuthenticatedRequest, @Res() res: FastifyReply) {
+		const { link, secret } = await this.authService.enable2FA(req.user.id, req.user.email);
+		return { success: true, link, secret };
+	}
+
+	/**
+	 * Vérifie le code TOTP lors de l'activation initiale
+	 * Active définitivement la 2FA si le code est valide
+	 */
+	@Post('/2fa/verify-setup')
+	@UseGuards(AuthGuard)
+	@BodySchema(TwoFAVerifySchema)
+	async verify2FASetup(
+		@Body() dto: TwoFAVerifyDto,
+		@Req() req: AuthenticatedRequest,
+		@Res() res: FastifyReply,
+	) {
+		const tokens = await this.authService.verify2FASetup(req.user.id, dto.code);
+		this.setAuthCookies(res, tokens);
+		return { success: true, message: '2FA enabled successfully' };
+	}
+
+	/**
+	 * Vérifie le code TOTP après un login
+	 * Requiert un JWT valide avec twoFA: true et twoFAVerified: false
+	 */
+	@Post('/2fa/verify')
+	@BodySchema(TwoFAVerifySchema)
+	async verify2FA(
+		@Body() dto: TwoFAVerifyDto,
+		@Req() req: FastifyRequest,
+		@Res() res: FastifyReply,
+	) {
+		const accessToken = (req.cookies as Record<string, string>)[config.accessTokenName];
+
+		if (!accessToken) {
+			throw new UnauthorizedException('No access token');
+		}
+
+		const payload = this.authService.verifyAccessToken(accessToken);
+
+		// Vérifier que la 2FA est activée mais pas encore vérifiée
+		if (!payload.twoFA) {
+			throw new UnauthorizedException('2FA is not enabled');
+		}
+
+		if (payload.twoFAVerified) {
+			throw new UnauthorizedException('2FA already verified');
+		}
+
+		const tokens = await this.authService.verify2FA(payload.id, dto.code);
+		this.setAuthCookies(res, tokens);
+		return { success: true, message: '2FA verified successfully' };
+	}
+
+	/**
+	 * Désactive la 2FA
+	 * Requiert que la 2FA soit activée et vérifiée
+	 */
+	@Delete('/2fa')
+	@UseGuards(AuthGuard)
+	async disable2FA(@Req() req: AuthenticatedRequest, @Res() res: FastifyReply) {
+		const tokens = await this.authService.disable2FA(
+			req.user.id,
+			req.user.twoFAVerified || false,
+		);
+		this.setAuthCookies(res, tokens);
+		return { success: true, message: '2FA disabled successfully' };
 	}
 }

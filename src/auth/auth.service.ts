@@ -6,7 +6,15 @@ import {
 	UnauthorizedException,
 } from 'my-fastify-decorators';
 import config from '../config.js';
-import { hashPassword, verifyPassword } from '../utils/crypto.js';
+import {
+	hashPassword,
+	verifyPassword,
+	generateTOTPSecret,
+	bufferToBase32,
+	base32ToBuffer,
+	linkTOTPSecret,
+	verifyTOTP,
+} from '../utils/crypto.js';
 import { DbExchangeService } from './dbExchange.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
@@ -22,6 +30,8 @@ export type JwtPayload = {
 	provider: string;
 	noUsername?: boolean;
 	suggestedUsername?: string;
+	twoFA?: boolean;           // 2FA activée sur le compte
+	twoFAVerified?: boolean;   // 2FA vérifiée pour cette session
 	iat: number;
 	exp: number;
 };
@@ -35,6 +45,12 @@ export type AuthTokens = {
 class BadGatewayException extends HttpException {
 	constructor(message = 'Bad Gateway', payload?: unknown) {
 		super(message, 502, payload);
+	}
+}
+
+class BadRequestException extends HttpException {
+	constructor(message = 'Bad Request', payload?: unknown) {
+		super(message, 400, payload);
 	}
 }
 
@@ -99,10 +115,30 @@ export class AuthService {
 			throw new UnauthorizedException('Invalid credentials');
 		}
 
+		// Vérifier si la 2FA est activée
+		const totpInfo = await this.dbExchange.getTOTPInfo(user.id);
+		const has2FA = totpInfo?.totp_enabled === 1;
+
 		if (!user.username || user.username === '') {
 			// va demander un username plus tard
-			return this.generateTokens(user.id, user.email, '', 'email', { noUsername: true });
+
+			const data: Record<string, unknown> = { noUsername: true };
+			if (has2FA) {
+				//normalement pas possible...
+				data.twoFA = true;
+				data.twoFAVerified = false;
+			}
+			return this.generateTokens(user.id, user.email, '', 'email', data);
 		}
+
+		// Si 2FA enable genere un token avec twoFAVerified: false
+		if (has2FA) {
+			return this.generateTokens(user.id, user.email, user.username, 'email', {
+				twoFA: true,
+				twoFAVerified: false,
+			});
+		}
+
 		return this.generateTokens(user.id, user.email, user.username, 'email');
 	}
 
@@ -130,6 +166,8 @@ export class AuthService {
 			username: payload.username || user.username || '',
 			noUsername: payload.noUsername || false,
 			suggestedUsername: payload.suggestedUsername || undefined,
+			twoFA: payload.twoFA || false,
+			twoFAVerified: payload.twoFAVerified || false,
 		};
 	}
 
@@ -137,7 +175,7 @@ export class AuthService {
 		return this.jwt.verify(refreshToken);
 	}
 
-	async refresh(refreshToken: string): Promise<AuthTokens> {
+	async refresh(refreshToken: string, currentPayload?: JwtPayload): Promise<AuthTokens> {
 		try {
 			this.jwt.verify(refreshToken);
 		} catch {
@@ -162,11 +200,30 @@ export class AuthService {
 		if (!user) throw new UnauthorizedException('User not found');
 
 		await this.dbExchange.revokeRefreshToken(refreshToken);
+
+		// check si state est 2FA
+		const totpInfo = await this.dbExchange.getTOTPInfo(user.id);
+		const has2FA = totpInfo?.totp_enabled === 1;
+
+		const data: Record<string, unknown> = {};
+
 		if (!user.username || user.username === '') {
-			// va demander un username plus tard
-			return this.generateTokens(user.id, user.email, '', 'email', { noUsername: true });
+			data.noUsername = true;
 		}
-		return this.generateTokens(user.id, user.email, user.username, 'email');
+
+		if (has2FA) {
+			data.twoFA = true;
+			// Conserve le state de 2FA
+			data.twoFAVerified = currentPayload?.twoFAVerified || false;
+		}
+
+		return this.generateTokens(
+			user.id,
+			user.email,
+			user.username || '',
+			'email',
+			Object.keys(data).length > 0 ? data : undefined,
+		);
 	}
 
 	async logout(refreshToken: string): Promise<void> {
@@ -186,8 +243,8 @@ export class AuthService {
 			tokenRes = await fetch(providers[provider].accessTokenUrl, {
 				method: 'POST',
 				headers: { 'Content-Type': providers[provider].contentType, Accept: 'application/json' },
-				body: JSON.stringify({ 
-					...providers[provider].body, 
+				body: JSON.stringify({
+					...providers[provider].body,
 					code,
 					redirect_uri: config.redirectUri + '/api/auth/' + provider + '/callback',
 				}),
@@ -241,9 +298,9 @@ export class AuthService {
 
 		if (!user?.username || user?.username === '') {
 			// va demander un username plus tard, avec suggestion du provider
-			return this.generateTokens(user?.id, user?.email, '', provider, { 
-				noUsername: true, 
-				suggestedUsername 
+			return this.generateTokens(user?.id, user?.email, '', provider, {
+				noUsername: true,
+				suggestedUsername
 			});
 		}
 		return this.generateTokens(user.id, userData.email || '', user.username, provider);
@@ -283,5 +340,109 @@ export class AuthService {
 		}
 		// Générer de nouveaux tokens avec le username
 		return this.generateTokens(user.id, user.email || '', username, 'email');
+	}
+
+	// ---------------------- 2FA TOTP Methods ----------------------
+
+	async enable2FA(userId: number, email: string): Promise<{ link: string; secret: string }> {
+		// check si 2FA est deja enable
+		const totpInfo = await this.dbExchange.getTOTPInfo(userId);
+		if (totpInfo?.totp_enabled === 1) {
+			throw new BadRequestException('2FA is already enabled');
+		}
+
+		// Genere un nouveau secret TOTP
+		const secretBuffer = generateTOTPSecret();
+		const secretBase32 = bufferToBase32(secretBuffer);
+
+		// Stocker le secret en mode pending
+		await this.dbExchange.setTOTPSecret(userId, secretBase32);
+
+		// Genere le lien otpauth://
+		const link = linkTOTPSecret(secretBuffer, 'Transcendance', email || `user-${userId}`);
+
+		return { link, secret: secretBase32 };
+	}
+
+	async verify2FASetup(userId: number, code: string): Promise<AuthTokens> {
+		const totpInfo = await this.dbExchange.getTOTPInfo(userId);
+
+		if (!totpInfo) {
+			throw new UnauthorizedException('User not found');
+		}
+
+		if (totpInfo.totp_enabled === 1) {
+			throw new BadRequestException('2FA is already enabled');
+		}
+
+		if (totpInfo.totp_pending !== 1 || !totpInfo.totp_secret) {
+			throw new BadRequestException('2FA setup not initiated');
+		}
+
+		const secretBuffer = base32ToBuffer(totpInfo.totp_secret);
+		const isValid = verifyTOTP(secretBuffer, code);
+
+		if (!isValid) {
+			throw new UnauthorizedException('Invalid TOTP code');
+		}
+
+		// Enable 2FA
+		await this.dbExchange.enableTOTP(userId);
+
+		const user = await this.dbExchange.getUserById(userId);
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
+
+		return this.generateTokens(user.id, user.email || '', user.username || '', 'email', {
+			twoFA: true,
+			twoFAVerified: true,
+		});
+	}
+
+	async verify2FA(userId: number, code: string): Promise<AuthTokens> {
+		const totpInfo = await this.dbExchange.getTOTPInfo(userId);
+
+		if (!totpInfo || totpInfo.totp_enabled !== 1 || !totpInfo.totp_secret) {
+			throw new BadRequestException('2FA is not enabled');
+		}
+
+		const secretBuffer = base32ToBuffer(totpInfo.totp_secret);
+		const isValid = verifyTOTP(secretBuffer, code);
+
+		if (!isValid) {
+			throw new UnauthorizedException('Invalid TOTP code');
+		}
+
+		const user = await this.dbExchange.getUserById(userId);
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
+
+		return this.generateTokens(user.id, user.email || '', user.username || '', 'email', {
+			twoFA: true,
+			twoFAVerified: true,
+		});
+	}
+
+	async disable2FA(userId: number, twoFAVerified: boolean): Promise<AuthTokens> {
+		const totpInfo = await this.dbExchange.getTOTPInfo(userId);
+
+		if (!totpInfo || totpInfo.totp_enabled !== 1) {
+			throw new BadRequestException('2FA is not enabled');
+		}
+
+		if (!twoFAVerified) {
+			throw new UnauthorizedException('2FA verification required to disable 2FA');
+		}
+
+		await this.dbExchange.disableTOTP(userId);
+
+		const user = await this.dbExchange.getUserById(userId);
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
+
+		return this.generateTokens(user.id, user.email || '', user.username || '', 'email');
 	}
 }
