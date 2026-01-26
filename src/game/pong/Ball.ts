@@ -27,7 +27,7 @@ class Ball {
         this.services = services;
         this.model = model ?? MeshBuilder.CreateSphere("ball", { diameter: this.diameter });
         // this.setFullDir(new Vector3(1, 0, 1));
-        this.startDirection();
+        this.startDirection(1);
         //this.model.setDirection(this.direction);
         let material = new StandardMaterial("ballmat", this.services.Scene);
         material.emissiveColor = new Color3(0, 1, 1);
@@ -74,12 +74,6 @@ class Ball {
         this.speed = speed;
     }
 
-    startDirection() {
-        // let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4);
-        let angle: number = Math.PI;
-        this.setFullDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
-    }
-
     setMoving(moving: boolean) {
         this.moving = moving;
     }
@@ -87,8 +81,17 @@ class Ball {
         return this.moving;
     }
 
-    public generate(delay: number) {
-        this.startDirection();
+    startDirection(side: number) {
+        let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4);
+        if (side == 1) {
+            angle += Math.PI;
+        }
+        //let angle: number = Math.PI;
+        this.setFullDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize());
+    }
+
+    public generate(delay: number, side: number) {
+        this.startDirection(side);
         this.setSpeed(3);
         this.setFullPos(new Vector3(0, 0.125, 0));
         this.moving = false;

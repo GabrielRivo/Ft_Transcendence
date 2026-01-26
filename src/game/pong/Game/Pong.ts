@@ -153,18 +153,34 @@ class Pong extends Game {
 
     private onDeathBarHit = (payload: DeathBarPayload) => {
         this.ball!.setFullPos(new Vector3(0, -100, 0));
-        if (payload.deathBar.owner == this.player1 && this.player2!.score < 5) {
+        let playerScoring: Player;
+        let scoredSide: number;
+
+        if (payload.deathBar.owner === this.player1) {
+            playerScoring = this.player2!;
+            scoredSide = 1;
+        }
+        else
+        {
+            playerScoring = this.player1!;
+            scoredSide = 2;
+        }
+
+        if (playerScoring.score < 5) {
+            playerScoring.scoreUp();
+        }
+        /*if (playerScoring === this.player1 && this.player2!.score < 5) {
             this.player2!.scoreUp();
         }
         else if (payload.deathBar.owner == this.player2 && this.player1!.score < 5) {
             this.player1!.scoreUp();
-        }
+        }*/
         this.nsp!.to(this.id).emit('score', { player1Score: this.player1!.score, player2Score: this.player2!.score });
 
         // Publish score update to other services (RabbitMQ)
         this.gameService.publishScoreUpdate(this.id, this.p1Id, this.p2Id, this.player1!.score, this.player2!.score);
 
-        if (this.player1!.score == 5 || this.player2!.score == 5) {
+        if (this.player1!.score === 5 || this.player2!.score === 5) {
 
             setTimeout(() => {
                 //const winnerId = this.player1!.score === 5 ? this.p1Id : this.p2Id;
@@ -177,9 +193,9 @@ class Pong extends Game {
 
         //this.ball = new Ball(this.services);
         //this.ball.setFullPos(new Vector3(0, 0.125, 0));
-        this.ball!.generate(2000);
+        this.ball!.generate(2000, scoredSide);
 
-        this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp() });
+        this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp(), ballDirection: this.ball!.getDirection()});
     }
 
     public sendGameState(): void {
@@ -218,7 +234,7 @@ class Pong extends Game {
             console.log("Game started with timestamp:", this.services.TimeService!.getTimestamp());
             if (!this.ball) {
                 this.ball = new Ball(this.services);
-                this.ball.generate(2000);
+                this.ball.generate(2000, Math.random() < 0.5 ? 1 : 2);
                 this.nsp!.to(this.id).emit('generateBall', { timestamp: this.services.TimeService!.getTimestamp() });
             }
             this.sendGameState();
