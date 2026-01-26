@@ -4,7 +4,7 @@ export class CreateUserHistoryDto {
 	@IsRequired({ message: 'game id is requiered' })
 	@IsNumber()
 	@Minimum(0, {message : 'negative game id'})
-	game_id: number;
+	game_id: string;
 
 	// @IsRequired({ message: 'elo player 1 is requiered' })
 	// @IsNumber()

@@ -28,7 +28,7 @@ VALUES (1), (2), (3);
 
 
 CREATE TABLE IF NOT EXISTS game_history (
-    game_id INTEGER PRIMARY KEY,
+    game_id TEXT NOT NULL,
     player1_id INTEGER NOT NULL,
     player2_id INTEGER NOT NULL,
     score_player1 INTEGER NOT NULL,

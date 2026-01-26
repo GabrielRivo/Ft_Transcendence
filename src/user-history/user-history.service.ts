@@ -28,7 +28,7 @@ export class UserHistoryService {
 	private userStatsService!: UserStatsService;
 
 	private statementAddMatchtoHistory: Statement<{
-		game_id: number;
+		game_id: string;
 		player1_id: number;
 		player2_id: number;
 		score_player1: number;
@@ -68,7 +68,7 @@ export class UserHistoryService {
 	}
 
 	add_match_to_history(
-		game_id: number,
+		game_id: string,
 		player1_id: number,
 		player2_id: number,
 		score_player1: number,
