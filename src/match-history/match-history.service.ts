@@ -51,16 +51,10 @@ export class MatchHistoryService {
 
 	get_user_matches(userId: number) {
 		try {
-		return this.statementGet.all(userId, userId);
-	} catch (error) {
-		console.error("ERROR SQLITE :", error);
-		throw error;
+			return this.statementGet.all(userId, userId);
+		} catch (error) {
+			console.error("ERROR SQLITE :", error);
+			throw error;
+		}
 	}
-		// return this.statementGet.all(userId, userId);
-	}
-	
-	// delete_match_from_history(userId1 : number, userId2	: number, 
-	// 	scoreUser1 : number, scoreUser2 : number){ // purpose?
-
-	// }
 }
