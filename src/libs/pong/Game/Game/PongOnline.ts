@@ -143,7 +143,7 @@ class PongOnline extends Game {
         let ballMesh : Mesh | undefined = undefined;
         if (this.isDisposed || !Services.Scene) return;
         try {
-            const ballMeshs = await Services.AssetCache.loadModel('pong-ball', './models/ball.glb', Services.Scene);
+            const ballMeshs = await Services.AssetCache.loadModel('pong-ball', '/models/ball.glb', Services.Scene);
             if (this.isDisposed) return; // Check again after async operation
             ballMeshs.forEach(mesh => {
                 mesh.isPickable = false;
