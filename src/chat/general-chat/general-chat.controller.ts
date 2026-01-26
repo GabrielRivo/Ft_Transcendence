@@ -14,8 +14,8 @@ export class GeneralChatController {
 	}
 
 	@Get('/history/:userId')
-	async get_history(@Param('userId') userId: string) {
-		const history = await this.chatService.getGeneralHistory(Number(userId));
+	async get_history() {
+		const history = await this.chatService.getGeneralHistory();
 		return history.reverse();
 	}
 
