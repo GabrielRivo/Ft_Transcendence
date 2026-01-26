@@ -13,6 +13,8 @@ import InputManager from "../InputManager.js";
 import Game from "./Game.js";
 import TruthManager from "./TruthManager.js";
 
+import { GameFinishedEvent, GameScoreUpdatedEvent } from '../../game.events.js';
+
 class Pong extends Game {
     private gameService: GameService;
     private services: Services;
@@ -141,12 +143,8 @@ class Pong extends Game {
                 setTimeout(() => {
                     if (this.p1Socket?.disconnected || this.p2Socket?.disconnected) {
                         console.log(`Timeout reached for client ${client.data.userId}. Disposing game ${this.id}...`);
-                        // Determine winner (the one who didn't disconnect)
-                        const remainingPlayer =
-                            this.p1Socket?.connected ? this.p1Id :
-                                this.p2Socket?.connected ? this.p2Id : null;
-
-                        this.dispose('disconnection', remainingPlayer);
+                        this.endGame('disconnection');
+                        //this.dispose('disconnection', remainingPlayer);
                     }
                 }, 15000)
             );
@@ -169,8 +167,9 @@ class Pong extends Game {
         if (this.player1!.score == 5 || this.player2!.score == 5) {
 
             setTimeout(() => {
-                const winnerId = this.player1!.score === 5 ? this.p1Id : this.p2Id;
-                this.dispose('score_limit', winnerId);
+                //const winnerId = this.player1!.score === 5 ? this.p1Id : this.p2Id;
+                //this.dispose('score_limit', winnerId);
+                this.endGame('score_limit');
             }, 8000);
 
             return;
@@ -250,10 +249,36 @@ class Pong extends Game {
         }
     }
 
-    dispose(
-        reason: 'score_limit' | 'surrender' | 'disconnection' | 'timeout' = 'surrender',
-        winnerId: string | null = null
-    ): void {
+    endGame(reason: 'score_limit' | 'surrender' | 'disconnection' | 'timeout' = 'score_limit'): void {
+        let winnerId: string | null = null;
+
+        if (reason === 'disconnection') {
+            winnerId = this.p1Socket?.connected ? this.p1Id : this.p2Socket?.connected ? this.p2Id : null;
+        }
+        else if (this.player1!.score > this.player2!.score) {
+            winnerId = this.p1Id;
+        } else if (this.player2!.score > this.player1!.score) {
+            winnerId = this.p2Id;
+        }
+
+        let gameFinishedEvent: GameFinishedEvent = {
+            eventName: 'game.finished',
+            gameId: this.id,
+            player1Id: this.p1Id,
+            player2Id: this.p2Id,
+            score1: this.player1?.score || 0,
+            score2: this.player2?.score || 0,
+            winnerId: winnerId,
+            reason: reason,
+            timestamp: this.services.TimeService!.getTimestamp(),
+            hitPlayer1: this.player1?.hitCount || 0,
+            hitPlayer2: this.player2?.hitCount || 0,
+        };
+        this.gameService.publishGameFinished(gameFinishedEvent);
+        this.dispose();
+    }
+
+    dispose(/*reason: 'score_limit' | 'surrender' | 'disconnection' | 'timeout' = 'surrender', winnerId: string | null = null*/): void {
         this.disconnectTimeout.forEach((timeout) => {
             if (timeout) {
                 clearTimeout(timeout);
@@ -273,12 +298,12 @@ class Pong extends Game {
 
         console.log(`Ending game instance ${this.id}`);
         this.nsp!.to(this.id).emit('gameEnded', { gameId: this.id, message: `Game ${this.id} has ended.` });
-        this.gameService.removeGame(this, this.p1Id, this.p2Id, {
+        this.gameService.removeGame(this, this.p1Id, this.p2Id/*, {
             score1: this.player1?.score || 0,
             score2: this.player2?.score || 0,
             winnerId,
             reason
-        });
+        }*/);
     }
 }
 

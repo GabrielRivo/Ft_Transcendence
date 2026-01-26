@@ -8,6 +8,9 @@ export interface GameFinishedEvent {
     winnerId: string | null; // null if draw or cancelled
     reason: 'score_limit' | 'surrender' | 'disconnection' | 'timeout';
     timestamp: number;
+
+    hitPlayer1: number;
+    hitPlayer2: number;
 }
 
 export interface GameScoreUpdatedEvent {

@@ -133,6 +133,7 @@ class Paddle {
         //ball.bounce(hitInfo);
         ball.speedUp();
         ball.owner = this.owner;
+        this.owner.hitCount++;
     }
 
     update(deltaT: number) {

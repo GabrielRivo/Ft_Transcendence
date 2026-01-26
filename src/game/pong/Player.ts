@@ -34,6 +34,8 @@ class Player {
     speed : number = 7;
     score: number = 0;
 
+    hitCount: number = 0;
+
     constructor(services: Services, id?: string) {
         this.services = services;
         this.id = id ?? "player" + (idDefault++);

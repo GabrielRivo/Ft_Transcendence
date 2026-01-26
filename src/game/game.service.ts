@@ -6,6 +6,8 @@ import { GameFinishedEvent, GameScoreUpdatedEvent } from './game.events.js';
 import { Socket } from 'socket.io';
 import { Inject } from 'my-fastify-decorators';
 import { GameEventsPublisher } from './infrastructure/publishers/game-events.publisher.js';
+import { time } from 'console';
+import Game from './pong/Game/Game.js';
 
 /**
  * Result type for game creation operations.
@@ -146,13 +148,13 @@ export class GameService {
 	public async removeGame(
 		game: Pong,
 		player1Id: string,
-		player2Id: string,
+		player2Id: string/*,
 		result?: {
 			score1: number;
 			score2: number;
 			winnerId: string | null;
 			reason: 'score_limit' | 'surrender' | 'disconnection' | 'timeout';
-		},
+		},*/
 	): Promise<void> {
 		this.gamesByPlayer.delete(player1Id);
 		this.gamesByPlayer.delete(player2Id);
@@ -163,7 +165,7 @@ export class GameService {
 			`[GameService] Game ${game.id} removed. Players ${player1Id} and ${player2Id} are now free.`,
 		);
 
-		if (result) {
+		/*if (result) {
 			await this.eventsPublisher.publishGameFinished({
 				eventName: 'game.finished',
 				gameId: game.id,
@@ -175,11 +177,15 @@ export class GameService {
 				reason: result.reason,
 				timestamp: Date.now(),
 			});
-		}
+		}*/
 	}
 
 	public getActiveGamesCount(): number {
 		return this.games.size;
+	}
+
+	public async publishGameFinished(gameFinishedEvent: GameFinishedEvent): Promise<void> {
+		await this.eventsPublisher.publishGameFinished(gameFinishedEvent);
 	}
 
 	public async publishScoreUpdate(gameId: string, player1Id: string, player2Id: string, score1: number, score2: number) {
