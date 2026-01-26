@@ -25,6 +25,9 @@ import { LoginDto, LoginSchema } from './dto/login.dto.js';
 import { RegisterDto, RegisterSchema } from './dto/register.dto.js';
 import { SetUsernameDto, SetUsernameSchema } from './dto/setUsername.dto.js';
 import { TwoFAVerifyDto, TwoFAVerifySchema } from './dto/twofa.dto.js';
+import { ForgotPasswordDto, ForgotPasswordSchema } from './dto/forgotPassword.dto.js';
+import { VerifyResetOtpDto, VerifyResetOtpSchema } from './dto/verifyResetOtp.dto.js';
+import { ResetPasswordDto, ResetPasswordSchema } from './dto/resetPassword.dto.js';
 
 import { RabbitMQClient } from 'my-fastify-decorators-microservices';
 import {
@@ -38,7 +41,7 @@ import { AuthGuard } from './guards/auth.guard.js';
 import type { ProviderKeys } from './providers.js';
 import { providers } from './providers.js';
 
-// Extend FastifyRequest to include user from AuthGuard
+
 interface AuthenticatedRequest extends FastifyRequest {
 	user: JwtPayload;
 }
@@ -99,7 +102,7 @@ export class AuthController {
 
 		const payload = this.authService.verifyAccessToken(accessToken);
 
-		// Si 2FA activée mais non vérifiée, rejeter la requête
+		// Si 2FA enable mais non checked, rejeter la request
 		if (payload.twoFA && !payload.twoFAVerified) {
 			throw new UnauthorizedException('2FA verification required');
 		}
@@ -141,13 +144,13 @@ export class AuthController {
 			throw new UnauthorizedException('No refresh token');
 		}
 
-		// Essayer de récupérer le payload actuel pour conserver l'état 2FA
+		// Essayer de recup le payload actuel pour conserver le state 2FA
 		let currentPayload;
 		if (accessToken) {
 			try {
 				currentPayload = this.authService.verifyAccessToken(accessToken);
 			} catch {
-				// Token expiré ou invalide, on continue sans le payload
+				// Token experer ou invalide, on continue sans le payload
 			}
 		}
 
@@ -156,9 +159,7 @@ export class AuthController {
 		return { success: true, message: 'Token refreshed' };
 	}
 
-	/**
-	 * Logout - revoke refresh token and clear cookies
-	 */
+
 	@Post('/logout')
 	async logout(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
 		const refreshToken = (req.cookies as Record<string, string | undefined>)[
@@ -253,21 +254,14 @@ export class AuthController {
 
 	// ---------------------- 2FA Endpoints ----------------------
 
-	/**
-	 * Initie l'activation de la 2FA
-	 * Retourne le lien otpauth:// pour générer le QR code
-	 */
 	@Post('/2fa/enable')
 	@UseGuards(AuthGuard)
-	async enable2FA(@Req() req: AuthenticatedRequest, @Res() res: FastifyReply) {
+	async enable2FA(@Req() req: AuthenticatedRequest) {
 		const { link, secret } = await this.authService.enable2FA(req.user.id, req.user.email);
 		return { success: true, link, secret };
 	}
 
-	/**
-	 * Vérifie le code TOTP lors de l'activation initiale
-	 * Active définitivement la 2FA si le code est valide
-	 */
+
 	@Post('/2fa/verify-setup')
 	@UseGuards(AuthGuard)
 	@BodySchema(TwoFAVerifySchema)
@@ -281,10 +275,6 @@ export class AuthController {
 		return { success: true, message: '2FA enabled successfully' };
 	}
 
-	/**
-	 * Vérifie le code TOTP après un login
-	 * Requiert un JWT valide avec twoFA: true et twoFAVerified: false
-	 */
 	@Post('/2fa/verify')
 	@BodySchema(TwoFAVerifySchema)
 	async verify2FA(
@@ -300,7 +290,6 @@ export class AuthController {
 
 		const payload = this.authService.verifyAccessToken(accessToken);
 
-		// Vérifier que la 2FA est activée mais pas encore vérifiée
 		if (!payload.twoFA) {
 			throw new UnauthorizedException('2FA is not enabled');
 		}
@@ -314,10 +303,6 @@ export class AuthController {
 		return { success: true, message: '2FA verified successfully' };
 	}
 
-	/**
-	 * Désactive la 2FA
-	 * Requiert que la 2FA soit activée et vérifiée
-	 */
 	@Delete('/2fa')
 	@UseGuards(AuthGuard)
 	async disable2FA(@Req() req: AuthenticatedRequest, @Res() res: FastifyReply) {
@@ -327,5 +312,29 @@ export class AuthController {
 		);
 		this.setAuthCookies(res, tokens);
 		return { success: true, message: '2FA disabled successfully' };
+	}
+
+	// ---------------------- Password Reset Endpoints ----------------------
+
+	@Post('/forgot-password')
+	@BodySchema(ForgotPasswordSchema)
+	async forgotPassword(@Body() body: ForgotPasswordDto) {
+		await this.authService.forgotPassword(body.email);
+		// Toujours retourner success pour eviter de savoir si le mail est existant ou pas
+		return { success: true, message: 'If the email exists, a reset code has been sent' };
+	}
+
+	@Post('/verify-reset-otp')
+	@BodySchema(VerifyResetOtpSchema)
+	async verifyResetOtp(@Body() body: VerifyResetOtpDto) {
+		const valid = await this.authService.verifyResetOTP(body.email, body.otp);
+		return { success: true, valid, message: 'OTP verified successfully' };
+	}
+
+	@Post('/reset-password')
+	@BodySchema(ResetPasswordSchema)
+	async resetPassword(@Body() body: ResetPasswordDto) {
+		await this.authService.resetPassword(body.email, body.otp, body.newPassword);
+		return { success: true, message: 'Password has been reset successfully' };
 	}
 }

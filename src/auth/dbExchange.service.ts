@@ -207,4 +207,42 @@ export class DbExchangeService {
 			| { totp_secret: string | null; totp_enabled: number; totp_pending: number }
 			| undefined;
 	}
+
+	// ---------------------- Password Reset OTP Methods ----------------------
+
+	async storePasswordResetOTP(email: string, otp: string) {
+		return this.storePasswordResetOTPPrepare.run({ email, otp }) as RunResult;
+	}
+
+	async getPasswordResetOTP(email: string) {
+		return this.getPasswordResetOTPPrepare.get({ email }) as
+			| { id: number; email: string; otp: string; verified: number; created_at: string }
+			| undefined;
+	}
+
+	async getVerifiedOTP(email: string, otp: string) {
+		const stmt = this.db.prepare(
+			`SELECT * FROM password_reset_otp 
+			 WHERE email = @email 
+			 AND otp = @otp 
+			 AND verified = 1 
+			 AND datetime(created_at, '+10 minutes') > datetime('now') 
+			 LIMIT 1`,
+		);
+		return stmt.get({ email, otp }) as
+			| { id: number; email: string; otp: string; verified: number; created_at: string }
+			| undefined;
+	}
+
+	async markOTPAsVerified(email: string, otp: string) {
+		return this.markOTPAsVerifiedPrepare.run({ email, otp }) as RunResult;
+	}
+
+	async deletePasswordResetOTPs(email: string) {
+		return this.deletePasswordResetOTPsPrepare.run({ email }) as RunResult;
+	}
+
+	async updateUserPassword(email: string, password_hash: string) {
+		return this.updateUserPasswordPrepare.run({ email, password_hash }) as RunResult;
+	}
 }

@@ -445,4 +445,62 @@ export class AuthService {
 
 		return this.generateTokens(user.id, user.email || '', user.username || '', 'email');
 	}
+
+	// ---------------------- Password Reset Methods ----------------------
+
+	private generateOTP(): string {
+		return Math.floor(100000 + Math.random() * 900000).toString();
+	}
+
+	async forgotPassword(email: string): Promise<void> {
+		const user = await this.dbExchange.getUserByEmail(email);
+		if (!user) {
+			return;
+		}
+
+		const otp = this.generateOTP();
+
+		await this.dbExchange.storePasswordResetOTP(email, otp);
+
+		this.mq.emit('send_otp', { mail: email, otp }, 'mail_queue');
+	}
+
+	async verifyResetOTP(email: string, otp: string): Promise<boolean> {
+
+		const storedOTP = await this.dbExchange.getPasswordResetOTP(email);
+
+		if (!storedOTP) {
+			throw new BadRequestException('Invalid or expired OTP');
+		}
+
+		if (storedOTP.otp !== otp) {
+			throw new BadRequestException('Invalid OTP');
+		}
+
+		await this.dbExchange.markOTPAsVerified(email, otp);
+
+		return true;
+	}
+
+	async resetPassword(email: string, otp: string, newPassword: string): Promise<void> {
+		// check si OTP a ete verifie
+		const verifiedOTP = await this.dbExchange.getVerifiedOTP(email, otp);
+
+		if (!verifiedOTP) {
+			throw new BadRequestException('OTP not verified or expired');
+		}
+
+		// Hash le nouveau password
+		const hashedPassword = await hashPassword(newPassword);
+
+		// Update le password
+		const result = await this.dbExchange.updateUserPassword(email, hashedPassword);
+
+		if (result.changes === 0) {
+			throw new BadRequestException('Failed to update password');
+		}
+
+		// Supprime tous les OTP de cet email
+		await this.dbExchange.deletePasswordResetOTPs(email);
+	}
 }

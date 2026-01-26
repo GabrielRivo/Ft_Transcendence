@@ -1,4 +1,4 @@
-import { generateSchema, IsEmail, IsRequired, IsString, Length } from 'my-class-validator';
+import { generateSchema, IsEmail, IsRequired, IsString, MaxLength, MinLength } from 'my-class-validator';
 
 export class VerifyResetOtpDto {
 	@IsRequired()
@@ -8,7 +8,8 @@ export class VerifyResetOtpDto {
 
 	@IsRequired()
 	@IsString()
-	@Length(6, 6)
+	@MinLength(6)
+	@MaxLength(6)
 	otp: string;
 }
 
