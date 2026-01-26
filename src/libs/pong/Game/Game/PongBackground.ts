@@ -219,7 +219,7 @@ class PongBackground extends Game {
 		this.walls[1].model.position = new Vector3(this.width / 2 + 0.1, 0.25, 0);
 
 		this.ball = new Ball();
-		this.ball.generate(2000);
+		this.ball.generate(2000, Math.random() < 0.5 ? 1 : 2);
 		this.ball.startDirectionRandom();
 		
 		this.loadGameAssets();
@@ -311,7 +311,7 @@ class PongBackground extends Game {
 	private onDeathBarHit = (_payload: DeathBarPayload): void => {
 		// Reset ball position
 		if (this.ball) {
-			this.ball.generate(2000);
+			this.ball.generate(2000, _payload.deathBar.owner === this.player1 ? 1 : 2);
 			this.ball.startDirectionRandom();
 		}
 	};

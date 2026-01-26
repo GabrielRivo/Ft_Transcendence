@@ -345,7 +345,7 @@ class PongOnline extends Game {
         if (!this.ball) return;
         const time = Services.TimeService!.getTimestamp();
         const deltaT = time - payload.timestamp;
-        this.ball.generate(2000 - deltaT);
+        this.ball.generate(2000 - deltaT, payload.ballDirection);
     }
 
     private onScore = (payload: any): void => {

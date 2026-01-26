@@ -214,7 +214,7 @@ class PongLocal extends Game {
             return;
         }
 
-        this.ball!.generate(2000);
+        this.ball!.generate(2000, payload.deathBar.owner === this.player1 ? 1 : 2);
     }
 
     run() {
@@ -224,7 +224,7 @@ class PongLocal extends Game {
 
         if (!this.ball) {
             this.ball = new Ball();
-            this.ball.generate(2000);
+            this.ball.generate(2000, Math.random() < 0.5 ? 1 : 2);
         }
         Services.Engine!.runRenderLoop(this.renderLoop);
     }

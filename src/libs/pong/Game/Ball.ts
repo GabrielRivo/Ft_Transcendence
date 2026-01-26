@@ -40,7 +40,7 @@ class Ball {
             this.model.rotationQuaternion = new Quaternion();
         }
 
-        this.startDirection();
+        this.startDirection(Math.random() < 0.5 ? 1 : 2);
 
         let material = new StandardMaterial("ballmat", Services.Scene);
         material.emissiveColor = new Color3(0, 1, 1);
@@ -90,11 +90,14 @@ class Ball {
             this.speed *= this.acceleration;
     }
 
-    startDirection() {
-        //let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4); // + ou moin PI pour le sens
-        let angle : number = Math.PI;
-		this.setDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
-        this.setModelDir(this.direction);
+    startDirection(side: number) {
+        let angle : number = (Math.random() * Math.PI / 2) - (Math.PI / 4);
+        if (side == 1) {
+            angle += Math.PI;
+        }
+        //let angle: number = Math.PI;
+        this.setDir(new Vector3(Math.sin(angle), 0, Math.cos(angle)));
+        return this.direction;
     }
 
 	startDirectionRandom() {
@@ -131,13 +134,16 @@ class Ball {
         this.model.owner = this;
     }
 
-    public generate(delay: number) {
+    public generate(delay: number, side: number, direction?: Vector3) {
         this.model.getChildMeshes().forEach(mesh => {
             mesh.isVisible = false;
         });
         this.model.visibility = 0;
 
-        this.startDirection();
+        if (!direction)
+            this.startDirection(side);
+        else
+            this.setDir(direction);
         //this.totalDistance = 0;
         this.setSpeed(3);
         this.setPos(new Vector3(0, 0.125, 0));
