@@ -99,7 +99,7 @@ class Ball {
         const currentTime = this.services.TimeService!.getTimestamp();
 
         this.startMovingTime = currentTime + delay;
-        console.log("||||||||||||||||||||Ball generated||||||||||||||||||||||||||");
+        //console.log("||||||||||||||||||||Ball generated||||||||||||||||||||||||||");
         //console.log("Ball will start moving at time:", this.startMovingTime, "current time:", currentTime);
     }
 
