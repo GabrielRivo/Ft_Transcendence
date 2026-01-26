@@ -1,4 +1,7 @@
 import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh } from "@babylonjs/core";
+import "@babylonjs/core/Debug/debugLayer";
+import "@babylonjs/inspector"; //A ENLEVER
+
 import Services from "../Services/Services";
 import { DeathBarPayload } from "../globalType";
 import Player from "../Player";
@@ -298,11 +301,15 @@ class PongLocal extends Game {
     }
 
     showDebugLayer(ev: KeyboardEvent) {
-        if (ev.ctrlKey && ev.keyCode === 73) {
+        if (ev.ctrlKey && ev.key.toLowerCase() === 'i') {
+            ev.preventDefault();
+
             if (Services.Scene!.debugLayer.isVisible()) {
                 Services.Scene!.debugLayer.hide();
             } else {
-                Services.Scene!.debugLayer.show();
+                Services.Scene!.debugLayer.show().catch((err) => {
+                    console.error("Impossible de lancer l'inspecteur.", err);
+                });
             }
         }
     }

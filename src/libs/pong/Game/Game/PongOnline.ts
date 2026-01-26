@@ -1,4 +1,7 @@
 import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh, SetValueAction, Camera } from "@babylonjs/core";
+import "@babylonjs/core/Debug/debugLayer";
+import "@babylonjs/inspector";
+
 import Services from "../Services/Services";
 import type { DeathBarPayload, GameState, OwnedMesh } from "../globalType";
 import Player from "../Player";
@@ -514,14 +517,18 @@ class PongOnline extends Game {
     }
 
     showDebugLayer(ev: KeyboardEvent) {
-        if (ev.ctrlKey && ev.keyCode === 73) {
-            if (Services.Scene!.debugLayer.isVisible()) {
-                Services.Scene!.debugLayer.hide();
-            } else {
-                Services.Scene!.debugLayer.show();
-            }
+    if (ev.ctrlKey && ev.key.toLowerCase() === 'i') {
+        ev.preventDefault();
+
+        if (Services.Scene!.debugLayer.isVisible()) {
+            Services.Scene!.debugLayer.hide();
+        } else {
+            Services.Scene!.debugLayer.show().catch((err) => {
+                console.error("Impossible de lancer l'inspecteur.", err);
+            });
         }
     }
+}
 }
 
 export default PongOnline;
