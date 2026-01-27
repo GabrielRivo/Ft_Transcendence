@@ -1,26 +1,40 @@
-import { createElement, useState, useEffect, useCallback } from 'my-react';
+import { createElement, useState, useEffect } from 'my-react';
 import { Link, useParams, useNavigate } from 'my-react-router';
 import { useToast } from '../../hook/useToast';
 import { ButtonStyle3 } from '../../components/ui/button/style3';
 import { ButtonStyle4 } from '../../components/ui/button/style4';
 import { fetchJsonWithAuth } from '../../libs/fetchWithAuth';
 import { ButtonStyle2 } from '@/components/ui/button/style2';
+import { useAuth } from '@/hook/useAuth';
+import { useFriends } from '@/hook/useFriends';
+
+interface UserIdentity {
+	id: number;
+	username: string;
+}
+
+interface ProfileData {
+	id: number;
+	username: string;
+	avatar: string | null;
+	bio: string;
+}
+
+interface StatsData {
+	elo: number;
+	total_games: number;
+	wins: number;
+	losses: number;
+	winrate: number | null;
+}
 
 interface UserProfile {
-	id: string;
+	id: number;
 	username: string;
 	avatarUrl: string | null;
 	bio: string | null;
-	createdAt: string;
-	stats: {
-		wins: number;
-		losses: number;
-		totalGames: number;
-		winRate: number;
-		rank: number;
-		elo: number;
-	};
-	isOnline: boolean;
+	isMe: boolean;
+	stats: StatsData;
 	isFriend: boolean;
 	hasPendingRequest: boolean;
 }
@@ -29,26 +43,13 @@ export function ProfileSlugPage() {
 	const params = useParams();
 	const navigate = useNavigate();
 	const { toast } = useToast();
+	const { user } = useAuth();
+	const { sendFriendInvite, friends, pendingInvitations, removeFriend } = useFriends();
 	const username = params.slug;
 
 	const [profile, setProfile] = useState<UserProfile | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
-	const [isSendingRequest, setIsSendingRequest] = useState(false);
-
-	const loadProfile = useCallback(async () => {
-		setIsLoading(true);
-		setError(null);
-
-		const result = await fetchJsonWithAuth<UserProfile>(`/api/user/profile/${username}`);
-
-		if (result.ok && result.data) {
-			setProfile(result.data);
-		} else {
-			setError(result.error || 'Utilisateur non trouvé');
-		}
-		setIsLoading(false);
-	}, [username]);
 
 	useEffect(() => {
 		if (!username) {
@@ -56,40 +57,85 @@ export function ProfileSlugPage() {
 			return;
 		}
 
+
+		
+		const loadProfile = async () => {
+			setIsLoading(true);
+			setError(null);
+
+			try {
+				// 1. Fetch Profile by Username (no need to resolve ID separately anymore)
+				const profileResult = await fetchJsonWithAuth<ProfileData>(`/api/user/profile/${username}`);
+
+				if (!profileResult.ok || !profileResult.data) {
+					setError('Utilisateur non trouvé');
+					setIsLoading(false);
+					return;
+				}
+
+				const profileData = profileResult.data;
+				const userId = profileData.id;
+
+				// 2. Fetch Stats using the ID from the profile response
+				const statsResult = await fetchJsonWithAuth<StatsData>(`/api/stats/user/small/${userId}`);
+
+				if (statsResult.ok && statsResult.data) {
+					setProfile({
+						id: userId,
+						username: profileData.username,
+						avatarUrl: profileData.avatar,
+						bio: profileData.bio,
+						isMe: user?.id === userId,
+						stats: statsResult.data,
+						isFriend: friends.some((friend) => friend.id === userId) ? true : false,
+						hasPendingRequest: pendingInvitations.some((invitation) => invitation.senderId === userId) ? true : false
+					});
+				} else {
+					// Fallback if stats fail
+					setProfile({
+						id: userId,
+						username: profileData.username,
+						avatarUrl: profileData.avatar,
+						bio: profileData.bio,
+						isMe: user?.id === userId,
+						stats: {
+							elo: 1000,
+							total_games: 0,
+							wins: 0,
+							losses: 0,
+							winrate: null
+						},
+						isFriend: friends.some((friend) => friend.id === userId) ? true : false,
+						hasPendingRequest: pendingInvitations.some((invitation) => invitation.senderId === userId) ? true : false,
+					});
+				}
+			} catch (err) {
+				setError('Une erreur est survenue');
+				console.error(err);
+			}
+			
+			setIsLoading(false);
+		};
+
 		loadProfile();
-	}, [username, navigate, loadProfile]);
+		
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [username, friends, pendingInvitations]);
+
+
+	// useEffect(() => {
+	// 	console.log(user, profile);
+	// }, [profile]);
 
 	const handleAddFriend = async () => {
 		if (!profile) return;
-
-		setIsSendingRequest(true);
-		const result = await fetchJsonWithAuth('/api/user/friend-request', {
-			method: 'POST',
-			body: JSON.stringify({ username: profile.username }),
-		});
-
-		if (result.ok) {
-			toast('Demande d\'ami envoyée', 'success');
-			setProfile({ ...profile, hasPendingRequest: true });
-		} else {
-			toast(result.error || 'Erreur lors de l\'envoi', 'error');
-		}
-		setIsSendingRequest(false);
+		console.log('add friend', profile.id);
+		sendFriendInvite(profile.id);
 	};
 
 	const handleRemoveFriend = async () => {
 		if (!profile) return;
-
-		const result = await fetchJsonWithAuth(`/api/user/friend/${profile.id}`, {
-			method: 'DELETE',
-		});
-
-		if (result.ok) {
-			toast('Ami supprimé', 'success');
-			setProfile({ ...profile, isFriend: false });
-		} else {
-			toast(result.error || 'Erreur lors de la suppression', 'error');
-		}
+		removeFriend(profile.id);
 	};
 
 	if (isLoading) {
@@ -125,17 +171,6 @@ export function ProfileSlugPage() {
 	return (
 		<div className="h-full overflow-y-auto p-6 text-white">
 			<div className="mx-auto max-w-4xl">
-				{/* Header with back button */}
-				<div className="mb-8 flex items-center gap-4">
-					<button
-						onClick={() => window.history.back()}
-						className="text-gray-400 transition-colors hover:text-white"
-					>
-						← Return
-					</button>
-				</div>
-
-				{/* Profile Header */}
 				<div className="mb-8 rounded-lg border border-cyan-500/30 bg-slate-900/50 p-8">
 					<div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
 						{/* Avatar */}
@@ -149,41 +184,19 @@ export function ProfileSlugPage() {
 									</div>
 								)}
 							</div>
-							{/* Online indicator */}
-							<div
-								className={`absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-slate-900 ${
-									profile.isOnline
-										? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]'
-										: 'bg-gray-600'
-								}`}
-							/>
 						</div>
 
 						{/* Info */}
 						<div className="flex-1 text-center md:text-left">
 							<div className="flex flex-col items-center gap-2 md:flex-row md:items-center md:gap-4">
 								<h1 className="font-pirulen text-2xl tracking-widest">{profile.username}</h1>
-								<span
-									className={`rounded-full px-3 py-1 text-xs ${
-										profile.isOnline
-											? 'bg-green-500/20 text-green-400'
-											: 'bg-gray-500/20 text-gray-400'
-									}`}
-								>
-									{profile.isOnline ? 'Online' : 'Offline'}
-								</span>
 							</div>
 							{profile.bio && (
 								<p className="mt-4 text-sm text-gray-400">{profile.bio}</p>
 							)}
-							<p className="mt-2 text-xs text-gray-600">
-								Member since {new Date(profile.createdAt).toLocaleDateString('fr-FR', {
-									year: 'numeric',
-									month: 'long',
-								})}
-							</p>
 
 							{/* Action buttons */}
+							{!profile.isMe && (
 							<div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
 								{profile.isFriend ? (
 									<ButtonStyle3 onClick={() => { handleRemoveFriend(); }}>Delete from friends</ButtonStyle3>
@@ -195,14 +208,13 @@ export function ProfileSlugPage() {
 										Invitation send
 									</button>
 								) : (
-									<ButtonStyle4 onClick={() => { handleAddFriend(); }} disabled={isSendingRequest}>
-										{isSendingRequest ? 'Envoi...' : 'Ajouter en ami'}
+									<ButtonStyle4 onClick={() => { handleAddFriend(); }} disabled={profile.hasPendingRequest}>
+										{profile.hasPendingRequest ? 'Envoi...' : 'Ajouter en ami'}
 									</ButtonStyle4>
 								)}
-								<Link to={`/statistics/general/${profile.username}`}>
-									<ButtonStyle3>Show stats</ButtonStyle3>
-								</Link>
-							</div>
+								</div>
+								)}
+							
 						</div>
 					</div>
 				</div>
@@ -224,7 +236,7 @@ export function ProfileSlugPage() {
 					{/* Win Rate */}
 					<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 p-6 text-center">
 						<h3 className="font-pirulen text-xs tracking-wider text-cyan-500">WINRATE</h3>
-						<p className="mt-2 text-4xl font-bold text-cyan-400">{profile.stats.winRate}%</p>
+						<p className="mt-2 text-4xl font-bold text-cyan-400">{profile.stats.winrate ?? 'N/A'}%</p>
 					</div>
 
 					{/* ELO */}
@@ -234,66 +246,13 @@ export function ProfileSlugPage() {
 					</div>
 				</div>
 
-				{/* Detailed Stats */}
-				<div className="mt-6 rounded-lg border border-cyan-500/30 bg-slate-900/50 p-6">
-					<h2 className="font-pirulen mb-6 text-xs tracking-wider text-cyan-500">DETAILED STATISTICS</h2>
-					
-					<div className="space-y-4">
-						{/* Total Games */}
-						<div className="flex items-center justify-between">
-							<span className="text-gray-400">Games total</span>
-							<span className="font-bold text-white">{profile.stats.totalGames}</span>
-						</div>
-
-						{/* Rank */}
-						<div className="flex items-center justify-between">
-							<span className="text-gray-400">World ranking</span>
-							<span className="font-bold text-yellow-400">#{profile.stats.rank}</span>
-						</div>
-
-						{/* Win Rate Bar */}
-						<div className="pt-4">
-							<div className="mb-2 flex justify-between text-xs">
-								<span className="text-green-400">Victories ({profile.stats.wins})</span>
-								<span className="text-red-400">Defeats ({profile.stats.losses})</span>
-							</div>
-							<div className="flex h-4 overflow-hidden rounded-full bg-slate-700">
-								<div
-									className="bg-linear-to-r from-green-500 to-green-400 transition-all duration-500"
-									style={`width: ${profile.stats.winRate}%`}
-								/>
-								<div
-									className="bg-linear-to-r from-red-400 to-red-500 transition-all duration-500"
-									style={`width: ${100 - profile.stats.winRate}%`}
-								/>
-							</div>
-						</div>
-					</div>
-					<div className="flex justify-center">
-						<Link to={`/statistics/general/${profile.username}`}>
-							<ButtonStyle2 className="bg-purple-500/50">View statistics</ButtonStyle2>
-						</Link>
-					</div>
+				<div className="flex justify-center mt-6">
+					<Link to={`/statistics/general/${params.slug}`}>
+						<ButtonStyle2 className="bg-purple-500/50">View statistics</ButtonStyle2>
+					</Link>
 				</div>
 
-				{/* Recent Activity Placeholder */}
-				<div className="mt-6 rounded-lg border border-orange-500/30 bg-slate-900/50 p-6">
-					<h2 className="font-pirulen mb-4 text-xs tracking-wider text-orange-500">RECENT ACTIVITY</h2>
-					<div className="space-y-3">
-						{profile.stats.totalGames > 0 ? (
-							<p className="text-center text-sm text-gray-400">
-								<Link
-									to={`/statistics/historic/${profile.username}`}
-									className="text-orange-400 transition-colors hover:text-white"
-								>
-									View game history →
-								</Link>
-							</p>
-						) : (
-							<p className="text-center text-sm text-gray-500">No games played yet.</p>
-						)}
-					</div>
-				</div>
+				
 			</div>
 		</div>
 	);
