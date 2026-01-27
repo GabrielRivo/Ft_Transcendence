@@ -84,7 +84,7 @@ class PongOnline extends Game {
             mainTextureRatio: 0.25
         });
         this.glowLayer.intensity = 0.3;
-        
+
         this.player1 = new Player(1);
         this.player2 = new Player(2);
         if (this.isDisposed || !Services.Scene) return;
@@ -147,7 +147,7 @@ class PongOnline extends Game {
                 console.error('[PongOnline] Failed to load pong.glb:', e);
             }
         }
-        let ballMesh : Mesh | undefined = undefined;
+        let ballMesh: Mesh | undefined = undefined;
         if (this.isDisposed || !Services.Scene) return;
         try {
             const ballMeshs = await Services.AssetCache.loadModel('pong-ball', '/models/ball.glb', Services.Scene);
@@ -291,9 +291,15 @@ class PongOnline extends Game {
         });
     }
 
+    private tournamentId?: string;
+
     private onGameJoined = (payload: any): void => {
-        
+
         console.log("Game joined with payload:", payload, " timestamp:", performance.now());
+        if (payload.tournamentId) {
+            this.tournamentId = payload.tournamentId;
+            console.log("Tournament ID received:", this.tournamentId);
+        }
         if (!this.gameJoined) {
             this.camera!.attachControl(Services.Canvas, true);
             this.camera!.inputs.removeByType("ArcRotateCameraKeyboardMoveInput");
@@ -304,17 +310,17 @@ class PongOnline extends Game {
             this.camera!._panningMouseButton = -1;
             this.camera!.beta = Math.PI / 2.8;
             const zoomEffect = new ZoomEffect(22, 11);
-            let rotateCameraAlphaEffect : RotateCameraAlphaEffect;
+            let rotateCameraAlphaEffect: RotateCameraAlphaEffect;
             if (payload.player === 1) {
                 this.clientPlayer = this.player1;
                 this.inputManager!.listenToPlayer1();
                 //this.camera!.alpha = -Math.PI/2;
-                rotateCameraAlphaEffect = new RotateCameraAlphaEffect(-Math.PI/2);
+                rotateCameraAlphaEffect = new RotateCameraAlphaEffect(-Math.PI / 2);
             } else {
                 this.clientPlayer = this.player2;
                 this.inputManager!.listenToPlayer2();
                 //this.camera!.alpha = Math.PI/2;
-                rotateCameraAlphaEffect = new RotateCameraAlphaEffect(Math.PI/2);
+                rotateCameraAlphaEffect = new RotateCameraAlphaEffect(Math.PI / 2);
             }
             Services.Scene!.stopAnimation(this.camera!);
             this.cameraAnimating = true;
@@ -457,7 +463,7 @@ class PongOnline extends Game {
         //console.log("renderLoop online");
         if (this.isDisposed) return;
         this.predictionManager!.predictionUpdate();
-        
+
         if (Services.TimeService!.getTimestamp() - this.lastPingTime > 5000) {
             try {
                 this.pingServer().then((result) => {
@@ -488,11 +494,14 @@ class PongOnline extends Game {
 
     private endGame(): void {
         //Services.EventBus!.emit("UI:MenuStateChange", "pongMenu");
-        const blackScreen = new BlackScreenEffect(0, 1);
-        blackScreen.play();
+        if (!this.tournamentId) {
+            const blackScreen = new BlackScreenEffect(0, 1);
+            blackScreen.play();
+        }
+
         setTimeout(() => {
             Services.EventBus!.emit("Game:Ended", { name: "PongOnline", winnerId: null, score: { player1: this.player1!.score, player2: this.player2!.score } });
-        }, 1000);
+        }, this.tournamentId ? 0 : 1000);
         //this.dispose();
     }
 
@@ -544,18 +553,18 @@ class PongOnline extends Game {
     }
 
     showDebugLayer(ev: KeyboardEvent) {
-    if (ev.ctrlKey && ev.key.toLowerCase() === 'i') {
-        ev.preventDefault();
+        if (ev.ctrlKey && ev.key.toLowerCase() === 'i') {
+            ev.preventDefault();
 
-        if (Services.Scene!.debugLayer.isVisible()) {
-            Services.Scene!.debugLayer.hide();
-        } else {
-            Services.Scene!.debugLayer.show().catch((err) => {
-                console.error("Impossible to launch the inspector.", err);
-            });
+            if (Services.Scene!.debugLayer.isVisible()) {
+                Services.Scene!.debugLayer.hide();
+            } else {
+                Services.Scene!.debugLayer.show().catch((err) => {
+                    console.error("Impossible to launch the inspector.", err);
+                });
+            }
         }
     }
-}
 }
 
 export default PongOnline;

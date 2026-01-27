@@ -54,7 +54,7 @@ export function TournamentPlayersPage() {
 	const queryId = query.get('id');
 
 	useEffect(() => {
-		if (queryId && !createdTournamentId) {
+		if (queryId && queryId !== createdTournamentId) {
 			console.log('[TournamentPage] Found tournament ID in URL:', queryId);
 			setCreatedTournamentId(queryId);
 		}
