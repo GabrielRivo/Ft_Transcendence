@@ -7,6 +7,8 @@ import { StartRoundUseCase } from '../../application/use-cases/start-round.use-c
 
 import { SocketTournamentEventsPublisher } from '../publishers/socket-tournament-events.publisher.js';
 
+const READY_TIME_SEC = 30;
+
 @Controller()
 export class TournamentEventsController {
     @Inject(TournamentRepository)
@@ -51,8 +53,8 @@ export class TournamentEventsController {
                 }
 
                 console.log(`[TournamentEventsController] Round ${match.round} finished. Starting timer for next round.`);
-                this.socketPublisher.publishTimer(tournament.id, 30); // Notify frontend immediately
-                this.timer.start(tournament.id, 30, async () => {
+                this.socketPublisher.publishTimer(tournament.id, READY_TIME_SEC); // Notify frontend immediately
+                this.timer.start(tournament.id, READY_TIME_SEC, async () => {
                     await this.startRoundUseCase.execute(tournament.id);
                 });
             }

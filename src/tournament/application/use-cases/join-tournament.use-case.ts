@@ -7,6 +7,8 @@ import { CompositeTournamentEventsPublisher } from '@/tournament/infrastructure/
 import { TimerAdapter } from '../../infrastructure/adapters/timer.adapter.js';
 import { StartRoundUseCase } from './start-round.use-case.js';
 
+const READY_TIME_SEC = 30;
+
 @Service()
 export class JoinTournamentUseCase {
     @Inject(SqliteTournamentRepository)
@@ -53,7 +55,7 @@ export class JoinTournamentUseCase {
         // If tournament just started, triggers the timer
         if (!wasStarted && isStarted) {
             console.log(`[JoinTournamentUseCase] Tournament ${tournament.id} started. Starting 30s timer.`);
-            this.timer.start(tournament.id, 30, async () => {
+            this.timer.start(tournament.id, READY_TIME_SEC, async () => {
                 await this.startRoundUseCase.execute(tournament.id);
             });
         }
