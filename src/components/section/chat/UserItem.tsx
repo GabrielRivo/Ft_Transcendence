@@ -86,8 +86,9 @@ export function UserItem({
 				ref={setRef}
 				onClick={onClick}
 				className={`flex cursor-pointer flex-col items-center gap-2 transition-colors ${
-					isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'hover:text-cyan-500 ${className}`'
-				}`}
+					isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'hover:text-cyan-500`'
+				}${className}`}
+				
 			>
 				<div className="relative">
 					<div className="flex size-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold">

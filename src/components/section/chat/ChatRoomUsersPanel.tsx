@@ -35,7 +35,7 @@ export function ChatRoomUsersPanel({ roomUsers, currentRoom }: { roomUsers: Room
 									isSelected={false}
 									isRightPanel={true}
 									onClick={() => {}}
-									className="border-cyan-500/50! bg-cyan-950/30! text-cyan-300! shadow-[0_0_10px_rgba(6,182,212,0.3)]"
+									className="border-orange-500/50! bg-orange-950/30! text-orange-400! shadow-[0_0_10px_rgba(249,115,22,0.3)]"
 								/>
 							);
 						}
