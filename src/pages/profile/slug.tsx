@@ -57,8 +57,6 @@ export function ProfileSlugPage() {
 			return;
 		}
 
-
-		
 		const loadProfile = async () => {
 			setIsLoading(true);
 			setError(null);
@@ -88,7 +86,7 @@ export function ProfileSlugPage() {
 						isMe: user?.id === userId,
 						stats: statsResult.data,
 						isFriend: friends.some((friend) => friend.id === userId) ? true : false,
-						hasPendingRequest: pendingInvitations.some((invitation) => invitation.senderId === userId) ? true : false
+						hasPendingRequest: pendingInvitations.some((invitation) => invitation.senderId === userId) ? true : false,
 					});
 				} else {
 					// Fallback if stats fail
@@ -103,7 +101,7 @@ export function ProfileSlugPage() {
 							total_games: 0,
 							wins: 0,
 							losses: 0,
-							winrate: null
+							winrate: null,
 						},
 						isFriend: friends.some((friend) => friend.id === userId) ? true : false,
 						hasPendingRequest: pendingInvitations.some((invitation) => invitation.senderId === userId) ? true : false,
@@ -113,15 +111,14 @@ export function ProfileSlugPage() {
 				setError('Une erreur est survenue');
 				console.error(err);
 			}
-			
+
 			setIsLoading(false);
 		};
 
 		loadProfile();
-		
-	// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [username, friends, pendingInvitations]);
 
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [username, friends, pendingInvitations]);
 
 	// useEffect(() => {
 	// 	console.log(user, profile);
@@ -158,7 +155,7 @@ export function ProfileSlugPage() {
 					</div>
 					<div>
 						<h2 className="font-pirulen text-xl tracking-widest text-white">USER NOT FOUND</h2>
-						<p className="mt-2 text-sm text-gray-400">{error || `L'utilisateur "${username}" n'existe pas.`}</p>
+						<p className="mt-2 text-sm text-gray-400">{error || `User "${username}" not found.`}</p>
 					</div>
 					<Link to="/">
 						<ButtonStyle3>Return to homepage</ButtonStyle3>
@@ -191,30 +188,38 @@ export function ProfileSlugPage() {
 							<div className="flex flex-col items-center gap-2 md:flex-row md:items-center md:gap-4">
 								<h1 className="font-pirulen text-2xl tracking-widest">{profile.username}</h1>
 							</div>
-							{profile.bio && (
-								<p className="mt-4 text-sm text-gray-400">{profile.bio}</p>
-							)}
+							{profile.bio && <p className="mt-4 text-sm text-gray-400">{profile.bio}</p>}
 
 							{/* Action buttons */}
 							{!profile.isMe && (
-							<div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
-								{profile.isFriend ? (
-									<ButtonStyle3 onClick={() => { handleRemoveFriend(); }}>Delete from friends</ButtonStyle3>
-								) : profile.hasPendingRequest ? (
-									<button
-										disabled
-										className="cursor-not-allowed rounded-sm border border-yellow-500/50 bg-yellow-500/10 px-6 py-2 text-xs text-yellow-400"
-									>
-										Invitation send
-									</button>
-								) : (
-									<ButtonStyle4 onClick={() => { handleAddFriend(); }} disabled={profile.hasPendingRequest}>
-										{profile.hasPendingRequest ? 'Envoi...' : 'Ajouter en ami'}
-									</ButtonStyle4>
-								)}
+								<div className="mt-6 flex flex-wrap justify-center gap-3 md:justify-start">
+									{profile.isFriend ? (
+										<ButtonStyle3
+											onClick={() => {
+												handleRemoveFriend();
+											}}
+										>
+											Delete from friends
+										</ButtonStyle3>
+									) : profile.hasPendingRequest ? (
+										<button
+											disabled
+											className="cursor-not-allowed rounded-sm border border-yellow-500/50 bg-yellow-500/10 px-6 py-2 text-xs text-yellow-400"
+										>
+											Invitation send
+										</button>
+									) : (
+										<ButtonStyle4
+											onClick={() => {
+												handleAddFriend();
+											}}
+											disabled={profile.hasPendingRequest}
+										>
+											{profile.hasPendingRequest ? 'Sending...' : 'Add friend'}
+										</ButtonStyle4>
+									)}
 								</div>
-								)}
-							
+							)}
 						</div>
 					</div>
 				</div>
@@ -246,13 +251,11 @@ export function ProfileSlugPage() {
 					</div>
 				</div>
 
-				<div className="flex justify-center mt-6">
+				<div className="mt-6 flex justify-center">
 					<Link to={`/statistics/general/${params.slug}`}>
 						<ButtonStyle2 className="bg-purple-500/50">View statistics</ButtonStyle2>
 					</Link>
 				</div>
-
-				
 			</div>
 		</div>
 	);
