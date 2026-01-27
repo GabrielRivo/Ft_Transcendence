@@ -26,62 +26,70 @@ const GAME_URL = 'http://game:3000';
 
 
 const Invit =
-	`INSERT INTO friends (userId, otherId, status) 
+	`INSERT INTO friends (userId, otherId, status)
 	VALUES (@userId, @otherId, 'pending')`;
 
 const AcceptInvit =
-	`UPDATE friends 
-	SET status = 'accepted' 
+	`UPDATE friends
+	SET status = 'accepted'
 	WHERE userId = @otherId AND otherId = @userId AND status = 'pending'`;
 
 const DeclineInvit =
-	`DELETE FROM friends 
+	`DELETE FROM friends
 	WHERE userId = @otherId AND otherId = @userId AND status = 'pending'`;
 
 const DeleteFromFriendList =
-	`DELETE FROM friends 
+	`DELETE FROM friends
 	WHERE (userId = @userId AND otherId = @otherId)
 	OR (userId = @otherId AND otherId = @userId)`;
 
 const GetPendingInvitations =
-	`SELECT userId, created_at FROM friends 
-	WHERE otherId = @userId AND status = 'pending'`;
+	`SELECT f.userId as senderId, p.username as senderUsername, f.created_at
+	FROM friends f
+	JOIN profiles p ON f.userId = p.userId
+	WHERE f.otherId = @userId AND f.status = 'pending'`;
 
 const IsFriend =
-	`SELECT id FROM friends 
+	`SELECT id FROM friends
 	WHERE ((userId = @userId AND otherId = @otherId) OR (userId = @otherId AND otherId = @userId))
 	AND status = 'accepted'`;
 
 const GetFriends =
-	`SELECT 
-	CASE WHEN userId = @userId THEN otherId ELSE userId END as friendId
-	FROM friends 
-	WHERE (userId = @userId OR otherId = @userId) AND status = 'accepted'`;
+	`SELECT
+	CASE WHEN f.userId = @userId THEN f.otherId ELSE f.userId END as id,
+	CASE WHEN f.userId = @userId THEN p2.username ELSE p1.username END as username
+	FROM friends f
+	LEFT JOIN profiles p1 ON f.userId = p1.userId
+	LEFT JOIN profiles p2 ON f.otherId = p2.userId
+	WHERE (f.userId = @userId OR f.otherId = @userId) AND f.status = 'accepted'`;
+
+const GetUserIdByUsername =
+	`SELECT userId FROM profiles WHERE username = @username`;
 
 const Challenge =
 	`INSERT INTO challengeUser(userId, otherId, status)
 	VALUES (@userId, @otherId, 'pending') `
 
 const AcceptChallenge =
-	`UPDATE challengeUser 
-	SET status = 'accepted' 
+	`UPDATE challengeUser
+	SET status = 'accepted'
 	WHERE userId = @otherId AND otherId = @userId AND status = 'pending'`
 
 const DeclineChallenge =
-	`DELETE FROM challengeUser 
+	`DELETE FROM challengeUser
 	WHERE userId = @otherId AND otherId = @userId AND status = 'pending'`;
 
 const CheckPending =
-	`SELECT 1 FROM challengeUser 
+	`SELECT 1 FROM challengeUser
 	WHERE userId = @otherId AND otherId = @userId AND status = 'pending'`;
 
 const CheckInteraction =
-	`SELECT userId, status FROM challengeUser 
-	WHERE (userId = @userId AND otherId = @otherId) 
+	`SELECT userId, status FROM challengeUser
+	WHERE (userId = @userId AND otherId = @otherId)
 	OR (userId = @otherId AND otherId = @userId)`;
 
 const DeleteFinishedMatch =
-	`DELETE FROM challengeUser 
+	`DELETE FROM challengeUser
 	WHERE ((userId = @userId AND otherId = @otherId) OR (userId = @otherId AND otherId = @userId))
 	AND status = 'accepted'`;
 
@@ -107,6 +115,7 @@ export class FriendManagementService {
 	private statementDeleteFromFriendList: Statement<{ userId: number, otherId: number }>;
 	private statementIsFriend: Statement<{ userId: number, otherId: number }>;
 	private statementGetFriends: Statement<{ userId: number }>;
+	private statementGetUserIdByUsername: Statement<{ username: string }>;
 
 	private statementChallenge: Statement<{ userId: number, otherId: number }>;
 	private statementAcceptChallenge: Statement<{ userId: number, otherId: number }>;
@@ -124,6 +133,7 @@ export class FriendManagementService {
 		this.statementDeleteFromFriendList = this.db.prepare(DeleteFromFriendList);
 		this.statementIsFriend = this.db.prepare(IsFriend);
 		this.statementGetFriends = this.db.prepare(GetFriends);
+		this.statementGetUserIdByUsername = this.db.prepare(GetUserIdByUsername);
 
 		this.statementChallenge = this.db.prepare(Challenge);
 		this.statementAcceptChallenge = this.db.prepare(AcceptChallenge);
@@ -179,17 +189,21 @@ export class FriendManagementService {
 		return { success: true, message: "Friend not added lol" };
 	}
 
-	getPendingInvitations(userId: number): { userId: number; created_at: string }[] {
-		return this.statementGetPendingInvitations.all({ userId }) as { userId: number; created_at: string }[];
+	getPendingInvitations(userId: number): PendingInvitation[] {
+		return this.statementGetPendingInvitations.all({ userId }) as PendingInvitation[];
 	}
 
-	getFriends(userId: number): number[] {
-		const rows = this.statementGetFriends.all({ userId }) as { friendId: number }[];
-		return rows.map(r => r.friendId);
+	getFriends(userId: number): { id: number; username: string }[] {
+		return this.statementGetFriends.all({ userId }) as { id: number; username: string }[];
 	}
 
 	async is_friend(userId: number, otherId: number): Promise<boolean> {
 		return !!this.statementIsFriend.get({ userId, otherId });
+	}
+
+	getUserIdByUsername(username: string): number | null {
+		const result = this.statementGetUserIdByUsername.get({ username }) as { userId: number } | undefined;
+		return result?.userId ?? null;
 	}
 
 	deleteFromFriendlist(userId: number, otherId: number) {
@@ -275,7 +289,7 @@ export class FriendManagementService {
 
 	async acceptChallenge(userId: number, otherId: number, senderUsername: string) {
 		const result = this.statementAcceptChallenge.run({ userId: userId, otherId: otherId });
-		// if (result.changes === 0) 
+		// if (result.changes === 0)
 		// 	return { success: false, message: "No challenge pending" };
 
 		const gameId = randomUUID();

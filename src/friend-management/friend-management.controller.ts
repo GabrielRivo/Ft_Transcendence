@@ -1,4 +1,4 @@
-import { Body, BodySchema, Controller, Delete, Get, Inject, InjectPlugin, JWTBody, Param, Post, Query, QuerySchema } from 'my-fastify-decorators';
+import { Body, BodySchema, Controller, Delete, Get, Inject, JWTBody, Param, Post, Query, QuerySchema } from 'my-fastify-decorators';
 import { BlockManagementService } from './block-management.service.js';
 import { AddFriendDto, AddFriendSchema } from './dto/addFriend.dto.js';
 import { InviteByUsernameDto, InviteByUsernameSchema } from './dto/inviteByUsername.dto.js';
@@ -6,9 +6,6 @@ import { FriendManagementService } from './friend-management.service.js';
 
 
 import { FriendManagementDto, FriendManagementSchema } from './dto/addFriend.dto.js';
-import { Server } from 'socket.io';
-
-const AUTH_SERVICE_URL = 'http://auth:3000';
 
 @Controller('/friend-management')
 export class FriendManagementController {
@@ -22,17 +19,15 @@ export class FriendManagementController {
 	@BodySchema(InviteByUsernameSchema)
 	async invite_by_username(@Body() data: InviteByUsernameDto) {
 		try {
-			const response = await fetch(`${AUTH_SERVICE_URL}/auth/user-by-username/${encodeURIComponent(data.targetUsername)}`)
+			const targetUserId = this.friend_managementService.getUserIdByUsername(data.targetUsername);
 
-			if (!response.ok) {
+			if (targetUserId === null) {
 				return { success: false, message: "User not found" };
 			}
 
-			const targetUser = await response.json() as { id: number; username: string };
-
 			const [blocked1, blocked2] = await Promise.all([
-				this.blockService.is_blocked(data.userId, targetUser.id),
-				this.blockService.is_blocked(targetUser.id, data.userId)
+				this.blockService.is_blocked(data.userId, targetUserId),
+				this.blockService.is_blocked(targetUserId, data.userId)
 			]);
 
 			if (blocked1) {
@@ -42,7 +37,7 @@ export class FriendManagementController {
 				return { success: false, message: "You can't add this user" };
 			}
 
-			return this.friend_managementService.sendInvitation(data.userId, targetUser.id, data.senderUsername);
+			return this.friend_managementService.sendInvitation(data.userId, targetUserId, data.senderUsername);
 		} catch (error: any) {
 			return { success: false, message: error.message || "Failed to send invitation" };
 		}
@@ -82,59 +77,13 @@ export class FriendManagementController {
 	}
 
 	@Get('/pending/:userId')
-	async get_pending_invitations(@Param('userId') userId: string) {
-		const pending = this.friend_managementService.getPendingInvitations(Number(userId));
-
-		// get depuis Auth sim juste ne bas...
-		const enrichedPending = await Promise.all(
-			pending.map(async (invite) => {
-				try {
-					const response = await fetch(`${AUTH_SERVICE_URL}/auth/users`);
-					if (response.ok) {
-						const users = await response.json() as { id: number; username?: string }[];
-						const sender = users.find(u => u.id === invite.userId);
-						return {
-							senderId: invite.userId,
-							senderUsername: sender?.username || `User ${invite.userId}`,
-							created_at: invite.created_at,
-						};
-					}
-				} catch {
-					// Fallback si l'appel échoue
-				}
-				return {
-					senderId: invite.userId,
-					senderUsername: `User ${invite.userId}`,
-					created_at: invite.created_at,
-				};
-			})
-		);
-
-		return enrichedPending;
+	get_pending_invitations(@Param('userId') userId: string) {
+		return this.friend_managementService.getPendingInvitations(Number(userId));
 	}
 
 	@Get('/friends/:userId')
-	async get_friends(@Param('userId') userId: string) {
-		const friendIds = this.friend_managementService.getFriends(Number(userId));
-
-		// get depuis Auth
-		try {
-			const response = await fetch(`${AUTH_SERVICE_URL}/auth/users`);
-			if (response.ok) {
-				const users = await response.json() as { id: number; username?: string }[];
-				return friendIds.map(friendId => {
-					const friend = users.find(u => u.id === friendId);
-					return {
-						id: friendId,
-						username: friend?.username || `User ${friendId}`,
-					};
-				});
-			}
-		} catch {
-			// Fallback si l'appel échoue
-		}
-
-		return friendIds.map(id => ({ id, username: `User ${id}` }));
+	get_friends(@Param('userId') userId: string) {
+		return this.friend_managementService.getFriends(Number(userId));
 	}
 
 	@Delete('/friend')
@@ -163,8 +112,6 @@ export class FriendManagementController {
 			isBlocked: await this.blockService.is_blocked(data.userId, data.otherId)
 		}
 	}
-
-	
 
 	@Post('/challenge')
 	@BodySchema(FriendManagementSchema)
