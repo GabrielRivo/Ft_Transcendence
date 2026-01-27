@@ -95,7 +95,7 @@ export class FriendManagementController {
 	@Post('/block')
 	@BodySchema(FriendManagementSchema)
 	async block_user(@Body() data: FriendManagementDto, @JWTBody() user: { id: number }) {
-		this.friend_managementService.deleteFromFriendlist(user.id, data.otherId);
+		// this.friend_managementService.deleteFromFriendlist(user.id, data.otherId);
 		return this.blockService.block_user(user.id, data.otherId);
 	}
 
