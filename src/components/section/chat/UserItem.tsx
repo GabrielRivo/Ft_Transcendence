@@ -4,9 +4,11 @@ import { UserContextMenu, UserContextMenuCallbacks, closeAllUserContextMenus } f
 export interface UserItemProps {
 	key?: number | string;
 	name: string;
+	avatar?: string | null;
 	isOnline?: boolean;
 	isSelected?: boolean;
 	isFriend?: boolean;
+	isBlocked?: boolean;
 	isRightPanel?: boolean;
 	onClick?: () => void;
 	contextMenuCallbacks?: UserContextMenuCallbacks;
@@ -15,9 +17,11 @@ export interface UserItemProps {
 
 export function UserItem({
 	name,
+	avatar,
 	isOnline,
 	isSelected,
 	isFriend,
+	isBlocked,
 	isRightPanel = false,
 	onClick,
 	contextMenuCallbacks,
@@ -86,13 +90,22 @@ export function UserItem({
 				ref={setRef}
 				onClick={onClick}
 				className={`flex cursor-pointer flex-col items-center gap-2 transition-colors ${
-					isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'hover:text-cyan-500 ${className}`'
-				}`}
+					isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'hover:text-cyan-500`'
+				}${className}`}
+				
 			>
 				<div className="relative">
-					<div className="flex size-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold">
-						{name.charAt(0).toUpperCase()}
-					</div>
+					{avatar ? (
+						<img
+							src={avatar}
+							alt={name}
+							className="size-12 rounded-full object-cover"
+						/>
+					) : (
+						<div className="flex size-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold">
+							{name.charAt(0).toUpperCase()}
+						</div>
+					)}
 					{!isRightPanel && isOnline !== undefined && (
 						<div
 							className={`absolute right-0 bottom-0 size-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-gray-500'}`}
@@ -108,6 +121,7 @@ export function UserItem({
 					position={{ x: contextMenu.x, y: contextMenu.y }}
 					onClose={handleCloseContextMenu}
 					isFriend={isFriend}
+					isBlocked={isBlocked}
 					callbacks={contextMenuCallbacks}
 				/>
 			)}

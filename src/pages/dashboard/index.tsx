@@ -27,17 +27,17 @@ export function Dashboard() {
 					<h1 className="font-pirulen text-2xl tracking-widest">Dashboard</h1>
 					{user && (
 						<p className="mt-2 text-cyan-400">
-							Bienvenue, <span className="font-bold">{user.username || user.email}</span>
+							Welcome, <span className="font-bold">{user.username || user.email}</span>
 						</p>
 					)}
 				</div>
-				<ButtonStyle3 onClick={handleLogout}>Déconnexion</ButtonStyle3>
+				<ButtonStyle3 onClick={handleLogout}>Deconnexion</ButtonStyle3>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 				<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 p-6">
-					<h2 className="font-pirulen mb-2 text-sm tracking-wider text-cyan-500">STATISTIQUES</h2>
-					<p className="text-gray-400">Vos statistiques de jeu apparaîtront ici.</p>
+					<h2 className="font-pirulen mb-2 text-sm tracking-wider text-cyan-500">STATISTICS</h2>
+					<p className="text-gray-400">Your gaming stats will appear here</p>
 				</div>
 
 				<div
@@ -47,16 +47,16 @@ export function Dashboard() {
 					<h2 className="font-pirulen mb-2 text-sm tracking-wider text-purple-500 transition-colors group-hover:text-purple-400">
 						MATCHMAKING
 					</h2>
-					<p className="text-gray-400">Trouvez une partie rapidement.</p>
+					<p className="text-gray-400">Find quick game.</p>
 					<div className="mt-4 flex items-center gap-2 text-xs text-purple-400 opacity-0 transition-opacity group-hover:opacity-100">
-						<span>Cliquez pour jouer</span>
+						<span>Clic to play</span>
 						<span>→</span>
 					</div>
 				</div>
 
 				<div className="rounded-lg border border-orange-500/30 bg-slate-900/50 p-6">
-					<h2 className="font-pirulen mb-2 text-sm tracking-wider text-orange-500">AMIS</h2>
-					<p className="text-gray-400">Gérez votre liste d'amis.</p>
+					<h2 className="font-pirulen mb-2 text-sm tracking-wider text-orange-500">Friends</h2>
+					<p className="text-gray-400">Manage your friend list.</p>
 				</div>
 			</div>
 		</div>
