@@ -35,6 +35,10 @@ export function ProfilePage() {
 	const [isEditingBio, setIsEditingBio] = useState(false);
 	const [isSavingBio, setIsSavingBio] = useState(false);
 
+	// Username state
+	const [isEditingUsername, setIsEditingUsername] = useState(false);
+	const [newUsername, setNewUsername] = useState('');
+
 	// Email/Password state (only if provider is email)
 	const [isEditingEmail, setIsEditingEmail] = useState(false);
 	const [newEmail, setNewEmail] = useState('');
@@ -120,6 +124,32 @@ export function ProfilePage() {
 		setIsSavingBio(false);
 	};
 
+	// Username handler
+	const handleUpdateUsername = async () => {
+		if (!newUsername || newUsername.length < 3) {
+			toast('Username must be at least 3 characters long', 'warning');
+			return;
+		}
+		if (newUsername.length > 20) {
+			toast('Username must be at most 20 characters long', 'warning');
+			return;
+		}
+
+		const result = await fetchJsonWithAuth('/api/auth/username', {
+			method: 'PATCH',
+			body: JSON.stringify({ username: newUsername }),
+		});
+
+		if (result.ok) {
+			toast('Username updated', 'success');
+			setIsEditingUsername(false);
+			setNewUsername('');
+			await checkAuth();
+		} else {
+			toast(result.error || 'Error during update', 'error');
+		}
+	};
+
 	// Email handler
 	const handleUpdateEmail = async () => {
 		if (!newEmail) {
@@ -127,8 +157,8 @@ export function ProfilePage() {
 			return;
 		}
 
-		const result = await fetchJsonWithAuth('/api/user/email', {
-			method: 'PUT',
+		const result = await fetchJsonWithAuth('/api/auth/email', {
+			method: 'PATCH',
 			body: JSON.stringify({ email: newEmail }),
 		});
 
@@ -152,8 +182,8 @@ export function ProfilePage() {
 			return;
 		}
 
-		const result = await fetchJsonWithAuth('/api/user/password', {
-			method: 'PUT',
+		const result = await fetchJsonWithAuth('/api/auth/password', {
+			method: 'PATCH',
 			body: JSON.stringify({
 				currentPassword,
 				newPassword,
@@ -234,8 +264,9 @@ export function ProfilePage() {
 		}
 
 		setIsDeleting(true);
-		const result = await fetchJsonWithAuth('/api/user', {
+		const result = await fetchJsonWithAuth('/api/auth/account', {
 			method: 'DELETE',
+			body: JSON.stringify({}),
 		});
 
 		if (result.ok) {
@@ -342,9 +373,41 @@ export function ProfilePage() {
 						<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 p-6">
 							<h2 className="font-pirulen mb-4 text-xs tracking-wider text-cyan-500">INFORMATIONS</h2>
 							<div className="space-y-4">
-								<div>
-									<label className="text-xs text-gray-500">Username</label>
-									<p className="text-lg font-bold text-white">{user?.username || 'Non défini'}</p>
+								<div className="rounded-sm border border-white/10 p-4">
+									<div className="flex items-center justify-between">
+										<div>
+											<label className="text-xs text-gray-500">Username</label>
+											<p className="text-lg font-bold text-white">{user?.username || 'Non défini'}</p>
+										</div>
+										{!isEditingUsername && (
+											<button
+												onClick={() => {
+													setNewUsername(user?.username || '');
+													setIsEditingUsername(true);
+												}}
+												className="text-xs text-cyan-400 transition-colors hover:text-white"
+											>
+												Modify
+											</button>
+										)}
+									</div>
+									{isEditingUsername && (
+										<div className="mt-4 space-y-3">
+											<input
+												type="text"
+												value={newUsername}
+												onInput={(e: Event) => setNewUsername((e.target as HTMLInputElement).value)}
+												placeholder="New username"
+												className="w-full rounded-sm border border-white/10 bg-transparent p-2 text-sm text-white outline-none focus:border-cyan-500/50"
+												minLength={3}
+												maxLength={20}
+											/>
+											<div className="flex justify-end gap-2">
+												<ButtonStyle3 onClick={() => setIsEditingUsername(false)}>Cancel</ButtonStyle3>
+												<ButtonStyle4 onClick={() => { handleUpdateUsername(); }}>Update</ButtonStyle4>
+											</div>
+										</div>
+									)}
 								</div>
 								<div>
 									<label className="text-xs text-gray-500">Mail</label>
