@@ -40,6 +40,12 @@ export class DbExchangeService {
 	private deletePasswordResetOTPsPrepare: Statement<{ email: string }>;
 	private updateUserPasswordPrepare: Statement<{ email: string; password_hash: string }>;
 
+	// Account management prepared statements
+	private updatePasswordByIdPrepare: Statement<{ userId: number; password_hash: string }>;
+	private revokeAllUserRefreshTokensPrepare: Statement<{ userId: number }>;
+	private deleteUserPrepare: Statement<{ userId: number }>;
+	private updateEmailByIdPrepare: Statement<{ userId: number; email: string }>;
+
 	@InjectPlugin('db')
 	private db!: Database;
 
@@ -109,6 +115,18 @@ export class DbExchangeService {
 		);
 		this.updateUserPasswordPrepare = this.db.prepare(
 			"UPDATE users SET password_hash = @password_hash WHERE email = @email AND provider = 'email'",
+		);
+
+		// Account management prepared statements
+		this.updatePasswordByIdPrepare = this.db.prepare(
+			'UPDATE users SET password_hash = @password_hash WHERE id = @userId',
+		);
+		this.revokeAllUserRefreshTokensPrepare = this.db.prepare(
+			'UPDATE refresh_tokens SET revoked = 1 WHERE user_id = @userId',
+		);
+		this.deleteUserPrepare = this.db.prepare('DELETE FROM users WHERE id = @userId');
+		this.updateEmailByIdPrepare = this.db.prepare(
+			'UPDATE users SET email = @email WHERE id = @userId',
 		);
 	}
 
@@ -244,5 +262,23 @@ export class DbExchangeService {
 
 	async updateUserPassword(email: string, password_hash: string) {
 		return this.updateUserPasswordPrepare.run({ email, password_hash }) as RunResult;
+	}
+
+	// ---------------------- Account Management Methods ----------------------
+
+	async updatePasswordById(userId: number, password_hash: string) {
+		return this.updatePasswordByIdPrepare.run({ userId, password_hash }) as RunResult;
+	}
+
+	async revokeAllUserRefreshTokens(userId: number) {
+		return this.revokeAllUserRefreshTokensPrepare.run({ userId }) as RunResult;
+	}
+
+	async deleteUser(userId: number) {
+		return this.deleteUserPrepare.run({ userId }) as RunResult;
+	}
+
+	async updateEmailById(userId: number, email: string) {
+		return this.updateEmailByIdPrepare.run({ userId, email }) as RunResult;
 	}
 }

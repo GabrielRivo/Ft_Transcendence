@@ -9,6 +9,7 @@ import {
 	InjectPlugin,
 	NotFoundException,
 	Param,
+	Patch,
 	Post,
 	Query,
 	Req,
@@ -28,6 +29,8 @@ import { TwoFAVerifyDto, TwoFAVerifySchema } from './dto/twofa.dto.js';
 import { ForgotPasswordDto, ForgotPasswordSchema } from './dto/forgotPassword.dto.js';
 import { VerifyResetOtpDto, VerifyResetOtpSchema } from './dto/verifyResetOtp.dto.js';
 import { ResetPasswordDto, ResetPasswordSchema } from './dto/resetPassword.dto.js';
+import { ChangePasswordDto, ChangePasswordSchema } from './dto/changePassword.dto.js';
+import { ChangeEmailDto, ChangeEmailSchema } from './dto/changeEmail.dto.js';
 
 import { RabbitMQClient } from 'my-fastify-decorators-microservices';
 import {
@@ -336,5 +339,55 @@ export class AuthController {
 	async resetPassword(@Body() body: ResetPasswordDto) {
 		await this.authService.resetPassword(body.email, body.otp, body.newPassword);
 		return { success: true, message: 'Password has been reset successfully' };
+	}
+
+	// ---------------------- Account Management Endpoints ----------------------
+
+	@Patch('/password')
+	@UseGuards(AuthGuard)
+	@BodySchema(ChangePasswordSchema)
+	async changePassword(
+		@Body() dto: ChangePasswordDto,
+		@Req() req: AuthenticatedRequest,
+	) {
+		await this.authService.changePassword(req.user.id, dto.currentPassword, dto.newPassword);
+		return { success: true, message: 'Password changed successfully' };
+	}
+
+	@Patch('/username')
+	@UseGuards(AuthGuard)
+	@BodySchema(SetUsernameSchema)
+	async updateUsername(
+		@Body() dto: SetUsernameDto,
+		@Req() req: AuthenticatedRequest,
+		@Res() res: FastifyReply,
+	) {
+		const tokens = await this.authService.updateUsername(req.user.id, dto.username);
+		this.setAuthCookies(res, tokens);
+		return { success: true, message: 'Username updated successfully' };
+	}
+
+	@Patch('/email')
+	@UseGuards(AuthGuard)
+	@BodySchema(ChangeEmailSchema)
+	async updateEmail(
+		@Body() dto: ChangeEmailDto,
+		@Req() req: AuthenticatedRequest,
+		@Res() res: FastifyReply,
+	) {
+		const tokens = await this.authService.updateEmail(req.user.id, dto.email);
+		this.setAuthCookies(res, tokens);
+		return { success: true, message: 'Email updated successfully' };
+	}
+
+	@Delete('/account')
+	@UseGuards(AuthGuard)
+	async deleteAccount(
+		@Req() req: AuthenticatedRequest,
+		@Res() res: FastifyReply,
+	) {
+		await this.authService.deleteAccount(req.user.id);
+		this.clearAuthCookies(res);
+		return { success: true, message: 'Account deleted successfully' };
 	}
 }

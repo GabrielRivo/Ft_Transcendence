@@ -483,24 +483,122 @@ export class AuthService {
 	}
 
 	async resetPassword(email: string, otp: string, newPassword: string): Promise<void> {
-		// check si OTP a ete verifie
 		const verifiedOTP = await this.dbExchange.getVerifiedOTP(email, otp);
 
 		if (!verifiedOTP) {
 			throw new BadRequestException('OTP not verified or expired');
 		}
 
-		// Hash le nouveau password
 		const hashedPassword = await hashPassword(newPassword);
 
-		// Update le password
 		const result = await this.dbExchange.updateUserPassword(email, hashedPassword);
 
 		if (result.changes === 0) {
 			throw new BadRequestException('Failed to update password');
 		}
 
-		// Supprime tous les OTP de cet email
 		await this.dbExchange.deletePasswordResetOTPs(email);
+	}
+
+	// ---------------------- Account Management Methods ----------------------
+
+	async changePassword(userId: number, currentPassword: string, newPassword: string): Promise<void> {
+		const user = await this.dbExchange.getUserById(userId);
+		if (!user || !user.password_hash) {
+			throw new UnauthorizedException('User not found or no password set');
+		}
+
+		const isValid = await verifyPassword(currentPassword, user.password_hash);
+		if (!isValid) {
+			throw new UnauthorizedException('Current password is incorrect');
+		}
+
+		const hashedPassword = await hashPassword(newPassword);
+		await this.dbExchange.updatePasswordById(userId, hashedPassword);
+
+		try {
+			this.users.publish('user.updated.password', { id: userId });
+		} catch (error) {
+			console.error('Error publishing user.updated.password', error);
+		}
+	}
+
+	async updateUsername(userId: number, newUsername: string): Promise<AuthTokens> {
+		const existingUser = await this.dbExchange.getUserByUsername(newUsername);
+		if (existingUser && existingUser.id !== userId) {
+			throw new UnauthorizedException('Username already exists');
+		}
+
+		await this.dbExchange.updateUsername(userId, newUsername);
+
+		const user = await this.dbExchange.getUserById(userId);
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
+
+		try {
+			this.users.publish('user.updated.username', { id: userId, username: newUsername });
+		} catch (error) {
+			console.error('Error publishing user.updated.username', error);
+		}
+
+		const totpInfo = await this.dbExchange.getTOTPInfo(userId);
+		const has2FA = totpInfo?.totp_enabled === 1;
+
+		const data: Record<string, unknown> = {};
+		if (has2FA) {
+			data.twoFA = true;
+			data.twoFAVerified = true;
+		}
+
+		return this.generateTokens(user.id, user.email || '', newUsername, 'email', data);
+	}
+
+	async deleteAccount(userId: number): Promise<void> {
+		const user = await this.dbExchange.getUserById(userId);
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
+
+		await this.dbExchange.revokeAllUserRefreshTokens(userId);
+
+		await this.dbExchange.deleteUser(userId);
+
+		try {
+			this.users.publish('user.deleted', { id: userId });
+		} catch (error) {
+			console.error('Error publishing user.deleted', error);
+		}
+	}
+
+	async updateEmail(userId: number, newEmail: string): Promise<AuthTokens> {
+		const user = await this.dbExchange.getUserById(userId);
+		if (!user) {
+			throw new UnauthorizedException('User not found');
+		}
+
+		const existingUser = await this.dbExchange.existing(newEmail);
+		if (existingUser && existingUser.id !== userId) {
+			throw new UnauthorizedException('Email already in use');
+		}
+
+		await this.dbExchange.updateEmailById(userId, newEmail);
+
+		try {
+			this.users.publish('user.updated.email', { id: userId, email: newEmail });
+		} catch (error) {
+			console.error('Error publishing user.updated.email', error);
+		}
+
+		const totpInfo = await this.dbExchange.getTOTPInfo(userId);
+		const has2FA = totpInfo?.totp_enabled === 1;
+
+		const data: Record<string, unknown> = {};
+		if (has2FA) {
+			data.twoFA = true;
+			data.twoFAVerified = true;
+		}
+
+		return this.generateTokens(user.id, newEmail, user.username || '', 'email', data);
 	}
 }
