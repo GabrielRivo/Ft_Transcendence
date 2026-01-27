@@ -1,4 +1,4 @@
-import { createElement } from 'my-react';
+import { createElement, useEffect } from 'my-react';
 import type { Element } from 'my-react';
 import { ChatSection } from '../components/section/chat/ChatSection';
 import { Link, useNavigate, useRouter } from 'my-react-router';
@@ -50,6 +50,7 @@ function Menu() {
 }
 
 export function DashboardLayout({ children }: { children: Element }) {
+	useActiveTournamentRedirect();
 	return (
 		<div className="flex size-full flex-col overflow-hidden text-white selection:bg-cyan-500/30">
 			<Info />
@@ -68,4 +69,55 @@ export function DashboardLayout({ children }: { children: Element }) {
 			<Menu />
 		</div>
 	);
+}
+
+function useActiveTournamentRedirect() {
+	const router = useRouter();
+	const navigate = useNavigate();
+	const { user } = useAuth();
+
+	useEffect(() => {
+		if (!user || !router.path.startsWith('/play')) return;
+
+		console.log('[DashboardLayout] Checking for active tournament...');
+		fetch('/api/tournament/active', {
+			method: 'GET',
+			credentials: 'include',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		})
+			.then(async (res) => {
+				if (res.ok) {
+					return res.json();
+				}
+				return null;
+			})
+			.then((tournament) => {
+				if (tournament && tournament.id) {
+					const tournamentType = tournament.visibility?.toLowerCase(); // 'public' or 'private'
+					const playersCount = tournament.size;
+					const tournamentId = tournament.id;
+
+					if (!tournamentType || !playersCount) {
+						console.error('[DashboardLayout] Invalid tournament data for redirection', tournament);
+						return;
+					}
+
+					const targetPath = `/play/tournament/${tournamentType}/${playersCount}`;
+					const currentUrl = new URL(window.location.href);
+					const currentId = currentUrl.searchParams.get('id');
+
+					// Redirect if we are not already on the specific tournament page
+					// or if the ID doesn't match
+					if (currentUrl.pathname !== targetPath || currentId !== tournamentId) {
+						console.log(`[DashboardLayout] Redirecting to active tournament: ${targetPath}?id=${tournamentId}`);
+						navigate(`${targetPath}?id=${tournamentId}`);
+					}
+				}
+			})
+			.catch((err) => {
+				console.error('[DashboardLayout] Failed to check active tournament', err);
+			});
+	}, [router.path, user]);
 }

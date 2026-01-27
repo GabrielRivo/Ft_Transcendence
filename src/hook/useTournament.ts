@@ -13,7 +13,7 @@ import { tournamentSocket } from '@libs/socket';
 import { fetchJsonWithAuth } from '@libs/fetchWithAuth';
 import { useToast } from '@hook/useToast';
 import { useAuth } from '@hook/useAuth';
-import { useTournamentUpdates } from '@hook/useTournamentUpdates';
+import { useTournamentUpdates, TournamentFinishedEvent } from '@hook/useTournamentUpdates';
 import { TournamentResponse, TournamentStatus } from '@/components/tournament/types';
 
 // -----------------------------------------------------------------------------
@@ -25,6 +25,7 @@ export interface UseTournamentReturn {
     tournament: TournamentResponse | null;
     isLoading: boolean;
     loadError: string | null;
+    winnerId: string | null;
 
     // Modal state for cancelled tournament
     showCancelModal: boolean;
@@ -52,6 +53,7 @@ export function useTournament(): UseTournamentReturn {
     const [isLoading, setIsLoading] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
+    const [winnerId, setWinnerId] = useState<string | null>(null);
 
     // Refs to avoid stale closures
     const tournamentRef = useRef<TournamentResponse | null>(null);
@@ -87,7 +89,8 @@ export function useTournament(): UseTournamentReturn {
     const loadTournament = useCallback(async (id: string) => {
         setIsLoading(true);
         setLoadError(null);
-        setTournament(null);
+        // Don't clear tournament state - keep existing data while fetching
+        // This prevents race conditions with match_started socket events
 
         const result = await fetchJsonWithAuth<TournamentResponse>(`/api/tournament/${id}`);
 
@@ -100,6 +103,18 @@ export function useTournament(): UseTournamentReturn {
         }
 
         setTournament(result.data);
+
+        // If tournament is finished, extract winnerId from final match
+        // This handles the case where finalists return from game after TournamentFinished event
+        if (result.data.status === 'FINISHED' && result.data.matches) {
+            const maxRound = Math.max(...result.data.matches.map(m => m.round));
+            const finalMatch = result.data.matches.find(m => m.round === maxRound);
+            if (finalMatch?.winner?.id) {
+                console.log('[useTournament] Tournament finished, winner:', finalMatch.winner.id);
+                setWinnerId(finalMatch.winner.id);
+            }
+        }
+
         setIsLoading(false);
     }, []);
 
@@ -201,11 +216,32 @@ export function useTournament(): UseTournamentReturn {
                 // Refetch to update bracket scores/status
                 if (listeningToId) loadTournament(listeningToId);
             },
-            onMatchStarted: () => {
+            onMatchStarted: (data) => {
+                // Redirect player to game if they are a participant
+                const currentUser = userRef.current;
+                if (currentUser) {
+                    const userId = String(currentUser.id);
+                    if (data.payload.player1Id === userId || data.payload.player2Id === userId) {
+                        const currentTournament = tournamentRef.current;
+                        // Use current tournament data if available, or fall back to listeningToId
+                        const tournamentId = currentTournament?.id || listeningToId;
+                        if (tournamentId) {
+                            const tournamentType = currentTournament?.visibility?.toLowerCase() || 'private';
+                            const playersCount = currentTournament?.size || 8;
+                            navigateRef.current(`/game/?id=${data.payload.gameId}&type=tournament&tournamentId=${tournamentId}&tournamentType=${tournamentType}&playersCount=${playersCount}`);
+                            return; // Don't refetch if redirecting
+                        }
+                    }
+                }
                 if (listeningToId) loadTournament(listeningToId);
             },
             onBracketUpdated: () => {
                 if (listeningToId) loadTournament(listeningToId);
+            },
+            onTournamentFinished: (data: TournamentFinishedEvent) => {
+                console.log('[useTournament] TournamentFinished event:', data);
+                setWinnerId(data.winnerId);
+                setTournament(prev => prev ? ({ ...prev, status: 'FINISHED' as TournamentStatus }) : null);
             }
         });
 
@@ -321,6 +357,7 @@ export function useTournament(): UseTournamentReturn {
         loadError,
         showCancelModal,
         setShowCancelModal,
+        winnerId,
 
         // Actions
         loadTournament,

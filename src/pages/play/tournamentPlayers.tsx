@@ -9,7 +9,7 @@ import { ButtonStyle3 } from '@/components/ui/button/style3';
 import { TournamentCreation } from '@/components/tournament/TournamentCreation';
 import { TournamentLobby } from '@/components/tournament/TournamentLobby';
 import { TournamentActive } from '@/components/tournament/TournamentActive';
-import { TournamentResponse } from '@/components/tournament/types';
+import { TournamentFinished } from '@/components/tournament/TournamentFinished';
 
 const TOURNAMENT_TYPES = ['public', 'private'] as const;
 const TOURNAMENT_SIZES = [4, 8, 16] as const;
@@ -32,6 +32,7 @@ export function TournamentPlayersPage() {
 		cancelTournament,
 		leaveTournament,
 		listenToTournament,
+		winnerId,
 	} = useTournament();
 
 	const [createdTournamentId, setCreatedTournamentId] = useState<string | null>(null);
@@ -100,8 +101,10 @@ export function TournamentPlayersPage() {
 						onTournamentCreated={handleTournamentCreated}
 					/>
 				) : (
-					// Check if tournament is started
-					tournament?.status === 'STARTED' ? (
+					// Check tournament status
+					tournament?.status === 'FINISHED' && winnerId ? (
+						<TournamentFinished tournament={tournament} winnerId={winnerId} />
+					) : tournament?.status === 'STARTED' ? (
 						<TournamentActive tournament={tournament} />
 					) : (
 						<TournamentLobby

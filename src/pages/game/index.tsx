@@ -152,10 +152,28 @@ export const Game = () => {
 	/**
 	 * Handles exit action - switches back to background mode and navigates to dashboard.
 	 */
-	const handleExit = () => {
-		console.log('[GamePage] Exit clicked - switching to background mode');
-		setMode('background');
-		navigate('/play');
+	const handleExit = async () => {
+		console.log('[GamePage] Exit clicked - surrendering game');
+
+		try {
+			// Call surrender endpoint
+			await fetch('/api/game/games/surrender', {
+				method: 'POST',
+				credentials: 'include',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({}),
+			});
+
+			console.log('[GamePage] Surrender successful - switching to background mode');
+		} catch (err) {
+			console.error('[GamePage] Failed to surrender game', err);
+		} finally {
+			// Always exit locally
+			setMode('background');
+			navigate('/play');
+		}
 	};
 
 	return (

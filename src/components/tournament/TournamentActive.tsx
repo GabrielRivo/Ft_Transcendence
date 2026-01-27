@@ -4,9 +4,8 @@ import { TournamentResponse } from './types';
 import { TournamentBracket } from './TournamentBracket';
 import { TournamentTimer } from './TournamentTimer';
 import { useTournamentUpdates, MatchScoreUpdatedEvent } from '@/hook/useTournamentUpdates';
-import { useNavigate } from 'my-react-router';
-import { useEffect, useState, useMemo } from 'my-react';
-import { useAuth } from '@/hook/useAuth';
+import { useEffect, useState } from 'my-react';
+
 
 interface TournamentActiveProps {
     tournament: TournamentResponse;
@@ -14,13 +13,8 @@ interface TournamentActiveProps {
 
 export function TournamentActive({ tournament }: TournamentActiveProps) {
     const { subscribeToTournament } = useTournamentUpdates();
-    const navigate = useNavigate();
-    const { user } = useAuth();
     const [timeLeft, setTimeLeft] = useState<number>(0);
     const [liveScores, setLiveScores] = useState<Record<string, { scoreA: number; scoreB: number }>>({});
-
-    const userId = user?.id ? String(user.id) : null;
-    const stableUserId = useMemo(() => userId, [userId]);
 
     useEffect(() => {
         return subscribeToTournament(tournament.id, {
@@ -36,38 +30,34 @@ export function TournamentActive({ tournament }: TournamentActiveProps) {
                     }
                 }));
             },
-            onMatchStarted: (data) => {
-                if (data.payload.player1Id === stableUserId || data.payload.player2Id === stableUserId) {
-                    const tournamentType = tournament.visibility.toLowerCase();
-                    const playersCount = tournament.size;
-                    navigate(`/game/?id=${data.payload.gameId}&type=tournament&tournamentId=${tournament.id}&tournamentType=${tournamentType}&playersCount=${playersCount}`);
-                }
-            },
             onBracketUpdated: () => {
-                // Handled by useTournament hook refetching, but we can also do local state updates if needed
                 console.log('Bracket updated event received in ActiveTournament');
             }
         });
-    }, [tournament.id, subscribeToTournament, stableUserId]); // Removed navigate as it might be unstable
+    }, [tournament.id, subscribeToTournament]);
 
     return (
-        <CardStyle2 className="w-full max-w-3xl">
-            <div className="flex w-full flex-col gap-8">
-                <div className="text-center">
-                    <h3 className="font-pirulen text-xl tracking-widest text-white">Tournament Active</h3>
-                    <p className="mt-2 text-sm text-gray-400">{tournament.name}</p>
+        <CardStyle2 className="flex h-full w-full max-w-5xl flex-col overflow-hidden">
+            {/* Timer Section (Absolute Top-Left) */}
+            {timeLeft > 0 && (
+                <div className="absolute left-4 top-4 z-20">
+                    <TournamentTimer timeLeft={timeLeft} />
                 </div>
+            )}
+            {/* Header */}
+            <div className="flex flex-col items-center pb-4">
+                <h3 className="font-pirulen text-xl tracking-widest text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]">
+                    {tournament.name}
+                </h3>
+            </div>
 
-                {timeLeft > 0 && (
-                    <div className="flex justify-center">
-                        <TournamentTimer timeLeft={timeLeft} />
-                    </div>
-                )}
-
-                <div className="rounded-sm border border-white/10 bg-white/5 p-8 text-center overflow-x-auto">
+            {/* Bracket Section - Full Flex Area */}
+            <div className="flex flex-1 items-center justify-center overflow-auto p-4">
+                <div className="h-full w-full min-w-[600px]">
                     <TournamentBracket tournament={tournament} liveScores={liveScores} />
                 </div>
             </div>
         </CardStyle2>
     );
 }
+

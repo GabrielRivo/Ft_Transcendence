@@ -86,6 +86,12 @@ export interface BracketUpdatedEvent {
     occurredAt: string;
 }
 
+export interface TournamentFinishedEvent {
+    aggregateId: string;
+    winnerId: string;
+    occurredAt: string;
+}
+
 export interface TournamentSubscription {
     onPlayerJoined?: (data: PlayerJoinedEvent) => void;
     onPlayerLeft?: (data: PlayerLeftEvent) => void;
@@ -95,6 +101,7 @@ export interface TournamentSubscription {
     onMatchScoreUpdated?: (data: MatchScoreUpdatedEvent) => void;
     onTimerUpdate?: (data: TimerUpdateEvent) => void;
     onBracketUpdated?: (data: BracketUpdatedEvent) => void;
+    onTournamentFinished?: (data: TournamentFinishedEvent) => void;
 }
 
 // -----------------------------------------------------------------------------
@@ -276,6 +283,30 @@ const handleBracketUpdated = (data: BracketUpdatedEvent) => {
     }
 };
 
+const handleTournamentFinished = (data: TournamentFinishedEvent) => {
+    const tournamentId = data.aggregateId;
+    if (!tournamentId) return;
+
+    const eventKey = `finished-${tournamentId}-${data.occurredAt || Date.now()}`;
+
+    if (processedEvents.has(eventKey)) {
+        return;
+    }
+    processedEvents.add(eventKey);
+    cleanupEvent(eventKey);
+
+    console.log('[TournamentUpdates] TournamentFinished:', tournamentId, 'Winner:', data.winnerId);
+
+    const subscribers = tournamentSubscribers.get(tournamentId);
+    if (subscribers) {
+        subscribers.forEach(sub => {
+            if (sub.onTournamentFinished) {
+                sub.onTournamentFinished(data);
+            }
+        });
+    }
+};
+
 const registerGlobalHandlers = () => {
     if (globalHandlersRegistered) return;
     globalHandlersRegistered = true;
@@ -297,6 +328,8 @@ const registerGlobalHandlers = () => {
     tournamentSocket.on('timer_update', handleTimerUpdate);
     tournamentSocket.on('BracketUpdated', handleBracketUpdated);
     tournamentSocket.on('bracket_updated', handleBracketUpdated);
+    tournamentSocket.on('TournamentFinished', handleTournamentFinished);
+    tournamentSocket.on('tournament_finished', handleTournamentFinished);
 };
 
 // -----------------------------------------------------------------------------
