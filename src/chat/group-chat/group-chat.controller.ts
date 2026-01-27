@@ -14,7 +14,7 @@ export class GroupController {
 		return this.groupService.createGroup(user.id, data.name);
 	}
 
-	@Get('/my-groups/:userId')
+	@Get('/my-groups/')
 	async get_my_groups(@JWTBody() user: { id: number }) {
 		return this.groupService.getUserGroups(Number(user.id));
 	}
