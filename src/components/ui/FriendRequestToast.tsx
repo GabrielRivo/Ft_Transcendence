@@ -1,4 +1,4 @@
-import { createElement, useState, createPortal, FragmentComponent } from 'my-react';
+import { createElement, useState, useEffect, createPortal, FragmentComponent } from 'my-react';
 import { useFriends, PendingInvitation } from '../../hook/useFriends';
 
 interface FriendRequestToastItemProps {
@@ -68,6 +68,26 @@ function FriendRequestToastItem({ invitation, onAccept, onDecline, onClose }: Fr
 export function FriendRequestToastContainer() {
 	const { pendingInvitations, acceptFriendInvite, declineFriendInvite } = useFriends();
 	const [dismissedIds, setDismissedIds] = useState<Set<number>>(new Set());
+
+	// Clean up dismissedIds when new invitations arrive from previously dismissed senders
+	useEffect(() => {
+		const currentSenderIds = new Set(pendingInvitations.map((inv) => inv.senderId));
+		setDismissedIds((prev) => {
+			const newDismissed = new Set<number>();
+			for (const id of prev) {
+				// Only keep dismissed IDs that are still in pendingInvitations
+				// This way, if someone sends a new invitation, it won't be filtered out
+				if (!currentSenderIds.has(id)) {
+					newDismissed.add(id);
+				}
+			}
+			// Only update if there's a difference
+			if (newDismissed.size !== prev.size) {
+				return newDismissed;
+			}
+			return prev;
+		});
+	}, [pendingInvitations]);
 
 	// Filter out dismissed invitations
 	const visibleInvitations = pendingInvitations.filter((inv) => !dismissedIds.has(inv.senderId));

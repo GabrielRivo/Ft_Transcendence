@@ -1,6 +1,7 @@
 import { createElement, useState, useEffect, useCallback, useRef, Element } from 'my-react';
 import { FriendsContext, Friend, PendingInvitation, FriendInviteResult } from './friendsContext';
 import { useAuth } from '../hook/useAuth';
+import { useOnlineUsers } from '../hook/useOnlineUsers';
 import { userSocket } from '../libs/socket';
 import { fetchWithAuth } from '../libs/fetchWithAuth';
 
@@ -12,6 +13,7 @@ interface FriendsProviderProps {
 
 export function FriendsProvider({ children }: FriendsProviderProps) {
 	const { isAuthenticated, user } = useAuth();
+	const { isOnline } = useOnlineUsers();
 	const [friends, setFriends] = useState<Friend[]>([]);
 	const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -89,10 +91,14 @@ export function FriendsProvider({ children }: FriendsProviderProps) {
 		if (!isAuthenticated || !user) return;
 
 		const handleFriendRequest = (data: { senderId: number; senderUsername: string }) => {
+			console.log('[FriendsProvider] friend_request received:', data);
 			setPendingInvitations((prev) => {
+				console.log('[FriendsProvider] prev pendingInvitations:', prev);
 				if (prev.some((inv) => inv.senderId === data.senderId)) {
+					console.log('[FriendsProvider] Already in pending, skipping');
 					return prev;
 				}
+				console.log('[FriendsProvider] Adding new pending invitation');
 				return [
 					...prev,
 					{
@@ -170,7 +176,7 @@ export function FriendsProvider({ children }: FriendsProviderProps) {
 					headers: {
 						'Content-Type': 'application/json',
 					},
-					body: JSON.stringify({ userId: user.id, otherId }),
+					body: JSON.stringify({ otherId }),
 				});
 
 				if (!response.ok) {
@@ -183,7 +189,7 @@ export function FriendsProvider({ children }: FriendsProviderProps) {
 				return false;
 			}
 		},
-		[user?.id],
+		[user],
 	);
 
 	const acceptFriendInvite = useCallback(
@@ -288,6 +294,7 @@ export function FriendsProvider({ children }: FriendsProviderProps) {
 				pendingInvitations,
 				loading,
 				error,
+				isOnline,
 				refreshFriends: fetchFriends,
 				refreshPendingInvitations: fetchPendingInvitations,
 				sendFriendInvite,

@@ -1,18 +1,24 @@
-import { createElement, useState, useRef } from 'my-react';
+import { createElement, useState, useRef, useEffect } from 'my-react';
 import { Link } from 'my-react-router';
 import { useAuth } from '../../hook/useAuth';
 import { useToast } from '../../hook/useToast';
 import { ButtonStyle3 } from '../../components/ui/button/style3';
 import { ButtonStyle4 } from '../../components/ui/button/style4';
 import { Modal } from '../../components/ui/modal';
-import { fetchJsonWithAuth } from '../../libs/fetchWithAuth';
+import { fetchJsonWithAuth, fetchWithAuth } from '../../libs/fetchWithAuth';
 import { ButtonStyle2 } from '@/components/ui/button/style2';
 
 interface UserStats {
 	wins: number;
 	losses: number;
-	totalGames: number;
-	winRate: number;
+	total_games: number;
+	winrate: number;
+}
+
+interface ProfileData {
+	username: string;
+	avatar: string | null;
+	bio: string;
 }
 
 interface TwoFactorSetupResponse {
@@ -39,6 +45,7 @@ export function ProfilePage() {
 	const [isEditingUsername, setIsEditingUsername] = useState(false);
 	const [newUsername, setNewUsername] = useState('');
 
+
 	// Email/Password state (only if provider is email)
 	const [isEditingEmail, setIsEditingEmail] = useState(false);
 	const [newEmail, setNewEmail] = useState('');
@@ -46,6 +53,7 @@ export function ProfilePage() {
 	const [currentPassword, setCurrentPassword] = useState('');
 	const [newPassword, setNewPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
+	const [stats, setStats] = useState<UserStats | null>(null);
 
 	// 2FA state
 	const [show2FAModal, setShow2FAModal] = useState(false);
@@ -59,13 +67,34 @@ export function ProfilePage() {
 	const [deleteConfirmText, setDeleteConfirmText] = useState('');
 	const [isDeleting, setIsDeleting] = useState(false);
 
+	// Fetch profile data
+	useEffect(() => {
+		const fetchProfile = async () => {
+			if (!user?.id) return;
+
+			const resultPromise = fetchJsonWithAuth<ProfileData>(`/api/user/profile/${user.id}`);
+			const result2Promise = fetchJsonWithAuth<UserStats>(`/api/stats/user/small/${user.id}`);
+			// /user/small/:userId
+
+			const [result, result2] = await Promise.all([resultPromise, result2Promise]);
+
+			if (result.ok && result2.ok && result.data && result2.data) {
+				setAvatarPreview(result.data.avatar);
+				setBio(result.data.bio || '');
+				setStats(result2.data);
+			}
+		};
+
+		fetchProfile();
+	}, [user?.id]);
+
 	// Stats (mock data for now)
-	const stats: UserStats = {
-		wins: 42,
-		losses: 18,
-		totalGames: 60,
-		winRate: 70,
-	};
+	// const stats: UserStats = {
+	// 	wins: 42,
+	// 	losses: 18,
+	// 	totalGames: 60,
+	// 	winRate: 70,
+	// };
 
 	// Check if user registered with email (not OAuth)
 	const isEmailProvider = true; // TODO: Get from user data
@@ -92,16 +121,16 @@ export function ProfilePage() {
 		const formData = new FormData();
 		formData.append('avatar', file);
 
-		const result = await fetchJsonWithAuth('/api/user/avatar', {
+		const response = await fetchWithAuth('/api/user/avatar', {
 			method: 'POST',
 			body: formData,
-			headers: {}, // Let browser set Content-Type for FormData
 		});
 
-		if (result.ok) {
+		if (response.ok) {
 			toast('Avatar updated', 'success');
 		} else {
-			toast(result.error || 'Error while downloading', 'error');
+			const errorData = await response.json().catch(() => ({}));
+			toast(errorData.message || errorData.error || 'Error while downloading', 'error');
 			setAvatarPreview(null);
 		}
 		setIsUploadingAvatar(false);
@@ -336,28 +365,30 @@ export function ProfilePage() {
 							<div className="space-y-3">
 								<div className="flex justify-between">
 									<span className="text-gray-400">Victories</span>
-									<span className="font-bold text-green-400">{stats.wins}</span>
+									<span className="font-bold text-green-400">{stats?.wins}</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-gray-400">Defeats</span>
-									<span className="font-bold text-red-400">{stats.losses}</span>
+									<span className="font-bold text-red-400">{stats?.losses}</span>
 								</div>
 								<div className="flex justify-between">
 									<span className="text-gray-400">Total games</span>
-									<span className="font-bold text-white">{stats.totalGames}</span>
+									<span className="font-bold text-white">{stats?.total_games}</span>
 								</div>
+								{stats?.winrate ? (
 								<div className="mt-4 border-t border-white/10 pt-4">
 									<div className="flex justify-between">
 										<span className="text-gray-400">Winrate</span>
-										<span className="font-bold text-cyan-400">{stats.winRate}%</span>
+										<span className="font-bold text-cyan-400">{stats.winrate.toFixed(2)}%</span>
 									</div>
 									<div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-700">
 										<div
 											className="h-full bg-linear-to-r from-cyan-500 to-purple-500 transition-all duration-500"
-											style={`width: ${stats.winRate}%`}
+											style={`width: ${stats.winrate.toFixed(2)}%`}
 										/>
 									</div>
 								</div>
+								) : null}
 							</div>
 						</div>
 						<div className="flex justify-center">
@@ -377,13 +408,13 @@ export function ProfilePage() {
 									<div className="flex items-center justify-between">
 										<div>
 											<label className="text-xs text-gray-500">Username</label>
-											<p className="text-lg font-bold text-white">{user?.username || 'Non défini'}</p>
+											{/* <p className="text-lg font-bold text-white">{user?.username || 'Non défini'}</p> */}
 										</div>
 										{!isEditingUsername && (
 											<button
 												onClick={() => {
-													setNewUsername(user?.username || '');
 													setIsEditingUsername(true);
+													setNewUsername(user?.username || '');
 												}}
 												className="text-xs text-cyan-400 transition-colors hover:text-white"
 											>
@@ -391,8 +422,8 @@ export function ProfilePage() {
 											</button>
 										)}
 									</div>
-									{isEditingUsername && (
-										<div className="mt-4 space-y-3">
+									{isEditingUsername ? (
+										<div className="mt-2 space-y-3">
 											<input
 												type="text"
 												value={newUsername}
@@ -407,6 +438,8 @@ export function ProfilePage() {
 												<ButtonStyle4 onClick={() => { handleUpdateUsername(); }}>Update</ButtonStyle4>
 											</div>
 										</div>
+									) : (
+										<p className="text-lg font-bold text-white">{user?.username || 'Non défini'}</p>
 									)}
 								</div>
 								<div>
