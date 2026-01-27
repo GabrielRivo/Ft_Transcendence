@@ -21,7 +21,7 @@ function MatchCard({ match, isSelected, onClick }: { match: TransformedMatch; is
 	const borderColor = isSelected
 		? match.isWin
 			? 'border-yellow-400 border-4'
-			: 'border-cyan-400 border-4'
+			: 'border-yellow-400 border-4'
 		: 'border-transparent border-2';
 
 	return (
@@ -65,8 +65,12 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 				</p>
 
 				{/* Elo */}
-				<p className={`text-lg ${match.eloChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
-					{match.eloChange > 0 ? '+' : ''}{match.eloChange} Elo
+				<p className={`text-xs font-pirulen font-bold ${
+						match.eloChange === 0 
+						? 'text-yellow-400'
+						: match.eloChange > 0 ? 'text-green-400' : 'text-red-400'
+					}`}>
+					{match.eloChange === 0  ? 'Tournament' : `${match.eloChange > 0 ? '+' : ''}${match.eloChange} Elo`}
 				</p>
 			</div>
 
@@ -194,7 +198,7 @@ export function StatisticsHistoricPage() {
 			</div>
 
 			{/* Colonne droite : Liste des matchs */}
-			<div className="flex-[2] flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 scrollbar-neon">
+			<div className="flex-[2] flex flex-col gap-4 overflow-y-auto max-h-[600px] p-2 scrollbar-neon">
 				{matches.map((match) => (
 					<MatchCard
 						key={match.id}
