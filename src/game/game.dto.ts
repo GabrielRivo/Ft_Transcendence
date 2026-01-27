@@ -64,7 +64,7 @@ export class CreateGameDto {
 	type!: GameType;
 }
 
-export type GameType = 'local' | 'tournament' | 'ranked' | 'friend';
+export type GameType = 'tournament' | 'ranked' | 'friend';
 
 /**
  * Response DTO for successful game creation.

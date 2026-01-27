@@ -41,7 +41,7 @@ class Pong extends Game {
 
     private gameState: "waiting" | "playing" | null;
 
-    public type: GameType;
+    private gameType: GameType;
 
     private disconnectTimeout: Map<string, NodeJS.Timeout | null> = new Map();
     private disconnectForgivingP1: number = 0;
@@ -49,7 +49,7 @@ class Pong extends Game {
 
     private startingTimeout: NodeJS.Timeout | null = null;
 
-    constructor(id: string, p1Id: string, p2Id: string, type: GameType, gameService: GameService) {
+    constructor(id: string, p1Id: string, p2Id: string, gameType: GameType, gameService: GameService) {
         super();
         this.id = id;
         this.p1Socket = null;
@@ -57,7 +57,8 @@ class Pong extends Game {
         this.nsp = null;
         this.p1Id = p1Id;
         this.p2Id = p2Id;
-        this.type = type;
+
+        this.gameType = gameType;
 
         this.gameService = gameService;
         this.gameState = "waiting";
@@ -309,6 +310,7 @@ class Pong extends Game {
 
         let gameFinishedEvent: GameFinishedEvent = {
             eventName: 'game.finished',
+            gameType: this.gameType,
             gameId: this.id,
             player1Id: this.p1Id,
             player2Id: this.p2Id,

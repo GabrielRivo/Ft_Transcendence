@@ -1,6 +1,9 @@
+import { GameType } from './game.dto.js';
+
 export interface GameFinishedEvent {
     eventName: 'game.finished';
     gameId: string;
+    gameType: GameType;
     player1Id: string;
     player2Id: string;
     score1: number;
