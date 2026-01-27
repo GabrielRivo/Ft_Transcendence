@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, JWTBody, Param } from 'my-fastify-decorators';
+import { BadRequestException, Controller, Get, Inject, JWTBody, Param } from 'my-fastify-decorators';
 
 
 export interface UserStatsValues {
@@ -23,25 +23,7 @@ export class UserStatsController {
 
 	@Get('/user/:userId')
 	async get_stats(@Param('userId') userId: string) {
-		try {
-			const stats_log = await this.statsService.getGlobalStats(Number(userId));
-			if (!stats_log) return {
-					elo: 1000,
-					total_games: 0,
-					wins: 0,
-					losses: 0,
-					winrate: null,
-					tournament_played: 0,
-					tournament_won: 0,
-					average_score: 0,
-					average_game_duration_in_seconde: 0,
-			}
-				//message: "User doesn't have stats" };
-			return stats_log;
-		} catch (err) {
-			console.error('Erreur GET stats:', err);
-			return { message: 'Error' };
-		}
+			return await this.statsService.getGlobalStats(Number(userId));
 	}
 
 	@Get('/all-elos')
@@ -51,20 +33,7 @@ export class UserStatsController {
 
 	@Get('/user/small/:userId')
 	async get_small_stats(@Param('userId') userId: string) {
-		try {
-		const stats_log = await this.statsService.getGlobalStats(Number(userId));
-		if (!stats_log) return {
-				elo: 1000,
-				total_games: 0,
-				wins: 0,
-				losses: 0,
-				winrate: null,
-		}
-		return stats_log;
-		} catch (err) {
-			console.error('Erreur GET stats:', err);
-			return { message: 'Error' };
-		}
+			return await this.statsService.getGlobalStats(Number(userId));
 	}
 
 }

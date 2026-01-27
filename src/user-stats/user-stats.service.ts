@@ -1,5 +1,5 @@
 import Database, { Statement } from 'better-sqlite3';
-import { InjectPlugin, Service } from 'my-fastify-decorators';
+import { InjectPlugin, InternalServerErrorException, NotFoundException, Service } from 'my-fastify-decorators';
 
 export interface UserStatsValues {
 	user_id: number;
@@ -13,7 +13,6 @@ export interface UserStatsValues {
 	average_score: number;
 	average_game_duration_in_seconde: number;
 }
-
 
 @Service()
 export class UserStatsService {
@@ -45,15 +44,27 @@ export class UserStatsService {
 		this.statementRegisterUser = this.db.prepare(`INSERT INTO user_stats (user_id) VALUES (@user_id)`)
 		this.statementChangeUsername = this.db.prepare(`UPDATE user_stats SET username = @username WHERE user_id = @user_id`)
 	}
+ 
 	async getGlobalStats(userId: number) {
-		return this.statementGetStats.get(userId) as UserStatsValues;
+		try {
+		const stats = this.statementGetStats.get(userId) as UserStatsValues | undefined;
+		if (!stats) {
+			throw new NotFoundException(`User "${userId}" not found`);
+		}
+		return stats;
+	}
+		catch (error) {
+			if (error instanceof NotFoundException) throw error;
+			console.error("Database error", error);
+			throw new InternalServerErrorException("Internal Database Error");
+		}
 	}
 
 	getAllElos(): number[] {
 		const rows = this.statementGetAllElos.all() as { elo: number }[];
 		return rows.map((r) => r.elo);
 	}
-
+	
 	get_win_rate(wins: number, losses: number, n: number)
 	{
 		if (n == 0)
