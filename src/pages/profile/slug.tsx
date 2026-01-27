@@ -254,8 +254,8 @@ export function ProfileSlugPage() {
 						{/* Win Rate Bar */}
 						<div className="pt-4">
 							<div className="mb-2 flex justify-between text-xs">
-								<span className="text-green-400">Victoires ({profile.stats.wins})</span>
-								<span className="text-red-400">Défaites ({profile.stats.losses})</span>
+								<span className="text-green-400">Victories ({profile.stats.wins})</span>
+								<span className="text-red-400">Defeats ({profile.stats.losses})</span>
 							</div>
 							<div className="flex h-4 overflow-hidden rounded-full bg-slate-700">
 								<div

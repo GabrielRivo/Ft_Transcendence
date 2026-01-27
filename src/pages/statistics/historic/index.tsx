@@ -13,7 +13,7 @@ function formatDate(dateStr: string): string {
 
 function formatDuration(seconds: number): string {
 	const minutes = Math.floor(seconds / 60);
-	return `${minutes} min`;
+	return `${minutes}`;
 }
 
 function MatchCard({ match, isSelected, onClick }: { match: TransformedMatch; isSelected: boolean; onClick: () => void; key?: number | string }) {
@@ -61,7 +61,7 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 
 				{/* Résultat */}
 				<p className={`font-pirulen text-2xl tracking-wider mb-4 ${match.isWin ? 'text-green-400' : 'text-red-400'}`}>
-					{match.isWin ? 'Victoire !' : 'Défaite'}
+					{match.isWin ? 'Victory !' : 'Defeat'}
 				</p>
 
 				{/* Elo */}
@@ -75,7 +75,7 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 
 			{/* Stats supplémentaires */}
 			<div className="flex justify-between text-gray-400">
-				<p>Duration {match.duration}</p>
+				<p>Duration {match.duration}s</p>
 				<p>Hit number : {match.hits}</p>
 			</div>
 		</div>
@@ -178,7 +178,7 @@ export function StatisticsHistoricPage() {
 	if (matches.length === 0) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				<p className="font-pirulen text-gray-400">Aucun match dans l'historique</p>
+				<p className="font-pirulen text-gray-400">No match in history</p>
 			</div>
 		);
 	}

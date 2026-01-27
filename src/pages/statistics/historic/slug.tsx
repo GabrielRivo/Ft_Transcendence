@@ -13,7 +13,7 @@ function formatDate(dateStr: string): string {
 
 function formatDuration(seconds: number): string {
 	const minutes = Math.floor(seconds / 60);
-	return `${minutes} min`;
+	return `${minutes}`;
 }
 
 function MatchCard({ match, isSelected, onClick }: { match: TransformedMatch; isSelected: boolean; onClick: () => void; key?: number | string }) {
@@ -30,7 +30,7 @@ function MatchCard({ match, isSelected, onClick }: { match: TransformedMatch; is
 			className={`w-full p-4 ${bgColor} ${borderColor} rounded-lg transition-all duration-200 hover:scale-[1.02] hover:brightness-110 text-center`}
 		>
 			<p className="font-pirulen text-lg tracking-wider text-white mb-1">
-				{match.isWin ? 'Victoire !' : 'Défaite'}
+				{match.isWin ? 'Victory !' : 'Defeat'}
 			</p>
 			<p className="text-sm text-white/80 mb-2">Vs "{match.opponent}"</p>
 			<p className="font-orbitron text-xl font-bold text-white">
@@ -61,7 +61,7 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 
 				{/* Résultat */}
 				<p className={`font-pirulen text-2xl tracking-wider mb-4 ${match.isWin ? 'text-green-400' : 'text-red-400'}`}>
-					{match.isWin ? 'Victoire !' : 'Défaite'}
+					{match.isWin ? 'Victory !' : 'Defeat'}
 				</p>
 
 				{/* Elo */}
@@ -75,7 +75,7 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 
 			{/* Stats supplémentaires */}
 			<div className="flex justify-between text-gray-400">
-				<p>Durée {match.duration}</p>
+				<p>Durée {match.duration}s</p>
 				<p>Nombre de hit : {match.hits}</p>
 			</div>
 		</div>
@@ -198,7 +198,7 @@ export function StatisticsHistoricPageSlug() {
 					</p>
 				</div>
 				<div className="flex h-full w-full items-center justify-center">
-					<p className="font-pirulen text-gray-400">Aucun match dans l'historique</p>
+					<p className="font-pirulen text-gray-400">No match in history</p>
 				</div>
 			</div>
 		);
@@ -211,7 +211,7 @@ export function StatisticsHistoricPageSlug() {
 			{/* Header avec nom du joueur */}
 			<div className="rounded-lg border border-purple-500/30 bg-slate-900/50 p-4 text-center">
 				<p className="font-pirulen text-lg tracking-wider text-purple-400">
-					Historique de "{username}"
+					History of "{username}"
 				</p>
 			</div>
 

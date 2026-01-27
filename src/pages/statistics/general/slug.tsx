@@ -37,7 +37,7 @@ function WinRatePieChart({ winRate }: { winRate: number }) {
 				background: 'transparent',
 			},
 			series: [winRate, 100 - winRate],
-			labels: ['Victoires', 'Défaites'],
+			labels: ['Victories', 'Defeat'],
 			colors: ['#22c55e', '#ef4444'],
 			legend: {
 				show: false,
@@ -112,7 +112,7 @@ export function StatisticsGeneralPageSlug() {
 	useEffect(() => {
 		async function fetchStats() {
 			if (!userId) {
-				setError('ID utilisateur invalide');
+				setError('Invalid user ID');
 				setLoading(false);
 				return;
 			}
@@ -128,14 +128,14 @@ export function StatisticsGeneralPageSlug() {
 				]);
 
 				if (userStatsRes.error || !userStatsRes.data) {
-					setError(userStatsRes.error || 'Impossible de charger les statistiques');
+					setError(userStatsRes.error || 'Impossible to load stats');
 					setLoading(false);
 					return;
 				}
 
 				const userStats = userStatsRes.data;
 				const allElos = allElosRes.data || [];
-				const username = userInfoRes.data?.username || `Joueur #${userId}`;
+				const username = userInfoRes.data?.username || `Player #${userId}`;
 
 				// Calcul du percentile
 				const playersBelow = allElos.filter((elo) => elo < userStats.elo).length;
@@ -155,7 +155,7 @@ export function StatisticsGeneralPageSlug() {
 					allPlayersElo: allElos,
 				});
 			} catch (err) {
-				setError('Erreur lors du chargement des statistiques');
+				setError('Error while loading stats');
 			} finally {
 				setLoading(false);
 			}
@@ -167,7 +167,7 @@ export function StatisticsGeneralPageSlug() {
 	if (loading) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				<p className="font-pirulen text-cyan-400">Chargement des statistiques...</p>
+				<p className="font-pirulen text-cyan-400">Loading stats...</p>
 			</div>
 		);
 	}
@@ -175,7 +175,7 @@ export function StatisticsGeneralPageSlug() {
 	if (error || !stats) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				<p className="font-pirulen text-red-400">{error || 'Aucune statistique disponible'}</p>
+				<p className="font-pirulen text-red-400">{error || 'No stats available'}</p>
 			</div>
 		);
 	}
@@ -184,7 +184,7 @@ export function StatisticsGeneralPageSlug() {
 		<div className="flex w-full flex-col gap-6 p-4">
 			{/* Header avec nom du joueur */}
 			<div className="rounded-lg border border-purple-500/30 bg-slate-900/50 p-4 text-center">
-				<p className="font-pirulen text-lg tracking-wider text-purple-400">Statistiques de "{stats.username}"</p>
+				<p className="font-pirulen text-lg tracking-wider text-purple-400">Stats of "{stats.username}"</p>
 			</div>
 
 			{/* Ligne 1 : Histogramme Elo + Parties jouées */}
@@ -199,7 +199,7 @@ export function StatisticsGeneralPageSlug() {
 
 				{/* Parties jouées */}
 				<div className="flex flex-col items-center justify-center rounded-lg border border-purple-500/30 bg-slate-900/50 p-6">
-					<StatCard title="Parties jouées :" value={stats.gamesPlayed} />
+					<StatCard title="Games payed :" value={stats.gamesPlayed} />
 				</div>
 			</div>
 
@@ -207,28 +207,28 @@ export function StatisticsGeneralPageSlug() {
 			<div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
 				{/* Score moyen par partie */}
 				<div className="flex flex-col items-center justify-center rounded-lg border border-orange-500/30 bg-slate-900/50 p-6">
-					<p className="font-pirulen mb-1 text-xs tracking-wider text-orange-400">Score moyen par partie :</p>
+					<p className="font-pirulen mb-1 text-xs tracking-wider text-orange-400">Average score by game :</p>
 					<p className="font-orbitron mb-2 text-4xl font-bold text-white">{stats.averageScore}</p>
-					<p className="text-xs text-gray-500 italic">(arrondi au 0,01 sup)</p>
+					<p className="text-xs text-gray-500 italic">(rounded up to the 0.01 sup)</p>
 				</div>
 
 				{/* Pie Chart - Taux de victoire */}
 				<div className="flex flex-col items-center rounded-lg border border-green-500/30 bg-slate-900/50 p-4 lg:col-span-2">
-					<p className="font-pirulen mb-2 text-sm tracking-wider text-green-400">Taux de victoire : {stats.winRate}%</p>
+					<p className="font-pirulen mb-2 text-sm tracking-wider text-green-400">Winrate  : {stats.winRate}%</p>
 					<WinRatePieChart winRate={stats.winRate} />
 				</div>
 
 				{/* Tournois */}
 				<div className="flex flex-col items-center justify-center gap-6 rounded-lg border border-red-500/30 bg-slate-900/50 p-6">
-					<StatCard title="Tournois joués :" value={stats.tournamentsPlayed} />
-					<StatCard title="Tournois remportés :" value={stats.tournamentsWon} />
+					<StatCard title="Tournaments played:" value={stats.tournamentsPlayed} />
+					<StatCard title="Tournois won :" value={stats.tournamentsWon} />
 				</div>
 			</div>
 
 			{/* Ligne 3 : Message de classement */}
 			<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 p-6 text-center">
 				<p className="font-pirulen text-lg tracking-wider text-cyan-400">
-					Ce joueur est meilleur que {stats.percentile}% des joueurs!
+					This player is better than {stats.percentile}% of players!
 				</p>
 			</div>
 		</div>

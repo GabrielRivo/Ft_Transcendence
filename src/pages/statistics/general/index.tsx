@@ -122,7 +122,7 @@ export function StatisticsGeneralPage() {
 				]);
 
 				if (userStatsRes.error || !userStatsRes.data) {
-					setError(userStatsRes.error || 'Impossible de charger les statistiques');
+					setError(userStatsRes.error || 'Impossible to launch stats');
 					setLoading(false);
 					return;
 				}
@@ -135,7 +135,7 @@ export function StatisticsGeneralPage() {
 				const percentile = allElos.length > 0 ? Math.round((playersBelow / allElos.length) * 1000) / 10 : 0;
 
 				setStats({
-					username: user.username || 'Vous',
+					username: user.username || 'You',
 					elo: userStats.elo,
 					gamesPlayed: userStats.total_games,
 					wins: userStats.wins,
@@ -148,7 +148,7 @@ export function StatisticsGeneralPage() {
 					allPlayersElo: allElos,
 				});
 			} catch (err) {
-				setError('Erreur lors du chargement des statistiques');
+				setError('Error while loading stats');
 			} finally {
 				setLoading(false);
 			}
@@ -160,15 +160,15 @@ export function StatisticsGeneralPage() {
 	if (loading) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				<p className="font-pirulen text-cyan-400">Chargement des statistiques...</p>
+				<p className="font-pirulen text-cyan-400">Loading stats...</p>
 			</div>
 		);
 	}
 
-	if (error || !stats) {
+	if (error || !stats?.gamesPlayed) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				<p className="font-pirulen text-red-400">{error || 'Aucune statistique disponible'}</p>
+				<p className="font-pirulen text-red-400">{error || 'No stats yet'}</p>
 			</div>
 		);
 	}
