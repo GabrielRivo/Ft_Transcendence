@@ -31,7 +31,7 @@ function FriendRequestToastItem({ invitation, onAccept, onDecline, onClose }: Fr
 					</div>
 					<div>
 						<p className="text-sm font-medium text-white">{invitation.senderUsername}</p>
-						<p className="text-xs text-gray-500">Demande d'ami</p>
+						<p className="text-xs text-gray-500">Friend request</p>
 					</div>
 				</div>
 				<button

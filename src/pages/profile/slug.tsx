@@ -45,7 +45,7 @@ export function ProfileSlugPage() {
 		if (result.ok && result.data) {
 			setProfile(result.data);
 		} else {
-			setError(result.error || 'Utilisateur non trouvé');
+			setError(result.error || 'User not found');
 		}
 		setIsLoading(false);
 	}, [username]);
@@ -69,10 +69,10 @@ export function ProfileSlugPage() {
 		});
 
 		if (result.ok) {
-			toast('Demande d\'ami envoyée', 'success');
+			toast('Friend request send', 'success');
 			setProfile({ ...profile, hasPendingRequest: true });
 		} else {
-			toast(result.error || 'Erreur lors de l\'envoi', 'error');
+			toast(result.error || 'Error while sending', 'error');
 		}
 		setIsSendingRequest(false);
 	};
@@ -85,10 +85,10 @@ export function ProfileSlugPage() {
 		});
 
 		if (result.ok) {
-			toast('Ami supprimé', 'success');
+			toast('Friend deleted', 'success');
 			setProfile({ ...profile, isFriend: false });
 		} else {
-			toast(result.error || 'Erreur lors de la suppression', 'error');
+			toast(result.error || 'Error while deleting', 'error');
 		}
 	};
 
@@ -112,7 +112,7 @@ export function ProfileSlugPage() {
 					</div>
 					<div>
 						<h2 className="font-pirulen text-xl tracking-widest text-white">USER NOT FOUND</h2>
-						<p className="mt-2 text-sm text-gray-400">{error || `L'utilisateur "${username}" n'existe pas.`}</p>
+						<p className="mt-2 text-sm text-gray-400">{error || `User "${username}" not found.`}</p>
 					</div>
 					<Link to="/">
 						<ButtonStyle3>Return to homepage</ButtonStyle3>
@@ -196,7 +196,7 @@ export function ProfileSlugPage() {
 									</button>
 								) : (
 									<ButtonStyle4 onClick={() => { handleAddFriend(); }} disabled={isSendingRequest}>
-										{isSendingRequest ? 'Envoi...' : 'Ajouter en ami'}
+										{isSendingRequest ? 'Send...' : 'Add friend'}
 									</ButtonStyle4>
 								)}
 								<Link to={`/statistics/general/${profile.username}`}>

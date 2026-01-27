@@ -85,7 +85,7 @@ export function ChatSidebarPanel({
 
 				{/* Amis */}
 				<div>
-					<div className="mb-2 text-[10px] text-gray-500 uppercase">Amis</div>
+					<div className="mb-2 text-[10px] text-gray-500 uppercase">Friends</div>
 					{friendsLoading ? (
 						<div className="text-gray-500">Loading...</div>
 					) : friends.length === 0 ? (
@@ -134,7 +134,7 @@ export function ChatSidebarPanel({
 											} else {
 												toast('Failed to remove friend', 'error');
 											}
-											console.log('Supprimer ami', friend.username)
+											console.log('Delete friend', friend.username)
 										},
 										onBlock: () => {
 											fetchWithAuth(`/api/user/friend-management/block`, {
