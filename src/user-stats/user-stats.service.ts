@@ -93,6 +93,7 @@ export class UserStatsService {
 	updateStats(current: UserStatsValues, match: any): UserStatsValues {
 		const n = current.total_games + 1;
 		let newWins: number = current.wins;
+		let newLosses : number = current.losses
 		let elog: number = 0;
 		let newTournament = 0;
 		let newTournamentWin = 0;
@@ -116,7 +117,6 @@ export class UserStatsService {
 			}
 		}
 
-		let newLosses : number = current.wins
 		if (current.user_id != match.winner_id)
 		{
 			newLosses += 1;
@@ -131,8 +131,8 @@ export class UserStatsService {
 			wins: newWins,
 			losses: newLosses,
 			winrate: this.get_win_rate(newWins, newLosses, n),
-			tournament_played: newTournament,
-			tournament_won: newTournamentWin,
+			tournament_played: current.tournament_played + newTournament,
+			tournament_won: current.tournament_won + newTournamentWin,
 			average_score: Math.round((current.average_score * current.total_games + match.score) / n),
 			average_game_duration_in_seconde: Math.round(
 				(current.average_game_duration_in_seconde * current.total_games + match.duration) / n,

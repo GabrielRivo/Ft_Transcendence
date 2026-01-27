@@ -62,7 +62,6 @@ export class UserHistoryService {
 
 		this.statementMatchTransaction = this.db.transaction((match, p1, p2, isFinal) => {
 			this.statementAddMatchtoHistory.run(match);
-			console.log("p1 = ", p1, " p2 = ", p2, "match = ", match)
 			this.userStatsService.updateUserGlobalStats(p1.user_id, match);
 			this.userStatsService.updateUserGlobalStats(p2.user_id, match);
 			if (isFinal) {
