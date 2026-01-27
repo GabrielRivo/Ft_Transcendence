@@ -67,7 +67,7 @@ class Pong extends Game {
 
         this.startingTimeout = setTimeout(() => {
             console.log(`[Game] Game ${this.id} starting timeout reached. Disposing game...`);
-            this.endGame('timeout');
+            this.endGame('disconnection');
         }, 20000);
     }
 
