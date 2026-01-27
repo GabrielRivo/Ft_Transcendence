@@ -180,7 +180,7 @@ export function StatisticsGeneralPage() {
 				{/* Histogramme Elo */}
 				<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 p-4 lg:col-span-2">
 					<div className="mb-2">
-						<h3 className="font-pirulen text-sm tracking-wider text-cyan-400">Elo :</h3>
+						<h3 className="font-pirulen text-sm tracking-wider text-cyan-400">Elo :</h3>  
 					</div>
 					<EloHistogram userElo={stats.elo} allPlayersData={stats.allPlayersElo} />
 				</div>

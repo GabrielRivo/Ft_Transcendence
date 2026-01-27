@@ -36,7 +36,7 @@ export function useGroups() {
 			setLoading(true);
 			setError(null);
 
-			const response = await fetchWithAuth(`${API_BASE}/my-groups/${user.id}`);
+			const response = await fetchWithAuth(`${API_BASE}/my-groups`);
 
 			if (!response.ok) {
 				throw new Error('Failed to fetch groups');
