@@ -75,8 +75,8 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 
 			{/* Stats supplémentaires */}
 			<div className="flex justify-between text-gray-400">
-				<p>Durée {match.duration}s</p>
-				<p>Nombre de hit : {match.hits}</p>
+				<p>Duration {match.duration}s</p>
+				<p>hits number : {match.hits}</p>
 			</div>
 		</div>
 	);
@@ -175,7 +175,7 @@ export function StatisticsHistoricPageSlug() {
 	if (loading) {
 		return (
 			<div className="flex h-full w-full items-center justify-center">
-				<p className="font-pirulen text-cyan-400">Chargement de l'historique...</p>
+				<p className="font-pirulen text-cyan-400">Loading history...</p>
 			</div>
 		);
 	}
