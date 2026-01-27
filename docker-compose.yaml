@@ -7,6 +7,7 @@ services:
       - "8080:80"
     volumes:
       - ./nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+      - images-data:/app/images
     networks:
       - transcendence-network
     depends_on:
@@ -104,6 +105,7 @@ services:
       - ./packages/my-fastify-decorators-microservices:/app/packages/my-fastify-decorators-microservices
       - user-node-modules:/app/node_modules
       - user-data:/app/apps/user/db
+      - images-data:/app/apps/user/images
     networks:
       - transcendence-network
     depends_on:
@@ -367,3 +369,5 @@ volumes:
     name: transcendence-stats-data
   tournament-data:
     name: transcendence-tournament-data
+  images-data:
+    name: transcendence-images-data
