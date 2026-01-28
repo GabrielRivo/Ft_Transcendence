@@ -136,7 +136,7 @@ export function StatisticsGeneralPageSlug() {
 				const [userStatsRes, allElosRes, userInfoRes] = await Promise.all([
 					api.get<UserStats>(`/api/stats/user/${userId}`),
 					api.get<number[]>('/api/stats/all-elos'),
-					api.get<UserInfo>(`/api/auth/user-by-id/${userId}`),
+					api.get<UserInfo>(`/api/user/profile/${userId}`),
 				]);
 
 				if (userStatsRes.error || !userStatsRes.data) {
