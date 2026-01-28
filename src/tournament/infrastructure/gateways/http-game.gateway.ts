@@ -11,7 +11,7 @@ export class HttpGameGateway implements GameGateway {
 
     // @Resilient used via manual fetch implementation or wrapper if decorator unavailable directly
     // Assuming simple fetch for now as Resilient usage might require setup
-    public async createGame(matchId: string, player1Id: string, player2Id: string): Promise<string> {
+    public async createGame(matchId: string, player1Id: string, player2Id: string, tournamentId?: string, isFinal?: boolean): Promise<string> {
         const url = `${this.gameServiceUrl}/games`;
         console.log(`[HttpGameGateway] Creating game at ${url} for match ${matchId}`);
 
@@ -23,7 +23,9 @@ export class HttpGameGateway implements GameGateway {
                     gameId: matchId,
                     player1Id,
                     player2Id,
-                    type: 'tournament'
+                    type: 'tournament',
+                    tournamentId,
+                    isFinal
                 })
             });
 

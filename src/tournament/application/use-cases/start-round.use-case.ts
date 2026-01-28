@@ -34,8 +34,11 @@ export class StartRoundUseCase {
 
         for (const match of playableMatches) {
             try {
-                console.log(`[StartRoundUseCase] Requesting game creation for match ${match.id}`);
-                await this.gameGateway.createGame(match.id, match.playerA!.id, match.playerB!.id);
+                const totalRounds = Math.log2(tournament.size);
+                const isFinal = match.round === totalRounds;
+
+                console.log(`[StartRoundUseCase] Requesting game creation for match ${match.id} (isFinal: ${isFinal})`);
+                await this.gameGateway.createGame(match.id, match.playerA!.id, match.playerB!.id, tournamentId, isFinal);
 
                 // Notify frontend to redirect
                 this.socketPublisher.publish({
