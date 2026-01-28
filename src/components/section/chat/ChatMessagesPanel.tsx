@@ -1,4 +1,4 @@
-import { createElement, useState, useRef, useEffect, useMemo, Fragment } from 'my-react';
+import { createElement, useState, useRef, useEffect, useMemo, FragmentComponent } from 'my-react';
 import { ChatMessage } from '../../../hook/useChat';
 import { useAuth } from '../../../hook/useAuth';
 import { useFriends } from '../../../hook/useFriends';
@@ -100,7 +100,7 @@ export function ChatMessagesPanel({
 				<span>{getRoomTitle()}</span>
 				<div className="flex items-center gap-3">
 					{isGroup && (
-						<Fragment>
+						<FragmentComponent>
 							<button
 								onClick={() => setShowInviteModal(true)}
 								className="rounded p-1 text-purple-400 transition-colors hover:bg-purple-500/20 hover:text-white"
@@ -115,7 +115,7 @@ export function ChatMessagesPanel({
 							>
 								Quitter
 							</button>
-						</Fragment>
+						</FragmentComponent>
 					)}
 					<span className={`${connected ? 'animate-pulse text-green-500' : 'text-red-500'}`}>
 						● {connected ? 'LIVE' : 'OFFLINE'}
