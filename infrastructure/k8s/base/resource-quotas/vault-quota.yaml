@@ -1,0 +1,30 @@
+# ------------------------------------------------------------------------------
+# Kubernetes ResourceQuota: Vault
+# ------------------------------------------------------------------------------
+# Defines limits for the 'vault' namespace.
+#
+# Purpose:
+# - HashiCorp Vault is relatively lightweight but critical.
+# - Stability (requests) is more important than high bursting capability.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: vault-quota
+  namespace: vault
+spec:
+  hard:
+    # CPU: Cryptographic operations.
+    requests.cpu: "1"
+    limits.cpu: "2"
+
+    # Memory: Caching and internal storage.
+    requests.memory: 1Gi
+    limits.memory: 2Gi
+
+    # Storage: Vault backend data (if using raft/file storage)
+    persistentvolumeclaims: "5"
+
+    # Pods: Vault replicas + potential injector
+    pods: "10"

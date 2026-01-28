@@ -1,0 +1,31 @@
+# ------------------------------------------------------------------------------
+# Kubernetes LimitRange: Test Environment
+# ------------------------------------------------------------------------------
+# Defines default resource requests and limits for containers in the 'test' namespace.
+#
+# Purpose:
+# - Provides slightly higher default resources than development to support
+#   integration tests that might mimic production loads.
+# - Enforces bounds to keep the test environment stable and predictable.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: test-limits
+  namespace: test
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "800m"
+        memory: "1Gi"
+      defaultRequest:
+        cpu: "200m"
+        memory: "256Mi"
+      max:
+        cpu: "2"
+        memory: "2Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"

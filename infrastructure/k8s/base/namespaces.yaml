@@ -1,0 +1,165 @@
+# ------------------------------------------------------------------------------
+# Kubernetes Namespaces Definition for ft_transcendence
+# ------------------------------------------------------------------------------
+# This file defines the 7 base namespaces required for the project structure.
+# It includes standard Kubernetes labels and Pod Security Standards enforcement.
+# ------------------------------------------------------------------------------
+
+# --- Application Environments ---
+
+# 1. Development Namespace
+# Used for local development and feature testing.
+# Security: Baseline (allows standard container capabilities).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/managed-by: kustomize
+    environment: dev
+    # Pod Security Standards
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    description: "Development environment for local testing and features"
+
+---
+# 2. Test Namespace
+# Used for integration testing and QA.
+# Security: Baseline.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: test
+  labels:
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/managed-by: kustomize
+    environment: test
+    # Pod Security Standards
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    description: "Integration testing and QA environment"
+
+---
+# 3. Production Namespace
+# Used for live user traffic.
+# Security: Restricted (highest security level, requires hardening).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: production
+  labels:
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/managed-by: kustomize
+    environment: production
+    # Pod Security Standards
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    description: "Production environment for live applications"
+
+---
+# --- Infrastructure Namespaces ---
+
+# 4. Vault Namespace
+# Hosts HashiCorp Vault for secret management.
+# Security: Baseline (Vault may need specific capabilities).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vault
+  labels:
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/managed-by: kustomize
+    environment: infra
+    # Pod Security Standards
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    description: "HashiCorp Vault for secrets management"
+
+---
+# 5. Logging Namespace
+# Hosts the ELK Stack (Elasticsearch, Logstash, Kibana).
+# Security: Baseline (ES often requires sysctl or fsgroup modifications).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: logging
+  labels:
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/managed-by: kustomize
+    environment: infra
+    # Pod Security Standards
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    description: "Logging stack (ELK) for centralized logs"
+
+---
+# 6. Monitoring Namespace
+# Hosts Prometheus and Grafana.
+#
+# Security: Privileged enforcement required for Node Exporter.
+#
+# RATIONALE:
+#   Prometheus node-exporter is a DaemonSet that REQUIRES privileged access:
+#   - hostNetwork: true (for network interface metrics)
+#   - hostPID: true (for process metrics like CPU usage per process)
+#   - hostPath volumes: /proc, /sys, / (for filesystem and system metrics)
+#   - hostPort: 9100 (for exposing metrics on the node)
+#
+#   These capabilities are FUNDAMENTAL to node-exporter's core functionality.
+#   Without them, we cannot collect host-level metrics (CPU, memory, disk, I/O).
+#
+#   The "baseline" PodSecurity profile prohibits hostNetwork/hostPID/hostPath.
+#   The "restricted" profile is even more strict.
+#
+#   Therefore, we MUST use:
+#   - enforce: privileged (allows node-exporter to run with required host access)
+#   - warn: baseline (warns if other pods violate baseline unnecessarily)
+#
+#   SECURITY NOTE: Only the monitoring namespace uses privileged enforcement.
+#   This is an intentional exception for infrastructure observability.
+#   All other namespaces use baseline or restricted enforcement.
+#
+# See: https://kubernetes.io/docs/concepts/security/pod-security-standards/
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/managed-by: kustomize
+    environment: infra
+    # Pod Security Standards
+    # enforce=privileged allows node-exporter DaemonSet to run
+    # warn=privileged suppresses warnings for expected privileged workloads
+    # audit=baseline logs violations for security review without blocking
+    pod-security.kubernetes.io/enforce: privileged
+    pod-security.kubernetes.io/warn: privileged
+    pod-security.kubernetes.io/audit: baseline
+  annotations:
+    description: "Monitoring stack (Prometheus, Grafana)"
+
+---
+# 7. Ingress Namespace
+# Hosts the Ingress Controller (nginx).
+# Security: Privileged (or Baseline depending on config) - defaulting to Baseline with warnings,
+# but Ingress Controllers often need specific permissions handled by their Helm chart.
+# We set Baseline here as a safe default for the namespace policy.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/part-of: ft-transcendence
+    app.kubernetes.io/managed-by: kustomize
+    environment: infra
+    # Pod Security Standards
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+  annotations:
+    description: "Ingress Controller for external access management"

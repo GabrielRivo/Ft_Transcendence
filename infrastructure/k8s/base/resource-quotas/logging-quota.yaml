@@ -1,0 +1,31 @@
+# ------------------------------------------------------------------------------
+# Kubernetes ResourceQuota: Logging (ELK Stack)
+# ------------------------------------------------------------------------------
+# Defines limits for the 'logging' namespace hosting Elasticsearch, Logstash, Kibana.
+#
+# Purpose:
+# - The ELK stack is resource-intensive, especially memory (Java Heap).
+# - We must cap it to prevent it from OOM-killing application pods.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: logging-quota
+  namespace: logging
+spec:
+  hard:
+    # CPU: Indexing logs is CPU intensive.
+    requests.cpu: "4"
+    limits.cpu: "8"
+
+    # Memory: Elasticsearch needs significant RAM.
+    # 12Gi reserved to ensure stability.
+    requests.memory: 12Gi
+    limits.memory: 16Gi
+
+    # Storage: Few PVCs needed (Elasticsearch data nodes)
+    persistentvolumeclaims: "5"
+
+    # Pods: ES Nodes + Kibana + Logstash + Filebeat daemonsets
+    pods: "20"

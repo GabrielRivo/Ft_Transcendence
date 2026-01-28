@@ -1,0 +1,36 @@
+# ------------------------------------------------------------------------------
+# Kubernetes LimitRange: Development Environment
+# ------------------------------------------------------------------------------
+# Defines default resource requests and limits for containers in the 'dev' namespace.
+#
+# Purpose:
+# - Ensures that any Pod created without explicit resource requirements gets
+#   assigned reasonable default values.
+# - Prevents the creation of "resource-hogging" Pods by enforcing maximum limits.
+# - Sets minimum requirements to avoid scheduling non-viable containers.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dev-limits
+  namespace: dev
+spec:
+  limits:
+    - type: Container
+      # Default limits applied if not specified by the user
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      # Default requests applied if not specified by the user
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      # Maximum resources a single container can request
+      max:
+        cpu: "1"
+        memory: "1Gi"
+      # Minimum resources required for a container
+      min:
+        cpu: "10m"
+        memory: "32Mi"

@@ -1,0 +1,34 @@
+# ------------------------------------------------------------------------------
+# Kubernetes ResourceQuota: Development Environment
+# ------------------------------------------------------------------------------
+# Defines the aggregate resource limits for the 'dev' namespace.
+#
+# Purpose:
+# - Prevents the development environment from consuming all cluster resources.
+# - Forces developers to define requests/limits for their pods.
+# - Allows enough resources for multiple microservices in debug mode.
+# ------------------------------------------------------------------------------
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-quota
+  namespace: dev
+spec:
+  hard:
+    # CPU: 2 Cores total for all pods in this namespace
+    requests.cpu: "2"
+    limits.cpu: "4"
+
+    # Memory: 2Gi guaranteed, bursting up to 4Gi
+    requests.memory: 2Gi
+    limits.memory: 4Gi
+
+    # Storage: Limit the total number of PVCs to control disk usage
+    persistentvolumeclaims: "5"
+
+    # Pods: Limit total pod count to prevent scheduling spam
+    pods: "20"
+
+    # Services: Limit load balancers if applicable (though we use Ingress mostly)
+    services.loadbalancers: "2"
