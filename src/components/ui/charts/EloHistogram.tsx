@@ -170,7 +170,7 @@ const EloHistogram = ({ userElo, allPlayersData }: EloHistogramProps) => {
                 fontWeight: 'bold',
                 padding: { left: 8, right: 8, top: 4, bottom: 4 }
               },
-              text: `TOI (${userElo})`,
+              text: `YOU (${userElo})`,
               orientation: 'horizontal',
               offsetY: -25,
             }
