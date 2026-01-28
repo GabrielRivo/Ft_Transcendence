@@ -83,14 +83,32 @@ export function GameProvider({ children }: GameProviderProps) {
 					console.log('[GameProvider] gameType is ranked, navigating to /play');
 					navigate('/play');
 				} else if (gameType === 'tournament' && eventTournamentId) {
-					// For tournaments, we navigate back to the tournament page
-					// Note: We need tournamentType and playersCount from somewhere - using defaults for now
-					// TODO: Consider adding these to the gameJoined event as well
-					console.log('[GameProvider] gameType is tournament, navigating to tournament page');
-					// Navigate to a generic tournament completion page or back to play
-					// For now, just go back to /play since we don't have full tournament info
-					navigate('/play');
-				} else {
+					console.log('[GameProvider] gameType is tournament, fetching tournament details...');
+					// Fetch tournament details from API to get tournamentType and playersCount
+					fetch(`/api/tournament/${eventTournamentId}`, {
+						method: 'GET',
+						credentials: 'include',
+						headers: { 'Content-Type': 'application/json' },
+					})
+						.then(res => res.ok ? res.json() : null)
+						.then(tournament => {
+							if (tournament && tournament.visibility && tournament.size) {
+								const tournamentType = tournament.visibility.toLowerCase();
+								const playersCount = tournament.size;
+								const targetUrl = `/play/tournament/${tournamentType}/${playersCount}?id=${eventTournamentId}`;
+								console.log('[GameProvider] Navigating to tournament page:', targetUrl);
+								navigate(targetUrl);
+							} else {
+								console.warn('[GameProvider] Could not fetch tournament details, falling back to /play');
+								navigate('/play');
+							}
+						})
+						.catch(err => {
+							console.error('[GameProvider] Error fetching tournament:', err);
+							navigate('/play');
+						});
+				}
+				else {
 					console.log('[GameProvider] Unknown gameType:', gameType, '- defaulting to /play');
 					// Default fallback - navigate to /play for any game type
 					navigate('/play');
