@@ -147,7 +147,7 @@ export class UserHistoryService {
 			win: winner_id === player1_id,
 			loss: winner_id !== player1_id,
 			elo_gain: gain_player1 ?? 0,
-			duration: duration_seconds,
+			duration: duration_seconds / 60,
 			wonTournament: is_final && winner_id === player1_id,
 		};
 		const p2Stats = {
@@ -156,7 +156,7 @@ export class UserHistoryService {
 			win: winner_id === player2_id,
 			loss: winner_id !== player2_id,
 			elo_gain: gain_player2 ?? 0,
-			duration: duration_seconds,
+			duration: duration_seconds / 60,
 			wonTournament: is_final && winner_id === player2_id,
 		};
 
@@ -169,7 +169,7 @@ export class UserHistoryService {
 			hit_player1,
 			hit_player2,
 			winner_id,
-			duration_seconds,
+			duration_seconds: duration_seconds /60,
 			game_type,
 			gain_player1,
 			gain_player2,

@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Param } from 'my-fastify-decorators';
+import { Controller, Get, Inject, NotFoundException, Param } from 'my-fastify-decorators';
 import { EventPattern, Payload } from 'my-fastify-decorators-microservices';
 import { type GameFinishedEvent } from './game-finished.event.js';
 import { UserHistoryService } from './user-history.service.js';
@@ -57,6 +57,8 @@ export class UserHistoryController {
 
 	@Get('/user/:userId')
 	getHistory(@Param('userId') userId: number) {
+		if (this.userStatsService.isUser(userId) == false || userId == -1)
+			throw new NotFoundException(`User "${userId}" not found`);
 		return this.userHistoryService.get_user_matches(userId);
 	}
 }
