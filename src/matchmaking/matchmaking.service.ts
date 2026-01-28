@@ -577,8 +577,8 @@ export class MatchmakingService implements OnModuleInit, OnModuleDestroy {
 		// 4. Notification des clients (Sauté si pas de server, comme dans le benchmark)
 		if (this.server) {
 			const payload = { matchId, expiresAt };
-			this.server.to(p1.socketId).emit('match_proposal', { ...payload, opponentElo: p2.elo });
-			this.server.to(p2.socketId).emit('match_proposal', { ...payload, opponentElo: p1.elo });
+			this.server.to(p1.socketId).emit('match_proposal', { ...payload, playerElo: p1.elo, opponentElo: p2.elo });
+			this.server.to(p2.socketId).emit('match_proposal', { ...payload, playerElo: p2.elo, opponentElo: p1.elo });
 		}
 
 		this.emitQueueStats();
