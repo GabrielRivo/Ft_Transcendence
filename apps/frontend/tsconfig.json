@@ -1,0 +1,40 @@
+{
+	"compilerOptions": {
+		"rootDir": ".",
+		"outDir": "./dist",
+		"baseUrl": ".",
+		"jsx": "react",
+		"jsxFactory": "createElement",
+		"jsxFragmentFactory": "FragmentComponent",
+		"target": "ES2022",
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"declaration": true,
+		"declarationMap": true,
+		"sourceMap": true,
+		"forceConsistentCasingInFileNames": true,
+		"typeRoots": ["./src/types"],
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"paths": {
+			"@/*": ["./src/*"],
+			"@components/*": ["./src/components/*"],
+			"@context/*": ["./src/context/*"],
+			"@dto/*": ["./src/dto/*"],
+			"@hook/*": ["./src/hook/*"],
+			"@layout/*": ["./src/layout/*"],
+			"@libs/*": ["./src/libs/*"],
+			"@pages/*": ["./src/pages/*"],
+			"@form/*": ["./src/components/form/*"],
+			"@guards/*": ["./src/components/guards/*"],
+			"@section/*": ["./src/components/section/*"],
+			"@ui/*": ["./src/components/ui/*"],
+			"@icon/*": ["./src/components/ui/icon/*"]
+		}
+	},
+	"include": ["src/**/*"],
+	"exclude": ["dist", "node_modules"]
+}

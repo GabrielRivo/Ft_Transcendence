@@ -1,0 +1,468 @@
+@import 'tailwindcss';
+
+@font-face {
+	font-family: 'IBM Plex Mono';
+	src: url('/font/IBM_Plex_Mono/IBMPlexMono-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'IBM Plex Mono';
+	src: url('/font/IBM_Plex_Mono/IBMPlexMono-Bold.ttf') format('truetype');
+	font-weight: 700;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Pirulen';
+	src: url('/font/pirulen/pirulen rg.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Orbitron';
+	src: url('/font/orbitron/Orbitron-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Orbitron';
+	src: url('/font/orbitron/Orbitron-Bold.ttf') format('truetype');
+	font-weight: 700;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Orbitron';
+	src: url('/font/orbitron/Orbitron-Medium.ttf') format('truetype');
+	font-weight: 500;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'RubikPixels';
+	src: url('/font/rubikpixels/RubikPixels-Regular.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Aquire';
+	src: url('/font/aquire/Aquire.ttf') format('truetype');
+	font-weight: 400;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Aquire';
+	src: url('/font/aquire/Aquire-Bold.ttf') format('truetype');
+	font-weight: 700;
+	font-style: normal;
+}
+
+@font-face {
+	font-family: 'Aquire';
+	src: url('/font/aquire/Aquire-Light.ttf') format('truetype');
+	font-weight: 300;
+	font-style: normal;
+}
+
+@theme {
+	/* --color-primary: #343b65; */
+	--color-primary: #000000;
+	--color-primary-transparent: #343b65a1;
+	/* --color-primary-dark: #252132; */
+	--color-primary-dark: #000000;
+	/* --color-secondary: #ffffff; */
+	--color-secondary: #ffffff;
+
+	--color-neon-blue: #2cc1c1;
+	--color-neon-pink: #ff00ff;
+
+	--font-display: 'Oswald', sans-serif;
+	--font-mono: 'IBM Plex Mono', monospace;
+	--font-pirulen: 'Pirulen', sans-serif;
+	--font-aquire: 'Aquire', sans-serif;
+	--font-orbitron: 'Orbitron', sans-serif;
+	--font-rubikpixels: 'RubikPixels', sans-serif;
+
+	--animate-float: float 3s ease-in-out infinite;
+	--animate-toast-slide-up: toastSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	--animate-modal-enter: modalEnter 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	--animate-backdrop-fade-in: backdropFadeIn 0.2s ease-out forwards;
+	--animate-toast-progress: toastProgress 3s linear forwards;
+	--animate-context-menu-enter: contextMenuEnter 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	/* Background Image background.png */
+
+	/* --background-image: url('./backgroundv2.svg') no-repeat center center fixed; */
+
+	/* Shadow - Utiliser avec shadow-{color} SANS opacité (ex: shadow-orange-500, pas shadow-orange-500/40) */
+
+	--shadow-neon-xs: 0 0 15px color-mix(in srgb, var(--tw-shadow-color) 40%, transparent);
+	--shadow-neon-sm: 0 0 20px color-mix(in srgb, var(--tw-shadow-color) 30%, transparent);
+	--shadow-neon: 0 0 30px color-mix(in srgb, var(--tw-shadow-color) 40%, transparent);
+	--shadow-neon-lg: 0 0 40px color-mix(in srgb, var(--tw-shadow-color) 30%, transparent);
+	--shadow-neon-xl: 0 0 60px color-mix(in srgb, var(--tw-shadow-color) 50%, transparent);
+
+	--shadow-neon-inner: inset 0 0 20px color-mix(in srgb, var(--tw-shadow-color) 10%, transparent);
+	--shadow-neon-inner-lg: inset 0 0 30px color-mix(in srgb, var(--tw-shadow-color) 20%, transparent);
+
+	--shadow-neon-complex-sm:
+		0 0 20px color-mix(in srgb, var(--tw-shadow-color) 20%, transparent),
+		inset 0 0 30px color-mix(in srgb, var(--tw-shadow-color) 20%, transparent);
+	--shadow-neon-complex-sm-low:
+		0 0 20px color-mix(in srgb, var(--tw-shadow-color) 15%, transparent),
+		inset 0 0 20px color-mix(in srgb, var(--tw-shadow-color) 5%, transparent);
+
+	--shadow-neon-complex:
+		0 0 40px color-mix(in srgb, var(--tw-shadow-color) 30%, transparent),
+		inset 0 0 60px color-mix(in srgb, var(--tw-shadow-color) 5%, transparent);
+
+	--shadow-neon-intense:
+		0 0 60px color-mix(in srgb, var(--tw-shadow-color) 50%, transparent),
+		inset 0 0 80px color-mix(in srgb, var(--tw-shadow-color) 10%, transparent);
+
+	/* 0_0_30px_rgba(249,115,22,0.4) 										shadow-neon
+
+0_0_30px_rgba(34,197,94,0.4) 												shadow-neon
+
+0_0_20px_rgba(249,115,22,0.15),inset_0_0_20px_rgba(249,115,22,0.05)			shadow-neon-complex-sm-low shadow-orange-500
+
+
+inset_0_0_20px_rgba(6,182,212,0.1) 											shadow-neon-inner
+0_0_20px_rgba(6,182,212,0.15),inset_0_0_20px_rgba(6,182,212,0.05)			shadow-neon-complex-sm-low
+0_0_30px_rgba(6,182,212,0.2) 												shadow-neon
+inset_0_0_30px_rgba(6,182,212,0.2),0_0_20px_rgba(6,182,212,0.2)				shadow-neon-complex-sm
+0_0_20px_rgba(6,182,212,0.3) 												shadow-neon-sm
+0_0_40px_rgba(6,182,212,0.3),inset_0_0_60px_rgba(6,182,212,0.05)			shadow-neon-complex
+0_0_30px_rgba(6,182,212,0.4) 												shadow-neon
+0_0_60px_rgba(6,182,212,0.5),inset_0_0_80px_rgba(6,182,212,0.1)				shadow-neon-intense
+
+0_0_20px_rgba(168,85,247,0.15),inset_0_0_20px_rgba(168,85,247,0.05)			shadow-neon-complex-sm-low
+0_0_30px_rgba(168,85,247,0.2) 												shadow-neon
+0_0_20px_rgba(168,85,247,0.3) 												shadow-neon-sm
+0_0_40px_rgba(168,85,247,0.3),inset_0_0_60px_rgba(168,85,247,0.05)			shadow-neon-complex
+0_0_15px_rgba(168,85,247,0.4) 												shadow-neon-xs
+0_0_30px_rgba(168,85,247,0.4) 												shadow-neon
+0_0_60px_rgba(168,85,247,0.5),inset_0_0_80px_rgba(168,85,247,0.1)			shadow-neon-intense  */
+
+	@keyframes float {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-10px);
+		}
+	}
+
+	@keyframes toastSlideUp {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes modalEnter {
+		from {
+			opacity: 0;
+			transform: scale(0.9) translateY(20px);
+			filter: blur(4px);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1) translateY(0);
+			filter: blur(0);
+		}
+	}
+	@keyframes backdropFadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes toastProgress {
+		from {
+			width: 100%;
+		}
+		to {
+			width: 0%;
+		}
+	}
+
+	@keyframes contextMenuEnter {
+		from {
+			opacity: 0;
+			transform: scale(0.9);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1);
+		}
+	}
+
+	@keyframes shimmer {
+		0% {
+			transform: translateX(-100%);
+		}
+		100% {
+			transform: translateX(100%);
+		}
+	}
+
+	--animate-shimmer: shimmer 2s infinite;
+}
+
+@utility bg-radial-primary {
+	background: radial-gradient(circle, var(--color-primary) 0%, var(--color-primary-dark) 142%);
+}
+
+@utility bg-background-image {
+	background: var(--background-image);
+	background-size: cover;
+}
+
+@utility shadow-neon-cyan {
+	box-shadow: 0 0 30px rgba(6, 182, 212, 0.5);
+}
+@utility shadow-neon-cyan-low {
+	box-shadow:
+		0 0 25px rgba(6, 182, 212, 0.25),
+		inset 0 0 30px rgba(6, 182, 212, 0.08);
+}
+
+@utility shadow-neon-red {
+	box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+}
+@utility shadow-neon-red-low {
+	box-shadow:
+		0 0 25px rgba(239, 68, 68, 0.25),
+		inset 0 0 30px rgba(239, 68, 68, 0.08);
+}
+
+
+@utility shadow-neon-purple {
+	box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}
+@utility shadow-neon-purple-low {
+	box-shadow:
+		0 0 25px rgba(168, 85, 247, 0.25),
+		inset 0 0 30px rgba(168, 85, 247, 0.08);
+}
+
+@utility shadow-neon-orange {
+	box-shadow: 0 0 30px rgba(249, 115, 22, 0.5);
+}
+@utility shadow-neon-orange-low {
+	box-shadow:
+		0 0 25px rgba(249, 115, 22, 0.25),
+		inset 0 0 30px rgba(249, 115, 22, 0.08);
+}
+
+
+@utility shadow-neon-red {
+	box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+}
+
+@utility shadow-neon-red-low {
+	box-shadow:
+		0 0 25px rgba(239, 68, 68, 0.25),
+		inset 0 0 30px rgba(239, 68, 68, 0.08);
+}
+
+
+
+@utility shadow-neon-green {
+	box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+}
+@utility shadow-neon-green-low {
+	box-shadow:
+		0 0 25px rgba(34, 197, 94, 0.25),
+		inset 0 0 30px rgba(34, 197, 94, 0.08);
+}
+
+@utility grid-area-button {
+	grid-area: button;
+}
+
+@layer components {
+	.scrollbar-neon {
+		scrollbar-width: thin;
+		scrollbar-color: rgba(6, 182, 212, 0.6) rgba(15, 23, 42, 0.5);
+	}
+	
+	.scrollbar-neon::-webkit-scrollbar {
+		width: 10px;
+	}
+	
+	.scrollbar-neon::-webkit-scrollbar-track {
+		background: rgba(15, 23, 42, 0.5);
+		border-radius: 5px;
+	}
+	
+	.scrollbar-neon::-webkit-scrollbar-thumb {
+		background: linear-gradient(180deg, rgba(6, 182, 212, 0.7) 0%, rgba(168, 85, 247, 0.7) 100%);
+		border-radius: 5px;
+		border: 2px solid transparent;
+		background-clip: padding-box;
+	}
+	
+	.scrollbar-neon::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(180deg, rgba(6, 182, 212, 1) 0%, rgba(168, 85, 247, 1) 100%);
+		box-shadow: 0 0 15px rgba(6, 182, 212, 0.6), 0 0 25px rgba(168, 85, 247, 0.4);
+	}
+
+	.chamfer {
+		--cut: 20px;
+
+		clip-path: polygon(
+			var(--cut) 0,
+			100% 0,
+			100% var(--cut),
+			100% calc(100% - var(--cut)),
+			calc(100% - var(--cut)) 100%,
+			var(--cut) 100%,
+			0 calc(100% - var(--cut)),
+			0 var(--cut)
+		);
+
+		transform: translateZ(0);
+		-webkit-font-smoothing: antialiased;
+		background-clip: padding-box;
+		perspective: 1000px;
+	}
+
+	/* Chamfer uniquement en bas à droite */
+	.chamfer-br {
+		--cut: 12px;
+		clip-path: polygon(0 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%);
+	}
+
+	.chamfer-full {
+		--cut: 20px;
+		clip-path: polygon(
+			var(--cut) 0,
+			calc(100% - var(--cut)) 0,
+			100% var(--cut),
+			100% calc(100% - var(--cut)),
+			calc(100% - var(--cut)) 100%,
+			var(--cut) 100%,
+			0 calc(100% - var(--cut)),
+			0 var(--cut)
+		);
+		transform: translateZ(0);
+		-webkit-font-smoothing: antialiased;
+		background-clip: padding-box;
+		perspective: 1000px;
+	}
+}
+
+*,
+:after,
+:before {
+	box-sizing: border-box;
+}
+
+body,
+html {
+	overflow: hidden;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: var(--font-mono);
+}
+
+#root {
+	width: 100%;
+	height: 100%;
+}
+
+/* Styles de scrollbar personnalisés */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: rgba(15, 23, 42, 0.5);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: linear-gradient(180deg, rgba(6, 182, 212, 0.6) 0%, rgba(168, 85, 247, 0.6) 100%);
+	border-radius: 4px;
+	transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(180deg, rgba(6, 182, 212, 0.9) 0%, rgba(168, 85, 247, 0.9) 100%);
+	box-shadow: 0 0 10px rgba(6, 182, 212, 0.5), 0 0 20px rgba(168, 85, 247, 0.3);
+}
+
+/* Firefox */
+html {
+	scrollbar-width: thin;
+	scrollbar-color: rgba(6, 182, 212, 0.6) rgba(15, 23, 42, 0.5);
+}
+
+@keyframes ffDashboardPanelEnter {
+	from {
+		opacity: 0;
+		transform: translate3d(90px, 0, 0);
+		filter: blur(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+		filter: blur(0);
+	}
+}
+
+.ff-dashboard-panel-enter {
+	opacity: 0;
+	transform: translate3d(90px, 0, 0);
+	animation: ffDashboardPanelEnter 650ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	will-change: transform, opacity, filter;
+}
+
+.ff-dashboard-panel-enter--delay-0 {
+	animation-delay: 0ms;
+}
+
+.ff-dashboard-panel-enter--delay-1 {
+	animation-delay: 150ms;
+}
+
+.ff-dashboard-panel-enter--delay-2 {
+	animation-delay: 300ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.ff-dashboard-panel-enter {
+		animation: none !important;
+		opacity: 1 !important;
+		transform: none !important;
+		filter: none !important;
+	}
+}
+
+@supports (-moz-appearance: none) {
+	.ff-dashboard-chat-safe {
+		transform: none !important;
+		transform-style: flat !important;
+	}
+
+	.ff-dashboard-perspective {
+		perspective: none !important;
+	}
+}
