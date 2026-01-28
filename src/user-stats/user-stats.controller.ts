@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Inject, JWTBody, Param } from 'my-fastify-decorators';
+import { Controller, Get, Inject, NotFoundException, Param } from 'my-fastify-decorators';
 
 
 export interface UserStatsValues {
@@ -22,8 +22,9 @@ export class UserStatsController {
 	private statsService!: UserStatsService;
 
 	@Get('/user/:userId')
-	async get_stats(@Param('userId') userId: string) {
-		return await this.statsService.getGlobalStats(Number(userId));
+	async get_stats(@Param('userId') userId: number) {
+		if (userId < 0) throw new NotFoundException(`User "${userId}" not found`);
+		return await this.statsService.getGlobalStats(userId);
 	}
 
 	@Get('/all-elos')
@@ -32,13 +33,15 @@ export class UserStatsController {
 	}
 
 	@Get('/elo/:userId')
-	async get_elo(@Param('userId') userId: string) {
-		return await this.statsService.getGlobalStats(Number(userId));
+	async get_elo(@Param('userId') userId: number) {
+		if (userId < 0) throw new NotFoundException(`User "${userId}" not found`);
+		return await this.statsService.getUserElo(userId);
 	}
 
 	@Get('/user/small/:userId')
-	async get_small_stats(@Param('userId') userId: string) {
-			return await this.statsService.getGlobalStats(Number(userId));
+	async get_small_stats(@Param('userId') userId: number) {
+			if (userId < 0) throw new NotFoundException(`User "${userId}" not found`);
+			return await this.statsService.getGlobalStats(userId);
 	}
 
 }

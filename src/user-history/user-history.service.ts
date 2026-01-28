@@ -60,7 +60,7 @@ export class UserHistoryService {
 		this.statementGetRankedNumber = this.db.prepare(countRanked);
 
 
-		this.statementMatchTransaction = this.db.transaction((match, p1, p2, isFinal) => {
+		this.statementMatchTransaction = this.db.transaction((match, p1, p2) => {
 			this.statementAddMatchtoHistory.run(match);
 			this.userStatsService.updateUserGlobalStats(p1.user_id, match);
 			this.userStatsService.updateUserGlobalStats(p2.user_id, match);

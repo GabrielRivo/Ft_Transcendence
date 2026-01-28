@@ -15,6 +15,17 @@ CREATE TABLE IF NOT EXISTS user_stats (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+INSERT OR IGNORE INTO user_stats (
+    user_id, 
+    username, 
+    elo
+)
+VALUES (
+    -1,
+    'Guest',
+    0
+);
+
 CREATE TABLE IF NOT EXISTS game_history (
     game_id TEXT NOT NULL,
     player1_id INTEGER NOT NULL,

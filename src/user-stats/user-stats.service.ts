@@ -24,14 +24,14 @@ export class UserStatsService {
 	private statementGetAllElos!: Statement<[]>;
 	private statementRegisterUser!: Statement;
 	private statementChangeUsername!: Statement;
-	private statementGetUserElo!: Statement<number>;
+	private statementGetUserElo!: Statement<{user_id : number}>;
 
 
 	onModuleInit() {
 		this.statementGetStats = this.db.prepare(
 			`SELECT * FROM user_stats WHERE user_id = ?`);
 
-		this.statementGetAllElos = this.db.prepare('SELECT elo FROM user_stats');
+		this.statementGetAllElos = this.db.prepare('SELECT elo FROM user_stats WHERE user_id >= 0');
 
 		this.statementUserStats = this.db.prepare(
 		`INSERT INTO user_stats (user_id, elo, total_games, wins, losses, winrate, tournament_played,
@@ -60,11 +60,6 @@ export class UserStatsService {
 				console.error("Database error", error);
 			throw new InternalServerErrorException("Internal Database Error");
 		}
-	}
-
-	getAllElos(): number[] {
-		const rows = this.statementGetAllElos.all() as { elo: number }[];
-		return rows.map((r) => r.elo);
 	}
 	
 	get_win_rate(wins: number, losses: number, n: number)
@@ -164,8 +159,30 @@ export class UserStatsService {
 		return this.statementUserStats.run(nextStats);
 		
 	}
-	getUserElo(userId: number) {
-		return this.statementGetUserElo.get(userId);
+	async getUserElo(userId: number) {
+		try {
+			const result =  this.statementGetUserElo.get({
+				user_id : userId
+			});
+			if (!result || result == undefined) {
+				throw new NotFoundException('User Id not Found');
+			}
+			return result;
+		}catch(e){
+			throw new NotFoundException('User Id not Found');
+		}
+	}
+
+	getAllElos(): number[] {
+		try {
+			const rows = this.statementGetAllElos.all() as { elo: number }[];
+			if (!rows || rows == undefined) {
+				throw new NotFoundException("Can't get the row");
+			}
+			return rows.map((r) => r.elo);
+		}catch(e){
+			throw new NotFoundException('No user!');
+		}
 	}
 	
 }
