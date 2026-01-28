@@ -164,7 +164,7 @@ export function ChatMessagesPanel({
 											{` >_`}
 										</span>
 									</div>
-									<div className="break-words">
+									<div className="wrap-break-word">
 										{isBlockedUser && !isRevealed ? (
 											<div
 												onClick={handleRevealMessage}

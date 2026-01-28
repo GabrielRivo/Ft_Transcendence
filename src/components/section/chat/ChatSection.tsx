@@ -36,16 +36,16 @@ export function ChatSection() {
 				body: JSON.stringify({}),
 			});
 			if (response.ok && response.data) {
-				console.log('Joined tournament successfully', response.data);
+				// console.log('Joined tournament successfully', response.data);
 				const tournament = response.data as any;
 				const type = tournament.visibility.toLowerCase();
 				const size = tournament.size;
 				navigate(`/play/tournament/${type}/${size}?id=${tournament.id}`);
 			} else {
-				console.error('Failed to join tournament:', response.error);
+				// console.error('Failed to join tournament:', response.error);
 			}
 		} catch (error) {
-			console.error('Error joining tournament:', error);
+			// console.error('Error joining tournament:', error);
 		}
 	};
 
@@ -77,14 +77,14 @@ export function ChatSection() {
 						if (!currentRoom.startsWith('group_')) return;
 						const groupId = parseInt(currentRoom.replace('group_', ''), 10);
 						const result = await addMember(groupId, userId);
-						toast(result.message || (result.success ? 'Invitation envoyée' : 'Erreur'), 
+						toast(result.message || (result.success ? 'Invitation sent' : 'Error'), 
 							result.success ? 'success' : 'error', 3000);
 					}}
 					onLeaveGroup={async () => {
 						if (!currentRoom.startsWith('group_')) return;
 						const groupId = parseInt(currentRoom.replace('group_', ''), 10);
 						const result = await leaveGroup(groupId);
-						toast(result.message || (result.success ? 'Vous avez quitté le groupe' : 'Erreur'), 
+						toast(result.message || (result.success ? 'You have left the group' : 'Error'), 
 							result.success ? 'success' : 'error', 3000);
 						if (result.success) {
 							joinRoom('hub');
