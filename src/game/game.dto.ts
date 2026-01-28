@@ -62,6 +62,12 @@ export class CreateGameDto {
 	@IsRequired({ message: 'type is required' })
 	@IsEnum(['local', 'tournament', 'ranked', 'friend'], { message: 'Invalid game type' })
 	type!: GameType;
+
+	@IsString({ message: 'tournamentId must be a string' })
+	tournamentId?: string;
+
+	// Note: Boolean validation might require specific decorator or handling if not strictly typed in JSON
+	isFinal?: boolean;
 }
 
 export type GameType = 'tournament' | 'ranked' | 'friend';

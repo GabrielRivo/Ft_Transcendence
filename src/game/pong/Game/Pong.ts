@@ -47,8 +47,10 @@ class Pong extends Game {
     private disconnectForgivingP2: number = 0;
 
     private startingTimeout: NodeJS.Timeout | null = null;
+    private tournamentId?: string | undefined;
+    private isFinal: boolean = false;
 
-    constructor(id: string, p1Id: string, p2Id: string, gameType: GameType, gameService: GameService) {
+    constructor(id: string, p1Id: string, p2Id: string, gameType: GameType, gameService: GameService, tournamentId?: string, isFinal?: boolean) {
         super();
         this.id = id;
         this.p1Socket = null;
@@ -61,6 +63,8 @@ class Pong extends Game {
 
         this.gameService = gameService;
         this.gameState = "waiting";
+        this.tournamentId = tournamentId;
+        this.isFinal = isFinal || false;
 
         this.services = new Services();
 
@@ -137,7 +141,15 @@ class Pong extends Game {
         else
             this.p2Ready = true;
 
-        client.emit("gameJoined", { gameId: this.id, player1Score: this.player1!.score, player2Score: this.player2!.score, message: `Joined game ${this.id} successfully!`, player: playerNbr });
+        client.emit("gameJoined", {
+            gameId: this.id,
+            player1Score: this.player1!.score,
+            player2Score: this.player2!.score,
+            message: `Joined game ${this.id} successfully!`,
+            player: playerNbr,
+            tournamentId: this.tournamentId,
+            isFinal: this.isFinal
+        });
         if (this.p1Ready && this.p2Ready) {
             if (this.startingTimeout)
                 clearTimeout(this.startingTimeout);
@@ -214,7 +226,7 @@ class Pong extends Game {
                 //const winnerId = this.player1!.score === 5 ? this.p1Id : this.p2Id;
                 //this.dispose('score_limit', winnerId);
                 this.endGame('score_limit');
-            }, 8000);
+            }, this.tournamentId ? 0 : 8000);
 
             return;
         }
@@ -327,7 +339,7 @@ class Pong extends Game {
             timestamp: this.services.TimeService!.getTimestamp(),
             hitPlayer1: this.player1?.hitCount || 0,
             hitPlayer2: this.player2?.hitCount || 0,
-            isTournamentFinal: false
+            isTournamentFinal: this.isFinal
         };
         this.gameService.publishGameFinished(gameFinishedEvent);
         console.log(`[Game] Ending game instance ${this.id}, reason: ${reason}, winner: ${winnerId}`);

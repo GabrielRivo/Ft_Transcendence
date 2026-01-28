@@ -111,7 +111,7 @@ export class GameService {
 		}
 	}
 
-	public createGame(id: string, player1Id: string, player2Id: string, type: GameType): CreateGameResult {
+	public createGame(id: string, player1Id: string, player2Id: string, type: GameType, tournamentId?: string, isFinal?: boolean): CreateGameResult {
 		// Validate that neither player is already in an active game
 		if (this.gamesByPlayer.has(player1Id)) {
 			console.log(
@@ -146,7 +146,7 @@ export class GameService {
 		}
 
 		// Create and initialize the game instance
-		const gameInstance = new Pong(id, player1Id, player2Id, type, this);
+		const gameInstance = new Pong(id, player1Id, player2Id, type, this, tournamentId, isFinal);
 
 		// Register game in tracking maps
 		this.gamesByPlayer.set(player1Id, gameInstance);

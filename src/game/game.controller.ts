@@ -92,7 +92,7 @@ export class GameController {
 		);
 
 		// Attempt to create the game
-		const result = this.gameService.createGame(dto.gameId, dto.player1Id, dto.player2Id, dto.type);
+		const result = this.gameService.createGame(dto.gameId, dto.player1Id, dto.player2Id, dto.type, dto.tournamentId, dto.isFinal);
 
 		// Handle success - return 201 Created
 		if (result.success) {
