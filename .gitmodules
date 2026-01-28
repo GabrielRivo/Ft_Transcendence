@@ -1,4 +1,0 @@
-[submodule "apps/social"]
-	path = apps/social
-	url = git@github.com:thetranscendence/social_management.git
-	branch = main
