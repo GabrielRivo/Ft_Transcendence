@@ -20,7 +20,7 @@ interface CreateGameErrorDto {
 type CreateGameResponseDto = CreateGameSuccessDto | CreateGameErrorDto;
 
 const PRIVATE_CHAT_SERVICE_URL = 'http://chat:3000';
-const BLOCK_URL = 'http://social:3000';
+
 const GAME_URL = 'http://game:3000';
 
 
@@ -244,12 +244,12 @@ export class FriendManagementService {
 	async sendChallenge(userId: number, otherId: number, senderUsername: string) {// VERIFIER SI L'USER EXISTE
 		if (userId === otherId)
 			throw new Error("Can't challenge yourself");
-		const res = await fetch(`${BLOCK_URL}/friend-management/block?userId=${userId}&otherId=${otherId}`);
-		if (!res.ok)
-			throw new Error(`You can't challenge blocked user`);
-		const r = await fetch(`${BLOCK_URL}/friend-management/block?otherId=${userId}&userId=${otherId}`);
-		if (!r.ok)
-			throw new Error(`You can't challenge this user`);
+		// const res = await fetch(`${BLOCK_URL}/friend-management/block?userId=${userId}&otherId=${otherId}`);
+		// if (!res.ok)
+		// 	throw new Error(`You can't challenge blocked user`);
+		// const r = await fetch(`${BLOCK_URL}/friend-management/block?otherId=${userId}&userId=${otherId}`);
+		// if (!r.ok)
+		// 	throw new Error(`You can't challenge this user`);
 		const interaction = this.statementCheckInteraction.get({ userId, otherId }) as { userId: number, status: string } | undefined;
 
 		if (interaction) {
@@ -272,15 +272,14 @@ export class FriendManagementService {
 		}
 	}
 
-	async getChallenge(userId: number, otherId: number, senderUsername: string)
-	{
+	async getChallenge(userId: number, otherId: number, senderUsername: string) {
 		if (userId === otherId)
 			throw new Error("Can't be challenged by yourself");
 		try {
 
-			const reverseChallenge = this.statementCheckPending.get({otherId, userId });
+			const reverseChallenge = this.statementCheckPending.get({ otherId, userId });
 			if (reverseChallenge)
-				return {success: true, message: `${senderUsername} is challenging you`}
+				return { success: true, message: `${senderUsername} is challenging you` }
 		}
 		catch (error: any) {
 			return { success: false, message: "Error!" };
@@ -289,7 +288,7 @@ export class FriendManagementService {
 	}
 
 	async acceptChallenge(userId: number, otherId: number, senderUsername: string) {
-		const result = this.statementAcceptChallenge.run({ userId: userId, otherId: otherId });
+		this.statementAcceptChallenge.run({ userId: userId, otherId: otherId });
 		// if (result.changes === 0)
 		// 	return { success: false, message: "No challenge pending" };
 
