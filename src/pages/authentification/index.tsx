@@ -103,7 +103,7 @@ export function Authentification() {
 			</div>
 			<div className="flex w-full items-center gap-2">
 				<hr className="w-full" />
-				<span>OU</span>
+				<span>OR</span>
 				<hr className="w-full" />
 			</div>
 			<div className="flex min-w-2/3 flex-col gap-2">
@@ -120,7 +120,7 @@ export function Authentification() {
 			</div>
 			<div className="flex w-full items-center gap-2">
 				<hr className="w-full" />
-				<span>OU</span>
+				<span>OR</span>
 				<hr className="w-full" />
 			</div>
 			<div className="flex min-w-2/3 flex-col gap-2">
