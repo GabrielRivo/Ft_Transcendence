@@ -292,10 +292,15 @@ class PongOnline extends Game {
     }
 
     private tournamentId?: string;
+    private gameType?: string;
 
     private onGameJoined = (payload: any): void => {
 
         console.log("Game joined with payload:", payload, " timestamp:", performance.now());
+        if (payload.gameType) {
+            this.gameType = payload.gameType;
+            console.log("Game type received:", this.gameType);
+        }
         if (payload.tournamentId) {
             this.tournamentId = payload.tournamentId;
             console.log("Tournament ID received:", this.tournamentId);
@@ -500,7 +505,13 @@ class PongOnline extends Game {
         }
 
         setTimeout(() => {
-            Services.EventBus!.emit("Game:Ended", { name: "PongOnline", winnerId: null, score: { player1: this.player1!.score, player2: this.player2!.score } });
+            Services.EventBus!.emit("Game:Ended", {
+                name: "PongOnline",
+                winnerId: null,
+                score: { player1: this.player1!.score, player2: this.player2!.score },
+                gameType: this.gameType,
+                tournamentId: this.tournamentId
+            });
         }, this.tournamentId ? 0 : 1000);
         //this.dispose();
     }

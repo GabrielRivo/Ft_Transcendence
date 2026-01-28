@@ -125,17 +125,16 @@ export const Game = () => {
 	useEffect(() => {
 		console.log('[GamePage] Mounting - switching to online mode with gameId:', urlGameId);
 
-		// Pass metadata to GameProvider
-		const metadata = type ? {
-			type,
+		// Pass metadata to GameProvider (used for display purposes, redirection is handled via WebSocket events)
+		const metadata = {
+			type: type || undefined,
 			tournamentId: tournamentId || undefined,
 			tournamentType: tournamentType || undefined,
 			playersCount: playersCount || undefined
-		} : undefined;
+		};
 		setMode('online', urlGameId, metadata);
 
 		return () => {
-			console.log("A");
 			console.log('[GamePage] Unmounting - switching back to background mode');
 			setMode('background');
 		};
