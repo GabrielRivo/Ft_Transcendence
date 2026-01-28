@@ -32,6 +32,7 @@ export type JwtPayload = {
 	suggestedUsername?: string;
 	twoFA?: boolean;           // 2FA activée sur le compte
 	twoFAVerified?: boolean;   // 2FA vérifiée pour cette session
+	isGuest?: boolean;         // Mode guest (connexion sans compte)
 	iat: number;
 	exp: number;
 };
@@ -102,6 +103,28 @@ export class AuthService {
 		return this.generateTokens(Number(info.lastInsertRowid), email, '', 'email', { noUsername: true });
 	}
 
+	async createGuest(username: string): Promise<AuthTokens> {
+		username = username.trim();
+
+		if (username === '') {
+			throw new BadRequestException('Username cannot be empty');
+		}
+
+		if (username.length < 3) {
+			throw new BadRequestException('Username must be at least 3 characters long');
+		}
+
+		const existingUser = await this.dbExchange.getUserByUsername(username);
+		if (existingUser) {
+			throw new BadRequestException('Username already exists');
+		}
+
+		const info = await this.dbExchange.addGuestUser(username);
+		const guestId = Number(info.lastInsertRowid);
+
+		return this.generateTokens(guestId, '', username, 'guest', { isGuest: true });
+	}
+
 	async login(dto: LoginDto): Promise<AuthTokens> {
 		const { email, password } = dto;
 
@@ -168,6 +191,7 @@ export class AuthService {
 			suggestedUsername: payload.suggestedUsername || undefined,
 			twoFA: payload.twoFA || false,
 			twoFAVerified: payload.twoFAVerified || false,
+			isGuest: payload.isGuest || false,
 		};
 	}
 
@@ -201,6 +225,19 @@ export class AuthService {
 
 		await this.dbExchange.revokeRefreshToken(refreshToken);
 
+		const provider = currentPayload?.provider || 'email';
+		const isGuest = provider === 'guest';
+
+		if (isGuest) {
+			return this.generateTokens(
+				user.id,
+				user.email || '',
+				user.username || '',
+				'guest',
+				{ isGuest: true },
+			);
+		}
+
 		// check si state est 2FA
 		const totpInfo = await this.dbExchange.getTOTPInfo(user.id);
 		const has2FA = totpInfo?.totp_enabled === 1;
@@ -221,7 +258,7 @@ export class AuthService {
 			user.id,
 			user.email,
 			user.username || '',
-			'email',
+			provider,
 			Object.keys(data).length > 0 ? data : undefined,
 		);
 	}

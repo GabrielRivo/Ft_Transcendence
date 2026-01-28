@@ -26,6 +26,7 @@ import { DbExchangeService } from './dbExchange.service.js';
 import { ChangeEmailDto, ChangeEmailSchema } from './dto/changeEmail.dto.js';
 import { ChangePasswordDto, ChangePasswordSchema } from './dto/changePassword.dto.js';
 import { ForgotPasswordDto, ForgotPasswordSchema } from './dto/forgotPassword.dto.js';
+import { GuestDto, GuestSchema } from './dto/guest.dto.js';
 import { LoginDto, LoginSchema } from './dto/login.dto.js';
 import { RegisterDto, RegisterSchema } from './dto/register.dto.js';
 import { ResetPasswordDto, ResetPasswordSchema } from './dto/resetPassword.dto.js';
@@ -90,6 +91,14 @@ export class AuthController {
 		return { success: true, message: 'Login successful' };
 	}
 
+	@Post('/guest')
+	@BodySchema(GuestSchema)
+	async guest(@Body() dto: GuestDto, @Res() res: FastifyReply) {
+		const tokens = await this.authService.createGuest(dto.username);
+		this.setAuthCookies(res, tokens);
+		return { success: true, message: 'Guest login successful' };
+	}
+
 	@Get('/verify')
 	async verify(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
 		const accessToken = (req.cookies as Record<string, string>)[config.accessTokenName];
@@ -100,9 +109,36 @@ export class AuthController {
 
 		const payload = this.authService.verifyAccessToken(accessToken);
 
+		// Les guests sont unauthorized sur les routes guard par verify classique
+		if (payload.provider === 'guest') {
+			throw new UnauthorizedException('Guest users are not authorized');
+		}
+
 		// Si 2FA enable mais non checked, rejeter la request
 		if (payload.twoFA && !payload.twoFAVerified) {
 			throw new UnauthorizedException('2FA verification required');
+		}
+
+		res.header('X-User-Id', String(payload.id));
+		res.header('X-User-Email', payload.email || '');
+
+		return { valid: true };
+	}
+
+	@Get('/verifyGuest')
+	async verifyGuest(@Req() req: FastifyRequest, @Res() res: FastifyReply) {
+		const accessToken = (req.cookies as Record<string, string>)[config.accessTokenName];
+
+		if (!accessToken) {
+			throw new UnauthorizedException('No access token');
+		}
+
+		const payload = this.authService.verifyAccessToken(accessToken);
+
+		if (payload.provider !== 'guest') {
+			if (payload.twoFA && !payload.twoFAVerified) {
+				throw new UnauthorizedException('2FA verification required');
+			}
 		}
 
 		res.header('X-User-Id', String(payload.id));
@@ -121,6 +157,7 @@ export class AuthController {
 	async me(@Req() req: FastifyRequest) {
 		const accessToken = (req.cookies as Record<string, string>)[config.accessTokenName];
 
+		console.log(accessToken);
 		if (!accessToken) {
 			return { authenticated: false, user: null };
 		}

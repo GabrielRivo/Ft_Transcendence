@@ -26,6 +26,7 @@ export class DbExchangeService {
 	private getAllUsersPrepare: Statement<Record<string, never>>;
 	private updateUsernamePrepare: Statement<{ userId: number; username: string }>;
 	private getUserByUsernamePrepare: Statement<{ username: string }>;
+	private addGuestUserPrepare: Statement<{ username: string }>;
 
 	// 2FA TOTP prepared statements
 	private setTOTPSecretPrepare: Statement<{ userId: number; secret: string }>;
@@ -80,6 +81,9 @@ export class DbExchangeService {
 		this.getAllUsersPrepare = this.db.prepare('SELECT * FROM users');
 		this.updateUsernamePrepare = this.db.prepare('UPDATE users SET username = @username WHERE id = @userId');
 		this.getUserByUsernamePrepare = this.db.prepare('SELECT * FROM users WHERE username = @username');
+		this.addGuestUserPrepare = this.db.prepare(
+			"INSERT INTO users (username, password_hash, provider) VALUES (@username, '', 'guest')",
+		);
 
 		// 2FA TOTP prepared statements
 		this.setTOTPSecretPrepare = this.db.prepare(
@@ -204,6 +208,10 @@ export class DbExchangeService {
 		return this.getUserByUsernamePrepare.get({ username }) as
 			| { id: number; username: string }
 			| undefined;
+	}
+
+	async addGuestUser(username: string) {
+		return this.addGuestUserPrepare.run({ username }) as RunResult;
 	}
 
 	// ---------------------- 2FA TOTP Methods ----------------------

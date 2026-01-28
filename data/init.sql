@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE COLLATE NOCASE,
     email TEXT UNIQUE COLLATE NOCASE,
     password_hash VARCHAR(64) NOT NULL,
-    provider TEXT CHECK(provider IN ('github', 'google', 'email', 'discord')) DEFAULT 'email', -- # Warning: check provider
+    provider TEXT CHECK(provider IN ('github', 'email', 'discord', 'guest')) DEFAULT 'email', -- # Warning: check provider
     provider_id TEXT,
     totp_secret TEXT DEFAULT NULL,
     totp_enabled INTEGER DEFAULT 0,
