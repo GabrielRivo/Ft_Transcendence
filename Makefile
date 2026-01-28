@@ -26,6 +26,10 @@ all: help
 # ------------------------------------------------------------------------------
 
 up: ## Start the application in production mode (generates SSL certs if missing)
+	@if [ ! -f pnpm-lock.yaml ]; then \
+		echo "$(BLUE)pnpm-lock.yaml not found. Installing dependencies...$(NC)"; \
+		pnpm install; \
+	fi
 	@echo "$(BLUE)Generating SSL certificates if missing...$(NC)"
 	@mkdir -p ./nginx/ssl
 	@if [ ! -f ./nginx/ssl/server.crt ]; then \

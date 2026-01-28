@@ -29,8 +29,8 @@ services:
     container_name: transcendence-nginx
     restart: unless-stopped
     ports:
-      - "80:80"
-      - "443:443"
+      - "8080:80"
+      - "8443:443"
     volumes:
       - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
@@ -237,11 +237,22 @@ services:
     networks:
       - transcendence-network
     healthcheck:
-      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:80" ]
+      test: [ "CMD", "wget", "-q", "--spider", "http://127.0.0.1:80" ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: transcendence-tunnel
+    restart: unless-stopped
+    command: tunnel run
+    # Le token est lu depuis le fichier .env
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - transcendence-network
 
 networks:
   transcendence-network:
