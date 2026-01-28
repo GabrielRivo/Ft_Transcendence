@@ -63,5 +63,9 @@ export function buildApp(options: { dbPath?: string } = {}) {
 		reply.send(error);
 	});
 
+	app.get('/health', async () => {
+		return { status: 'ok' };
+	});
+
 	return app;
 }
