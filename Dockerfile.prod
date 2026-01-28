@@ -1,0 +1,83 @@
+# =============================================================================
+# Stage 1: Builder - Installation des dépendances et compilation
+# =============================================================================
+FROM node:24-alpine AS builder
+
+# Build tools pour better-sqlite3 (au cas où, même si pas forcément utilisé c'est plus safe)
+RUN apk add --no-cache python3 make g++ git
+
+# Installation pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+# Copie des fichiers de dépendances (layer cache)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/my-fastify-decorators/package.json ./packages/my-fastify-decorators/
+COPY packages/my-class-validator/package.json ./packages/my-class-validator/
+COPY packages/my-fastify-decorators-microservices/package.json ./packages/my-fastify-decorators-microservices/
+COPY apps/worker-mail/package.json ./apps/worker-mail/
+
+# Installation des dépendances
+RUN pnpm install --frozen-lockfile
+
+# Copie et build des packages
+COPY packages/my-fastify-decorators ./packages/my-fastify-decorators
+COPY packages/my-class-validator ./packages/my-class-validator
+COPY packages/my-fastify-decorators-microservices ./packages/my-fastify-decorators-microservices
+RUN pnpm --filter my-fastify-decorators run build
+RUN pnpm --filter my-class-validator run build
+RUN pnpm --filter my-fastify-decorators-microservices run build
+
+# Copie et build de l'application
+COPY apps/worker-mail ./apps/worker-mail
+RUN pnpm --filter worker-mail run build
+
+# Prune dev dependencies
+ENV CI=true
+# RUN pnpm prune --prod
+
+# =============================================================================
+# Stage 2: Production - Image minimale
+# =============================================================================
+FROM node:24-alpine AS production
+
+# Labels OCI
+LABEL org.opencontainers.image.title="ft_transcendence Worker Mail Service"
+LABEL org.opencontainers.image.description="Worker Mail microservice in production mode"
+LABEL org.opencontainers.image.authors="ft_transcendence team"
+
+# Créer un utilisateur non-root
+RUN addgroup -g 1001 appgroup && adduser -u 1001 -G appgroup -s /bin/sh -D appuser
+
+WORKDIR /app
+
+# Copie des artefacts du builder
+COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
+COPY --from=builder --chown=appuser:appgroup /app/packages ./packages
+COPY --from=builder --chown=appuser:appgroup /app/apps/worker-mail/dist ./apps/worker-mail/dist
+COPY --from=builder --chown=appuser:appgroup /app/apps/worker-mail/package.json ./apps/worker-mail/
+
+# Variables d'environnement
+ENV NODE_ENV=production
+
+# Utilisateur non-root
+USER appuser
+
+# Pas de port EXPOSE car c'est un worker qui consomme RabbitMQ
+# EXPOSE 3000
+
+# Healthcheck différent car pas de port HTTP (sauf si on ajoute un serveur fastify juste pour healthcheck ?)
+# En général les workers ont un healthcheck basé sur un fichier ou un ping process
+# Mais attendons, le code source du worker-mail a-t-il un serveur fastify ?
+# Regardons package.json: "dependencies": { "my-fastify-decorators": "workspace:*", ... }
+# Il semble utiliser fastify decorators, donc il doit avoir un serveur HTTP démarré, souvent sur le port 3000 par défaut.
+# Dans Dockerfile.dev (step 11), il n'y a PAS de HEALTHCHECK défini.
+# Dans docker-compose.yaml (step 6), ligne 314, il n'y a PAS de healthcheck défini pour worker-mail.
+# Donc je ne vais pas mettre de healthcheck HTTP pour l'instant pour éviter de bloquer si pas de serveur.
+# Ou juste un process check simple.
+# Mais pour être safe et cohérent, si pas de healthcheck prévu, on n'en met pas ou un simple "true".
+# Le worker tourne en continu.
+# Je vais omettre le HEALTHCHECK pour worker-mail pour l'instant vu qu'il n'expose pas forcément de port.
+
+CMD ["node", "apps/worker-mail/dist/src/index.js"]
