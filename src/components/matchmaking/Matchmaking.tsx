@@ -152,7 +152,8 @@ function SearchingAnimation() {
 }
 
 /**
- * Match found display showing opponent info and accept/decline buttons.
+ * Match found display showing player and opponent info with accept/decline buttons.
+ * Uses cyan/blue color scheme consistent with the rest of the site.
  */
 function MatchFoundDisplay({
 	proposal,
@@ -171,16 +172,38 @@ function MatchFoundDisplay({
 		<div className="flex flex-col items-center gap-6">
 			{/* Title */}
 			<h2 className="font-pirulen text-xl tracking-widest text-cyan-400">
-				{isWaiting ? 'WAITING FOR OPPONENT' : 'MATCH FOUND'}
+				{isWaiting ? 'WAITING FOR OPPONENT' : 'MATCH FOUND!'}
 			</h2>
 
 			{/* Countdown timer */}
 			{remainingTime !== null && <CountdownTimer remainingTime={remainingTime} />}
 
-			{/* Opponent info */}
-			<div className="rounded-lg border border-purple-500/30 bg-purple-500/10 px-6 py-3">
-				<div className="text-xs text-gray-400 uppercase">Opponent ELO</div>
-				<div className="font-orbitron text-2xl font-bold text-purple-400">{proposal.opponentElo}</div>
+			{/* Players ELO display - VS layout */}
+			<div className="flex items-center gap-6">
+				{/* Your ELO */}
+				<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 px-6 py-4 text-center">
+					<div className="text-xs uppercase tracking-wider text-gray-400 mb-1">You</div>
+					<div className="font-orbitron text-3xl font-bold text-cyan-400">{proposal.playerElo}</div>
+					<div className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">ELO</div>
+					{isWaiting && (
+						<div className="mt-2 flex items-center justify-center gap-1">
+							<svg className="h-4 w-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+							</svg>
+							<span className="text-xs text-green-400">Ready</span>
+						</div>
+					)}
+				</div>
+
+				{/* VS separator */}
+				<div className="font-pirulen text-lg text-gray-500">VS</div>
+
+				{/* Opponent ELO */}
+				<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 px-6 py-4 text-center">
+					<div className="text-xs uppercase tracking-wider text-gray-400 mb-1">Opponent</div>
+					<div className="font-orbitron text-3xl font-bold text-cyan-400">{proposal.opponentElo}</div>
+					<div className="text-[10px] uppercase tracking-widest text-gray-500 mt-1">ELO</div>
+				</div>
 			</div>
 
 			{/* Action buttons */}
@@ -189,31 +212,34 @@ function MatchFoundDisplay({
 					{/* Accept button */}
 					<button
 						onClick={onAccept}
-						className="group relative overflow-hidden rounded-lg border-2 border-green-500 bg-green-500/10 px-8 py-3 font-bold text-green-400 transition-all duration-300 hover:bg-green-500/30 hover:text-white hover:shadow-[0_0_20px_rgba(34,197,94,0.4)]"
+						className="rounded-lg border-2 border-cyan-500 bg-cyan-500/10 px-8 py-3 font-orbitron font-bold text-cyan-400 uppercase tracking-wider transition-all duration-300 hover:bg-cyan-500/20 hover:text-white hover:shadow-neon-cyan-low"
 					>
-						<span className="relative z-10">ACCEPT</span>
-						<div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-green-500/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+						Accept
 					</button>
 
 					{/* Decline button */}
 					<button
 						onClick={onDecline}
-						className="group relative overflow-hidden rounded-lg border-2 border-red-500 bg-red-500/10 px-8 py-3 font-bold text-red-400 transition-all duration-300 hover:bg-red-500/30 hover:text-white hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+						className="rounded-lg border border-gray-500/50 bg-gray-500/5 px-8 py-3 font-orbitron font-bold text-gray-400 uppercase tracking-wider transition-all duration-300 hover:border-gray-400 hover:bg-gray-500/10 hover:text-gray-300"
 					>
-						<span className="relative z-10">DECLINE</span>
-						<div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-red-500/20 to-transparent transition-transform duration-500 group-hover:translate-x-full" />
+						Decline
 					</button>
 				</div>
 			) : (
-				<p className="text-sm text-gray-400">
-					Waiting for opponent to accept
-					<LoadingDots />
-				</p>
+				<div className="flex items-center gap-2 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-4 py-2">
+					<div className="h-2 w-2 animate-pulse rounded-full bg-cyan-400" />
+					<p className="text-sm text-cyan-300">
+						Waiting for opponent to accept
+						<LoadingDots />
+					</p>
+				</div>
 			)}
 
 			{/* Warning about penalty */}
 			{!isWaiting && (
-				<p className="text-xs text-gray-500">⚠️ Declining or timing out will result in a temporary penalty</p>
+				<p className="text-xs text-gray-500">
+					⚠️ Declining or timing out will result in a temporary penalty
+				</p>
 			)}
 		</div>
 	);

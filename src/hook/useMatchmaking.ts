@@ -66,6 +66,7 @@ export type MatchmakingStatus =
  */
 export interface MatchProposal {
 	matchId: string;
+	playerElo: number;
 	opponentElo: number;
 	expiresAt: number; // Unix timestamp when the proposal expires
 }

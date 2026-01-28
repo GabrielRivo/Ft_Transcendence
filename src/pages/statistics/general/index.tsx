@@ -4,6 +4,8 @@ import ApexCharts, { ApexOptions } from 'apexcharts';
 import { useAuth } from '../../../hook/useAuth';
 import { api } from '../../../hook/useFetch';
 import { UserStats } from '../../../types/stats';
+import { useNavigate } from 'my-react-router';
+import { useToast } from '@/hook/useToast';
 
 interface GeneralStatsDisplay {
 	username: string;
@@ -21,7 +23,17 @@ interface GeneralStatsDisplay {
 
 function WinRatePieChart({ winRate }: { winRate: number }) {
 	const chartRef = useRef<HTMLDivElement | null>(null);
-	const chartInstance = useRef<ApexCharts | null>(null);
+	const chartInstanceRef = useRef<ApexCharts | null>(null);
+	const { user } = useAuth();
+	const navigate = useNavigate();
+	const { toast } = useToast();
+	
+	useEffect(() => {
+		if (user?.isGuest) {
+			toast('Please have an account to use all features', 'error');
+			navigate('/play');
+		}
+	}, [user?.isGuest]);
 
 	useEffect(() => {
 		if (!chartRef.current) return;
@@ -180,7 +192,7 @@ export function StatisticsGeneralPage() {
 				{/* Histogramme Elo */}
 				<div className="rounded-lg border border-cyan-500/30 bg-slate-900/50 p-4 lg:col-span-2">
 					<div className="mb-2">
-						<h3 className="font-pirulen text-sm tracking-wider text-cyan-400">Elo :</h3>
+						<h3 className="font-pirulen text-sm tracking-wider text-cyan-400">Elo :</h3>  
 					</div>
 					<EloHistogram userElo={stats.elo} allPlayersData={stats.allPlayersElo} />
 				</div>

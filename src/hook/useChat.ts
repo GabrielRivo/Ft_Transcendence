@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'my-react';
 import { chatSocket } from '../libs/socket';
 import { useAuth } from './useAuth';
 
+export interface RoomUser {
+	userId: number;
+	username: string;
+}
+
 export interface ChatMessage {
 	userId: number;
 	username: string;
@@ -33,7 +38,7 @@ export function useChat() {
 
 	// Connecter au chat quand l'utilisateur est authentifié
 	useEffect(() => {
-		if (isAuthenticated && user && !user.noUsername) {
+		if (isAuthenticated && user && !user.noUsername && !user?.isGuest) {
 			isConnectingRef.current = true;
 
 			// Mettre à jour l'auth du socket
@@ -51,7 +56,7 @@ export function useChat() {
 			}
 			isConnectingRef.current = false;
 		};
-	}, [isAuthenticated, user]);
+	}, [isAuthenticated, user?.id, user?.username, user?.noUsername, user?.isGuest]);
 
 	// Gérer les événements socket
 	useEffect(() => {

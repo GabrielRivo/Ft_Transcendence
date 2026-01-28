@@ -14,6 +14,7 @@ export interface TournamentResponse {
     ownerId: string;
     visibility: TournamentVisibility;
     status: TournamentStatus;
+    inviteCode: string;
     participants: TournamentParticipant[];
     matches?: Match[];
 }

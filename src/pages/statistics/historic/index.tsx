@@ -2,6 +2,8 @@ import { createElement, useState, useEffect } from 'my-react';
 import { useAuth } from '../../../hook/useAuth';
 import { api } from '../../../hook/useFetch';
 import { MatchHistory, TransformedMatch, UserInfo } from '../../../types/stats';
+import { useNavigate } from 'my-react-router';
+import { useToast } from '@/hook/useToast';
 
 function formatDate(dateStr: string): string {
 	const date = new Date(dateStr);
@@ -21,7 +23,7 @@ function MatchCard({ match, isSelected, onClick }: { match: TransformedMatch; is
 	const borderColor = isSelected
 		? match.isWin
 			? 'border-yellow-400 border-4'
-			: 'border-cyan-400 border-4'
+			: 'border-yellow-400 border-4'
 		: 'border-transparent border-2';
 
 	return (
@@ -65,8 +67,12 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 				</p>
 
 				{/* Elo */}
-				<p className={`text-lg ${match.eloChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
-					{match.eloChange > 0 ? '+' : ''}{match.eloChange} Elo
+				<p className={`text-xs font-pirulen font-bold ${
+						match.eloChange === 0 
+						? 'text-yellow-400'
+						: match.eloChange > 0 ? 'text-green-400' : 'text-red-400'
+					}`}>
+					{match.eloChange === 0  ? 'Tournament' : `${match.eloChange > 0 ? '+' : ''}${match.eloChange} Elo`}
 				</p>
 			</div>
 
@@ -84,10 +90,20 @@ function MatchDetails({ match, username }: { match: TransformedMatch; username: 
 
 export function StatisticsHistoricPage() {
 	const { user } = useAuth();
+	const navigate = useNavigate();
+	const { toast } = useToast();
 	const [matches, setMatches] = useState<TransformedMatch[]>([]);
 	const [selectedMatchId, setSelectedMatchId] = useState<number>(0);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+
+
+	useEffect(() => {
+		if (user?.isGuest) {
+			toast('Please have an account to use all features', 'error');
+			navigate('/play');
+		}
+	}, [user?.isGuest]);
 
 	useEffect(() => {
 		async function fetchHistory() {
@@ -194,7 +210,7 @@ export function StatisticsHistoricPage() {
 			</div>
 
 			{/* Colonne droite : Liste des matchs */}
-			<div className="flex-[2] flex flex-col gap-3 overflow-y-auto max-h-[600px] pr-2 scrollbar-neon">
+			<div className="flex-[2] flex flex-col gap-4 overflow-y-auto max-h-[600px] p-2 scrollbar-neon">
 				{matches.map((match) => (
 					<MatchCard
 						key={match.id}

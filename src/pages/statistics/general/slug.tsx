@@ -1,9 +1,11 @@
 import { createElement, useEffect, useRef, useState } from 'my-react';
-import { useParams } from 'my-react-router';
+import { useNavigate, useParams } from 'my-react-router';
 import EloHistogram from '@ui/charts/EloHistogram';
 import ApexCharts, { ApexOptions } from 'apexcharts';
 import { api } from '../../../hook/useFetch';
 import { UserStats, UserInfo } from '../../../types/stats';
+import { useToast } from '@/hook/useToast';
+import { useAuth } from '@/hook/useAuth';
 
 interface GeneralStatsDisplay {
 	username: string;
@@ -12,7 +14,7 @@ interface GeneralStatsDisplay {
 	wins: number;
 	losses: number;
 	winRate: number;
-	averageScore: number;
+	average_score: number;
 	tournamentsPlayed: number;
 	tournamentsWon: number;
 	percentile: number;
@@ -22,6 +24,16 @@ interface GeneralStatsDisplay {
 function WinRatePieChart({ winRate }: { winRate: number }) {
 	const chartRef = useRef<HTMLDivElement | null>(null);
 	const chartInstance = useRef<ApexCharts | null>(null);
+	const { user } = useAuth();
+	const navigate = useNavigate();
+	const { toast } = useToast();
+	
+	useEffect(() => {
+		if (user?.isGuest) {
+			toast('Please have an account to use all features', 'error');
+			navigate('/play');
+		}
+	}, [user?.isGuest]);
 
 	useEffect(() => {
 		if (!chartRef.current) return;
@@ -148,7 +160,7 @@ export function StatisticsGeneralPageSlug() {
 					wins: userStats.wins,
 					losses: userStats.losses,
 					winRate: userStats.winrate,
-					averageScore: userStats.average_score,
+					average_score: userStats.average_score,
 					tournamentsPlayed: userStats.tournament_played,
 					tournamentsWon: userStats.tournament_won,
 					percentile,
@@ -208,7 +220,7 @@ export function StatisticsGeneralPageSlug() {
 				{/* Score moyen par partie */}
 				<div className="flex flex-col items-center justify-center rounded-lg border border-orange-500/30 bg-slate-900/50 p-6">
 					<p className="font-pirulen mb-1 text-xs tracking-wider text-orange-400">Average score by game :</p>
-					<p className="font-orbitron mb-2 text-4xl font-bold text-white">{stats.averageScore}</p>
+					<p className="font-orbitron mb-2 text-4xl font-bold text-white">{stats.average_score}</p>
 					<p className="text-xs text-gray-500 italic">(rounded up to the 0.01 sup)</p>
 				</div>
 
