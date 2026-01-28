@@ -38,10 +38,14 @@ import {
 	ConnectedSocket,
 	MessageBody,
 	JWTBody,
+	BodySchema,
+	Body,
 } from 'my-fastify-decorators';
 import { Socket } from 'socket.io';
 import { GameService } from './game.service.js';
 import { GameConnectionError, type JwtPayload } from './types.js';
+import { PlayerInputDto, PlayerInputSchema } from "./game.dto.js";
+import { PlayerInputData } from './pong/globalType.js';
 
 /**
  * Extended Socket type with typed data property for game sessions.
@@ -246,7 +250,8 @@ export class GameGateway {
 	 * @param data - Input payload (movement direction, actions, etc.)
 	 */
 	@SubscribeMessage('playerDirection')
-	handlePlayerInput(@ConnectedSocket() client: GameSocket, @MessageBody() data: any): void {
+	@BodySchema(PlayerInputSchema)
+	handlePlayerInput(@ConnectedSocket() client: GameSocket, @MessageBody() data: PlayerInputDto): void {
 		// Forward input to game service
 		this.gameService.onPlayerInput(client, data);
 	}

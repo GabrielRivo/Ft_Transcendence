@@ -9,7 +9,8 @@
 // - Admin endpoints: Manual game creation for testing
 // ============================================================================
 
-import { IsString, IsRequired, MinLength, generateSchema, IsEnum } from 'my-class-validator';
+import { IsString, IsRequired, MinLength, generateSchema, IsEnum, IsNumber, Minimum } from 'my-class-validator';
+import { Movement } from './pong/Player.js';
 
 /**
  * DTO for creating a new game instance.
@@ -102,5 +103,18 @@ export interface CreateGameErrorDto {
 	message: string;
 }
 
+export class PlayerInputDto{
+	@Minimum(0, { message: 'timestamp must be non-negative' })
+	@IsNumber({ message: 'timestamp must be a number' })
+	@IsRequired({ message: 'timestamp is required' })
+	timestamp: number;
+
+	@IsString({ message: 'direction must be a string' })
+	@IsRequired({ message: 'direction is required' })
+	direction: Movement;
+}
+
+
 // Generate JSON Schema for request validation
 export const CreateGameSchema = generateSchema(CreateGameDto);
+export const PlayerInputSchema = generateSchema(PlayerInputDto);
