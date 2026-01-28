@@ -1,5 +1,5 @@
-import { type TournamentVisibility } from '@/tournament/domain/entities/tournament.js';
-import { type TournamentStatus } from '@/tournament/domain/entities/tournament.js';
+import { type TournamentVisibility } from '../../../domain/entities/tournament.js';
+import { type TournamentStatus } from '../../../domain/entities/tournament.js';
 import { AdditionalProperties, generateSchema, IsArray, IsEnum, IsNumber, IsObject, IsString } from 'my-class-validator';
 
 @AdditionalProperties(false)

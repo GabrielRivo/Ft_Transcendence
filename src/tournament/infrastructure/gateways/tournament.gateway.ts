@@ -7,6 +7,7 @@ import {
     SocketSchema,
     SubscribeMessage,
     WebSocketGateway,
+    SubscribeConnection,
 } from 'my-fastify-decorators';
 import { Socket } from 'socket.io';
 import { JoinTournamentDto } from '../../application/dtos/join-tournament.dto.js';
@@ -28,12 +29,21 @@ export class ListenTournamentPayload {
     @IsString()
     @IsRequired()
     tournamentId!: string;
+
+    @IsString()
+    displayName?: string;
 }
 
 @WebSocketGateway()
 export class TournamentGateway {
     @Inject(JoinTournamentUseCase)
     private joinUseCase!: JoinTournamentUseCase;
+
+    @SubscribeConnection()
+    public handleConnection(@ConnectedSocket() socket: Socket) {
+        console.log(`[TournamentGateway] New connection: ${socket?.id}, auth: ${socket.handshake.auth && JSON.stringify(socket.handshake.auth)}, query: ${socket.handshake.query && JSON.stringify(socket.handshake.query)}`);
+    }
+
 
     @SubscribeMessage('join_tournament')
     @SocketSchema(generateSchema(JoinTournamentPayload))

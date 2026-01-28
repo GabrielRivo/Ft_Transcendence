@@ -1,6 +1,6 @@
 import { Inject, Service, NotFoundException, ForbiddenException } from 'my-fastify-decorators';
 import { SqliteTournamentRepository } from '../../infrastructure/repositories/sqlite-tournament.repository.js';
-import { CompositeTournamentEventsPublisher } from '@/tournament/infrastructure/publishers/composite-tournament-events.publisher.js';
+import { CompositeTournamentEventsPublisher } from '../../infrastructure/publishers/composite-tournament-events.publisher.js';
 
 @Service()
 export class CancelTournamentUseCase {

@@ -1,8 +1,8 @@
 import { Inject, Service, NotFoundException } from 'my-fastify-decorators';
 
 import { UpdateMatchScoreDto } from '../dtos/update-match-score.dto.js';
-import { SqliteTournamentRepository } from '@/tournament/infrastructure/repositories/sqlite-tournament.repository.js';
-import { CompositeTournamentEventsPublisher } from '@/tournament/infrastructure/publishers/composite-tournament-events.publisher.js';
+import { SqliteTournamentRepository } from '../../infrastructure/repositories/sqlite-tournament.repository.js';
+import { CompositeTournamentEventsPublisher } from '../../infrastructure/publishers/composite-tournament-events.publisher.js';
 @Service()
 export class ProcessMatchResultUseCase {
     @Inject(SqliteTournamentRepository)

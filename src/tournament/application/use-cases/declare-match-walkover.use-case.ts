@@ -1,7 +1,7 @@
 import { Inject, Service, NotFoundException } from 'my-fastify-decorators';
 import { DeclareMatchWalkoverDto } from '../dtos/declare-match-walkover.dto.js';
-import { SqliteTournamentRepository } from '@/tournament/infrastructure/repositories/sqlite-tournament.repository.js';
-import { SocketTournamentEventsPublisher } from '@/tournament/infrastructure/publishers/socket-tournament-events.publisher.js';
+import { SqliteTournamentRepository } from '../../infrastructure/repositories/sqlite-tournament.repository.js';
+import { SocketTournamentEventsPublisher } from '../../infrastructure/publishers/socket-tournament-events.publisher.js';
 
 @Service()
 export class DeclareMatchWalkoverUseCase {

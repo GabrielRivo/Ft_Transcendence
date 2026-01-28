@@ -3,8 +3,8 @@ import { Inject, Service } from 'my-fastify-decorators';
 import { Tournament } from '../../domain/entities/tournament.js';
 import { Participant } from '../../domain/value-objects/participant.js';
 import { CreateTournamentDto } from '../dtos/create-tournament.dto.js';
-import { SqliteTournamentRepository } from '@/tournament/infrastructure/repositories/sqlite-tournament.repository.js';
-import { CompositeTournamentEventsPublisher } from '@/tournament/infrastructure/publishers/composite-tournament-events.publisher.js';
+import { SqliteTournamentRepository } from '../../infrastructure/repositories/sqlite-tournament.repository.js';
+import { CompositeTournamentEventsPublisher } from '../../infrastructure/publishers/composite-tournament-events.publisher.js';
 
 
 @Service()

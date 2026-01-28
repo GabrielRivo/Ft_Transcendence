@@ -2,7 +2,7 @@ import { Inject, Service } from 'my-fastify-decorators';
 import { Tournament } from '../../domain/entities/tournament.js';
 
 import { ListTournamentsDto } from '../dtos/list-tournaments.dto.js';
-import { SqliteTournamentRepository } from '@/tournament/infrastructure/repositories/sqlite-tournament.repository.js';
+import { SqliteTournamentRepository } from '../../infrastructure/repositories/sqlite-tournament.repository.js';
 
 @Service()
 export class ListTournamentsUseCase {

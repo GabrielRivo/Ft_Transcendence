@@ -196,6 +196,13 @@ export class SqliteTournamentRepository extends TournamentRepository {
     });
   }
 
+  public async findByInviteCode(code: string): Promise<Tournament | null> {
+    const row = this.db.prepare('SELECT * FROM tournaments WHERE invite_code = ?').get(code) as any;
+    if (!row) return null;
+
+    return this.findById(row.id);
+  }
+
   public async findActiveByParticipantId(participantId: string): Promise<Tournament | null> {
     const row = this.db.prepare(`
       SELECT t.id

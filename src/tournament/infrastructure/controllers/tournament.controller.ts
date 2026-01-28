@@ -21,8 +21,12 @@ import { ListTournamentsUseCase } from '../../application/use-cases/list-tournam
 import { JoinTournamentUseCase } from '../../application/use-cases/join-tournament.use-case.js';
 import { LeaveTournamentUseCase } from '../../application/use-cases/leave-tournament.use-case.js';
 import { GetActiveTournamentUseCase } from '../../application/use-cases/active-tournament.use-case.js';
+import { JoinGuestTournamentUseCase } from '../../application/use-cases/join-guest-tournament.use-case.js';
+
 
 import { CreateTournamentDto, CreateTournamentSchema } from '../../application/dtos/create-tournament.dto.js';
+import { JoinGuestTournamentDto } from '../../application/dtos/join-guest-tournament.dto.js';
+
 import { ListTournamentsDto, ListTournamentsSchema } from '../../application/dtos/list-tournaments.dto.js';
 import { TournamentResponseSchema } from '../dtos/responses/tournament.response.dto.js';
 
@@ -111,5 +115,19 @@ export class TournamentController {
         if (!user) throw new UnauthorizedException();
         await this.leaveTournamentUseCase.execute(id, String(user.id));
         return { success: true };
+    }
+
+    @Inject(JoinGuestTournamentUseCase)
+    private joinGuestTournamentUseCase!: JoinGuestTournamentUseCase;
+
+    @Post('/guest/join')
+    public async joinGuest(@Body() body: JoinGuestTournamentDto, @JWTBody() user: any) {
+        if (!user) throw new UnauthorizedException();
+        const tournament = await this.joinGuestTournamentUseCase.execute(
+            body,
+            String(user.id),
+            user.username
+        );
+        return tournament;
     }
 }
