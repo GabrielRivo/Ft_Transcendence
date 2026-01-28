@@ -1,0 +1,270 @@
+services:
+  # ===========================================================================
+  # Infrastructure Services
+  # ===========================================================================
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: transcendence-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  nginx:
+    image: nginx:alpine
+    container_name: transcendence-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - images-data:/app/images
+    networks:
+      - transcendence-network
+    depends_on:
+      auth:
+        condition: service_healthy
+      user:
+        condition: service_healthy
+      game:
+        condition: service_healthy
+      chat:
+        condition: service_healthy
+      matchmaking:
+        condition: service_healthy
+      tournament:
+        condition: service_healthy
+      stats:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/nginx-health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================================================
+  # Backend Microservices
+  # ===========================================================================
+
+  auth:
+    build:
+      context: .
+      dockerfile: apps/auth/Dockerfile.prod
+    container_name: transcendence-auth
+    restart: unless-stopped
+    # Pas de montage de volume code source en prod
+    volumes:
+      - auth-data:/app/apps/auth/db
+    environment:
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      PEPPER: ${PEPPER}
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  user:
+    build:
+      context: .
+      dockerfile: apps/user/Dockerfile.prod
+    container_name: transcendence-user
+    restart: unless-stopped
+    volumes:
+      - user-data:/app/apps/user/db
+      - images-data:/app/apps/user/images
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  game:
+    build:
+      context: .
+      dockerfile: apps/game/Dockerfile.prod
+    container_name: transcendence-game
+    restart: unless-stopped
+    volumes:
+      - game-data:/app/apps/game/db
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URI: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  chat:
+    build:
+      context: .
+      dockerfile: apps/chat/Dockerfile.prod
+    container_name: transcendence-chat
+    restart: unless-stopped
+    volumes:
+      - chat-data:/app/apps/chat/db
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  matchmaking:
+    build:
+      context: .
+      dockerfile: apps/matchmaking/Dockerfile.prod
+    container_name: transcendence-matchmaking
+    restart: unless-stopped
+    volumes:
+      - matchmaking-data:/app/apps/matchmaking/db
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+      USER_SERVICE_URL: http://user:3000
+      GAME_SERVICE_URL: http://game:3000
+      STATS_SERVICE_URL: http://stats:3000
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      user:
+        condition: service_healthy
+      game:
+        condition: service_healthy
+      stats:
+        condition: service_healthy
+
+  tournament:
+    build:
+      context: .
+      dockerfile: apps/tournament/Dockerfile.prod
+    container_name: transcendence-tournament
+    restart: unless-stopped
+    volumes:
+      - tournament-data:/app/apps/tournament/db
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URI: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+      JWT_SECRET: ${JWT_SECRET}
+      GAME_SERVICE_URL: http://game:3000
+      ACCESS_TOKEN_NAME: ${ACCESS_TOKEN_NAME:-accessToken}
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      game:
+        condition: service_healthy
+
+  stats:
+    build:
+      context: .
+      dockerfile: apps/stats/Dockerfile.prod
+    container_name: transcendence-stats
+    restart: unless-stopped
+    volumes:
+      - stats-data:/app/apps/stats/db
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  worker-mail:
+    build:
+      context: .
+      dockerfile: apps/worker-mail/Dockerfile.prod
+    container_name: transcendence-worker-mail
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      RABBITMQ_URL: amqp://${RABBITMQ_USER:-guest}:${RABBITMQ_PASS:-guest}@rabbitmq:5672
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      MAIL_FROM: ${MAIL_FROM}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME}
+    networks:
+      - transcendence-network
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  # ===========================================================================
+  # Frontend Service
+  # ===========================================================================
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile.prod
+    container_name: transcendence-frontend
+    restart: unless-stopped
+    networks:
+      - transcendence-network
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://localhost:80" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  transcendence-network:
+    name: transcendence-network
+    driver: bridge
+
+volumes:
+  rabbitmq-data:
+    name: transcendence-rabbitmq-data
+  auth-data:
+    name: transcendence-auth-data
+  user-data:
+    name: transcendence-user-data
+  game-data:
+    name: transcendence-game-data
+  chat-data:
+    name: transcendence-chat-data
+  matchmaking-data:
+    name: transcendence-matchmaking-data
+  tournament-data:
+    name: transcendence-tournament-data
+  stats-data:
+    name: transcendence-stats-data
+
+  images-data:
+    name: transcendence-images-data
