@@ -7,7 +7,6 @@ import {
 	Delete,
 	Get,
 	Inject,
-	JWTBody,
 	Param,
 	Patch,
 	Post,
@@ -66,10 +65,10 @@ export class AuthController {
 
 	@Post('/register')
 	@BodySchema(RegisterSchema)
-	async register(@Body() dto: RegisterDto, @Res() res: FastifyReply, @JWTBody() jwt: { id : number}) {
-		if (jwt?.id) {
-			throw new UnauthorizedException('User already logged in');
-		}
+	async register(@Body() dto: RegisterDto, @Res() res: FastifyReply) {
+		// if (jwt?.id) {
+		// 	throw new UnauthorizedException('User already logged in');
+		// }
 		const tokens = await this.authService.register(dto);
 		this.setAuthCookies(res, tokens);
 		return { success: true, message: 'Registration successful' };
@@ -77,12 +76,12 @@ export class AuthController {
 
 	@Post('/login')
 	@BodySchema(LoginSchema)
-	async login(@Body() dto: LoginDto, @Res() res: FastifyReply, @JWTBody() jwt: { id : number}) {
-		// pas besoin de reelement check le guard, valide ou pas si le mec ce fait passer pour connecter ben il est connecter cela n'aura aucun impact server...
-		if (jwt?.id) {
-			throw new UnauthorizedException('User already logged in');
-		}
-		// Je pourrais faire un guard...
+	async login(@Body() dto: LoginDto, @Res() res: FastifyReply) {
+		// // pas besoin de reelement check le guard, valide ou pas si le mec ce fait passer pour connecter ben il est connecter cela n'aura aucun impact server...
+		// if (jwt?.id) {
+		// 	throw new UnauthorizedException('User already logged in');
+		// }
+		// // Je pourrais faire un guard...
 
 		const tokens = await this.authService.login(dto);
 		this.setAuthCookies(res, tokens);
@@ -91,10 +90,7 @@ export class AuthController {
 
 	@Post('/guest')
 	@BodySchema(GuestSchema)
-	async guest(@Body() dto: GuestDto, @Res() res: FastifyReply, @JWTBody() jwt: { id : number}) {
-		if (jwt?.id) {
-			throw new UnauthorizedException('User already logged in');
-		}
+	async guest(@Body() dto: GuestDto, @Res() res: FastifyReply) {
 		const tokens = await this.authService.createGuest(dto.username);
 		this.setAuthCookies(res, tokens);
 		return { success: true, message: 'Guest login successful' };
@@ -221,7 +217,7 @@ export class AuthController {
 		@Req() req: AuthenticatedRequest,
 		@Res() res: FastifyReply,
 	) {
-		console.log(req.user);
+		// console.log(req.user);
 		const tokens = await this.authService.addUsername(req.user.id, dto.username);
 		this.setAuthCookies(res, tokens);
 
@@ -234,6 +230,9 @@ export class AuthController {
 		@Query('code') code: string,
 		@Res() res: FastifyReply,
 	) {
+		if (provider !== 'github' && provider !== 'discord') {
+			throw new BadRequestException('Invalid provider');
+		}
 		const tokens = await this.authService.handleCallback(code, provider);
 		this.setAuthCookies(res, tokens);
 		res.redirect(config.redirectUri + '/dashboard');
@@ -241,6 +240,9 @@ export class AuthController {
 
 	@Get('/:provider/redirect/uri')
 	async redirectUri(@Param('provider') provider: ProviderKeys, @Res() res: FastifyReply) {
+		if (provider !== 'github' && provider !== 'discord') {
+			throw new BadRequestException('Invalid provider');
+		}
 		res.redirect(providers[provider].authorizationUrl);
 	}
 
