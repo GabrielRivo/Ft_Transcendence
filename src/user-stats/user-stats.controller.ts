@@ -23,7 +23,8 @@ export class UserStatsController {
 
 	@Get('/user/:userId')
 	async get_stats(@Param('userId') userId: number) {
-		if (userId < 0) throw new NotFoundException(`User "${userId}" not found`);
+		if (this.statsService.isUser(userId) == false || userId == -1) 
+			throw new NotFoundException(`User "${userId}" not found`);
 		return await this.statsService.getGlobalStats(userId);
 	}
 
@@ -34,14 +35,16 @@ export class UserStatsController {
 
 	@Get('/elo/:userId')
 	async get_elo(@Param('userId') userId: number) {
-		if (userId < 0) throw new NotFoundException(`User "${userId}" not found`);
+		if (this.statsService.isUser(userId) == false || userId == -1) 
+			throw new NotFoundException(`User "${userId}" not found`);
 		return await this.statsService.getUserElo(userId);
 	}
 
 	@Get('/user/small/:userId')
 	async get_small_stats(@Param('userId') userId: number) {
-			if (userId < 0) throw new NotFoundException(`User "${userId}" not found`);
-			return await this.statsService.getGlobalStats(userId);
+		if (this.statsService.isUser(userId) == false || userId == -1) 
+			throw new NotFoundException(`User "${userId}" not found`);
+		return await this.statsService.getGlobalStats(userId);
 	}
 
 }

@@ -25,6 +25,7 @@ export class UserStatsService {
 	private statementRegisterUser!: Statement;
 	private statementChangeUsername!: Statement;
 	private statementGetUserElo!: Statement<{user_id : number}>;
+	private statementIsUserExist!: Statement;
 
 
 	onModuleInit() {
@@ -45,6 +46,7 @@ export class UserStatsService {
 		this.statementRegisterUser = this.db.prepare(`INSERT INTO user_stats (user_id) VALUES (@user_id)`)
 		this.statementChangeUsername = this.db.prepare(`UPDATE user_stats SET username = @username WHERE user_id = @user_id`)
 		this.statementGetUserElo = this.db.prepare(`SELECT elo FROM user_stats WHERE user_id = @user_id`)
+		this.statementIsUserExist = this.db.prepare(`SELECT 1 FROM user_stats WHERE user_id = ?`)
 	}
  
 	async getGlobalStats(userId: number) {
@@ -184,5 +186,9 @@ export class UserStatsService {
 			throw new NotFoundException('No user!');
 		}
 	}
-	
+	isUser(userId: number) {
+		if (this.statementIsUserExist.get(userId))
+			return true;
+		return false;
+	}
 }
