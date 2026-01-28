@@ -57,7 +57,7 @@ function commitDeletionDOM(fiber: Fiber, domParent: Node): void {
   }
 
   if (fiber.dom) {
-    console.log("Removing DOM node:", fiber.dom);
+    // console.log("Removing DOM node:", fiber.dom);
 
     // gestion des refs cleanup
     if (fiber.props && fiber.props.ref) {
