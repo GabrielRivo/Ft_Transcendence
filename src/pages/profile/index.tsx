@@ -104,7 +104,7 @@ export function ProfilePage() {
 	// };
 
 	// Check if user registered with email (not OAuth)
-	const isEmailProvider = true; // TODO: Get from user data
+	const isEmailProvider = true;
 
 	// Avatar handlers
 	const handleAvatarClick = () => {
@@ -504,6 +504,11 @@ export function ProfilePage() {
 						{isEmailProvider && (
 							<div className="rounded-lg border border-purple-500/30 bg-slate-900/50 p-6">
 								<h2 className="font-pirulen mb-4 text-xs tracking-wider text-purple-500">ACCOUNT SETTINGS</h2>
+								{(!user?.email || user?.email == '') && (
+								<div className="mb-4 rounded-sm border border-red-500/30 bg-red-500/10 p-2">
+									<p className="text-xs text-red-500">You cannot use this feature when you are connected via Discord or GitHub.</p>
+								</div>
+							)}
 								<div className="space-y-4">
 									{/* Email Section */}
 									<div className="rounded-sm border border-white/10 p-4">
@@ -515,6 +520,7 @@ export function ProfilePage() {
 											{!isEditingEmail && (
 												<button
 													onClick={() => setIsEditingEmail(true)}
+													disabled={!user?.email || user?.email == ''}
 													className="text-xs text-purple-400 transition-colors hover:text-white"
 												>
 													Modify
@@ -525,14 +531,15 @@ export function ProfilePage() {
 											<div className="mt-4 space-y-3">
 												<input
 													type="email"
+													disabled={!user?.email || user?.email == ''}
 													value={newEmail}
 													onInput={(e: Event) => setNewEmail((e.target as HTMLInputElement).value)}
 													placeholder="Nouvel email"
 													className="w-full rounded-sm border border-white/10 bg-transparent p-2 text-sm text-white outline-none focus:border-purple-500/50"
 												/>
 												<div className="flex justify-end gap-2">
-													<ButtonStyle3 onClick={() => setIsEditingEmail(false)}>Cancel</ButtonStyle3>
-													<ButtonStyle4 onClick={() => { handleUpdateEmail(); }}>Update</ButtonStyle4>
+													<ButtonStyle3 disabled={!user?.email || user?.email == ''} onClick={() => setIsEditingEmail(false)}>Cancel</ButtonStyle3>
+													<ButtonStyle4 disabled={!user?.email || user?.email == ''} onClick={() => { handleUpdateEmail(); }}>Update</ButtonStyle4>
 												</div>
 											</div>
 										)}
@@ -542,12 +549,13 @@ export function ProfilePage() {
 									<div className="rounded-sm border border-white/10 p-4">
 										<div className="flex items-center justify-between">
 											<div>
-												<h3 className="text-sm font-bold text-white">Passeword</h3>
+												<h3 className="text-sm font-bold text-white">Password</h3>
 												<p className="text-xs text-gray-500">••••••••</p>
 											</div>
 											{!isEditingPassword && (
 												<button
 													onClick={() => setIsEditingPassword(true)}
+													disabled={!user?.email || user?.email == ''}
 													className="text-xs text-purple-400 transition-colors hover:text-white"
 												>
 													Modify
@@ -558,6 +566,7 @@ export function ProfilePage() {
 											<div className="mt-4 space-y-3">
 												<input
 													type="password"
+													disabled={!user?.email || user?.email == ''}
 													value={currentPassword}
 													onInput={(e: Event) => setCurrentPassword((e.target as HTMLInputElement).value)}
 													placeholder="Current passeword"
@@ -565,6 +574,7 @@ export function ProfilePage() {
 												/>
 												<input
 													type="password"
+													disabled={!user?.email || user?.email == ''}
 													value={newPassword}
 													onInput={(e: Event) => setNewPassword((e.target as HTMLInputElement).value)}
 													placeholder="New passeword"
@@ -572,14 +582,15 @@ export function ProfilePage() {
 												/>
 												<input
 													type="password"
+													disabled={!user?.email || user?.email == ''}
 													value={confirmPassword}
 													onInput={(e: Event) => setConfirmPassword((e.target as HTMLInputElement).value)}
 													placeholder="Confirm the new password"
 													className="w-full rounded-sm border border-white/10 bg-transparent p-2 text-sm text-white outline-none focus:border-purple-500/50"
 												/>
 												<div className="flex justify-end gap-2">
-													<ButtonStyle3 onClick={() => setIsEditingPassword(false)}>Cancel</ButtonStyle3>
-													<ButtonStyle4 onClick={() => { handleUpdatePassword(); }}>Update</ButtonStyle4>
+													<ButtonStyle3 disabled={!user?.email || user?.email == ''} onClick={() => setIsEditingPassword(false)}>Cancel</ButtonStyle3>
+													<ButtonStyle4 disabled={!user?.email || user?.email == ''} onClick={() => { handleUpdatePassword(); }}>Update</ButtonStyle4>
 												</div>
 											</div>
 										)}
@@ -593,10 +604,16 @@ export function ProfilePage() {
 							<h2 className="font-pirulen mb-4 text-xs tracking-wider text-green-500">
 								TWO-FACTOR AUTHENTICATION (2FA)
 							</h2>
+							{(!user?.email || user?.email == '') && (
+								<div className="mb-4 rounded-sm border border-red-500/30 bg-red-500/10 p-2">
+									<p className="text-xs text-red-500">You cannot use this feature when you are connected via Discord or GitHub.</p>
+								</div>
+							)}
 							<div className="space-y-4">
 								<div className="flex items-center justify-between">
 									<div>
 										<h3 className="text-sm font-bold text-white">TOTP Authenticator</h3>
+										
 										<p className="text-xs text-gray-500">
 											{user?.twoFA
 												? 'Activated - Your account is protected'
@@ -609,9 +626,9 @@ export function ProfilePage() {
 								</div>
 								<div className="flex gap-2">
 									{user?.twoFA ? (
-										<ButtonStyle3 onClick={() => { handleDisable2FA(); }}>Disable 2FA</ButtonStyle3>
+										<ButtonStyle3 disabled={!user?.email || user?.email == ''} onClick={() => { handleDisable2FA(); }}>Disable 2FA</ButtonStyle3>
 									) : (
-										<ButtonStyle4 onClick={() => { handleSetup2FA(); }} disabled={isSettingUp2FA}>
+										<ButtonStyle4 disabled={(!user?.email || user?.email == '') || isSettingUp2FA} onClick={() => { handleSetup2FA(); }} >
 											{isSettingUp2FA ? 'Setting up...' : 'Enable 2FA'}
 										</ButtonStyle4>
 									)}

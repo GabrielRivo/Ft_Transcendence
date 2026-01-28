@@ -14,7 +14,7 @@ function formatDate(dateStr: string): string {
 }
 
 function formatDuration(seconds: number): string {
-	const minutes = Math.floor(seconds / 60);
+	const minutes = Math.floor(seconds);
 	return `${minutes}`;
 }
 
@@ -138,7 +138,7 @@ export function StatisticsHistoricPage() {
 				const usernameMap = new Map<number, string>();
 				await Promise.all(
 					Array.from(opponentIds).map(async (id) => {
-						const res = await api.get<UserInfo>(`/api/auth/user-by-id/${id}`);
+						const res = await api.get<UserInfo>(`/api/user/profile/${id}`);
 						usernameMap.set(id, res.data?.username || `Joueur #${id}`);
 					})
 				);
