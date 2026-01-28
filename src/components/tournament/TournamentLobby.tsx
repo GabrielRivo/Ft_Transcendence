@@ -40,6 +40,23 @@ export function TournamentLobby({
                     <p className="mt-2 text-sm text-gray-400">
                         Waiting for players to join...
                     </p>
+                    {/* Invite Code - Small and subtle at top */}
+                    {tournament?.inviteCode && (
+                        <div className="mt-3 flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Code:</span>
+                            <span className="font-mono text-sm text-gray-400">
+                                {tournament.inviteCode}
+                            </span>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(tournament.inviteCode);
+                                }}
+                                className="rounded border border-gray-600 bg-gray-700/50 px-2 py-0.5 text-xs text-gray-400 hover:bg-gray-600/50 hover:text-gray-300 transition-colors"
+                            >
+                                Copy
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Loading State */}

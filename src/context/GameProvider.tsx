@@ -1,7 +1,7 @@
 import { createElement, useState, useEffect, useRef, useCallback, useMemo } from 'my-react';
 import { useNavigate } from 'my-react-router';
 import type { Element } from 'my-react';
-import { GameContext, EndingScreenData, GameMode, GameScores } from './gameContext';
+import { GameContext, GameMode, GameScores } from './gameContext';
 import Game from '../libs/pong/Game/index';
 import Services from '../libs/pong/Game/Services/Services';
 import { useToast } from '@/hook/useToast';
@@ -49,18 +49,6 @@ export function GameProvider({ children }: GameProviderProps) {
 		handleScoreUpdateRef.current = handleScoreUpdate;
 	}, [handleScoreUpdate]);
 
-
-	// Handler for game ending
-	const handleEndingScreen = useCallback((event: EndingScreenData) => {
-		console.log('[GameProvider] Game ended:', event);
-	}, []);
-	const handleEndingScreenRef = useRef(handleEndingScreen);
-	useEffect(() => {
-		handleEndingScreenRef.current = handleEndingScreen;
-	}, [handleEndingScreen]);
-
-
-	
 	useEffect(() => {
 		if (isInitializedRef.current || !canvasRef.current) {
 			return;
@@ -78,36 +66,52 @@ export function GameProvider({ children }: GameProviderProps) {
 				handleScoreUpdateRef.current(event);
 			});
 
-			Services.EventBus?.on('Game:EndingScreen', (event: EndingScreenData) => {
-				handleEndingScreenRef.current(event);
-			});
+			Services.EventBus?.on('Game:Ended', (event: { gameType?: string; tournamentId?: string }) => {
+				console.log('[GameProvider] Game:Ended event received!', event);
+				console.log('[GameProvider] Event payload - gameType:', event?.gameType, 'tournamentId:', event?.tournamentId);
 
-			Services.EventBus?.on('Game:Ended', () => {
 				setModeState('background');
 				toast('Game ended', 'warning');
 
-				// Redirection logic
-				// Priority to stored metadata which is explicitly passed
-				const { type, tournamentId, tournamentType, playersCount } = gameMetadataRef.current;
+				// Use gameType from the event payload (set by PongOnline from gameJoined WebSocket event)
+				const gameType = event?.gameType;
+				const eventTournamentId = event?.tournamentId;
 
-				if (type === 'ranked') {
-					navigate('/');
-				} else if (type === 'tournament' && tournamentId && tournamentType && playersCount) {
-					navigate(`/play/tournament/${tournamentType}/${playersCount}?id=${tournamentId}`);
-				} else {
-					// Fallback to URL params if metadata wasn't set (e.g. reload)
-					const searchParams = new URLSearchParams(window.location.search);
-					const urlType = searchParams.get('type');
-					if (urlType === 'ranked') {
-						navigate('/');
-					} else if (urlType === 'tournament') {
-						const urlTournamentId = searchParams.get('tournamentId');
-						const urlTournamentType = searchParams.get('tournamentType');
-						const urlPlayersCount = searchParams.get('playersCount');
-						if (urlTournamentId && urlTournamentType && urlPlayersCount) {
-							navigate(`/play/tournament/${urlTournamentType}/${urlPlayersCount}?id=${urlTournamentId}`);
-						}
-					}
+				console.log('[GameProvider] Extracted from event - gameType:', gameType, 'tournamentId:', eventTournamentId);
+
+				if (gameType === 'ranked') {
+					console.log('[GameProvider] gameType is ranked, navigating to /play');
+					navigate('/play');
+				} else if (gameType === 'tournament' && eventTournamentId) {
+					console.log('[GameProvider] gameType is tournament, fetching tournament details...');
+					// Fetch tournament details from API to get tournamentType and playersCount
+					fetch(`/api/tournament/${eventTournamentId}`, {
+						method: 'GET',
+						credentials: 'include',
+						headers: { 'Content-Type': 'application/json' },
+					})
+						.then(res => res.ok ? res.json() : null)
+						.then(tournament => {
+							if (tournament && tournament.visibility && tournament.size) {
+								const tournamentType = tournament.visibility.toLowerCase();
+								const playersCount = tournament.size;
+								const targetUrl = `/play/tournament/${tournamentType}/${playersCount}?id=${eventTournamentId}`;
+								console.log('[GameProvider] Navigating to tournament page:', targetUrl);
+								navigate(targetUrl);
+							} else {
+								console.warn('[GameProvider] Could not fetch tournament details, falling back to /play');
+								navigate('/play');
+							}
+						})
+						.catch(err => {
+							console.error('[GameProvider] Error fetching tournament:', err);
+							navigate('/play');
+						});
+				}
+				else {
+					console.log('[GameProvider] Unknown gameType:', gameType, '- defaulting to /play');
+					// Default fallback - navigate to /play for any game type
+					navigate('/play');
 				}
 			});
 
@@ -126,6 +130,13 @@ export function GameProvider({ children }: GameProviderProps) {
 	}, []);
 
 	const setMode = useCallback((newMode: GameMode, newGameId?: string | null, metadata?: { type?: string; tournamentId?: string; tournamentType?: string; playersCount?: string }) => {
+		// Always store metadata FIRST, before any early returns
+		// This ensures metadata is preserved even on duplicate setMode calls
+		if (metadata) {
+			console.log('[GameProvider] Storing metadata:', JSON.stringify(metadata));
+			gameMetadataRef.current = metadata;
+		}
+
 		if (currentModeRef.current === newMode) {
 			console.log('[GameProvider] Mode already set to:', newMode);
 			return;
@@ -134,10 +145,6 @@ export function GameProvider({ children }: GameProviderProps) {
 		console.log('[GameProvider] Switching mode from', currentModeRef.current, 'to', newMode);
 		currentModeRef.current = newMode;
 		setModeState(newMode);
-
-		if (metadata) {
-			gameMetadataRef.current = metadata;
-		}
 
 		if (newGameId !== undefined) {
 			setGameId(newGameId);
