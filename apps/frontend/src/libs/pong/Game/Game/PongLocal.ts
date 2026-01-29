@@ -1,4 +1,4 @@
-import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh, PBRMaterial, Engine, AbstractMesh } from "@babylonjs/core";
+import { Scene, MeshBuilder, StandardMaterial, Color3, ArcRotateCamera, Vector2, Vector3, GlowLayer, Mesh, PBRMaterial, AbstractMesh } from "@babylonjs/core";
 
 import Services from "../Services/Services";
 import { DeathBarPayload } from "../globalType";
@@ -118,11 +118,10 @@ class PongLocal extends Game {
     }
 
     async loadGameAssets(): Promise<void> {
-        // Load 3D background model from cache
         if (this.isDisposed || !Services.Scene) return;
         try {
             this.backgroundMeshes = await Services.AssetCache.loadModel('pong-background', '/models/pong.glb', Services.Scene);
-            if (this.isDisposed) return; // Check again after async operation
+            if (this.isDisposed) return;
             this.backgroundMeshes.forEach(mesh => {
                 mesh.isPickable = false;
             });
@@ -135,7 +134,7 @@ class PongLocal extends Game {
         if (this.isDisposed || !Services.Scene) return;
         try {
             const ballMeshs = await Services.AssetCache.loadModel('pong-ball', '/models/ball.glb', Services.Scene);
-            if (this.isDisposed) return; // Check again after async operation
+            if (this.isDisposed) return;
             ballMeshs.forEach(mesh => {
                 mesh.isPickable = false;
             });

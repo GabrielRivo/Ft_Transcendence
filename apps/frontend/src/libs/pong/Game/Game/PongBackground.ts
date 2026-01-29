@@ -125,7 +125,11 @@ class PongBackground extends Game {
             this.backgroundMeshes.forEach(mesh => {
                 mesh.isPickable = false;
             });
-        } catch (e) { }
+        } catch (e) {
+            if (!this.isDisposed) {
+                this.dispose();
+            }
+        }
         let ballMesh : Mesh | undefined = undefined;
         if (this.isDisposed || !Services.Scene) return;
         try {
@@ -135,14 +139,18 @@ class PongBackground extends Game {
                 mesh.isPickable = false;
             });
             ballMesh = ballMeshs[0]! as Mesh;
-        } catch (e) { }
+        } catch (e) {
+            if (!this.isDisposed) {
+                this.dispose();
+            }
+        }
         if (this.isDisposed || !Services.Scene) return;
         if (ballMesh && this.ball) {
             this.ball.setModelMesh(ballMesh);
         }
     }
 
-	launch(): void { }
+	launch(): void {}
 
 	start(): void { this.run(); }
 
