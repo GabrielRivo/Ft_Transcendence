@@ -219,7 +219,7 @@ class Pong extends Game {
                 //const winnerId = this.player1!.score === 5 ? this.p1Id : this.p2Id;
                 //this.dispose('score_limit', winnerId);
                 this.endGame('score_limit');
-            }, this.tournamentId ? 0 : 8000);
+            }, this.tournamentId ? 0 : 3500);
 
             return;
         }
