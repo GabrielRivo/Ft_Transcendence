@@ -5,7 +5,6 @@ import "@babylonjs/inspector";
 import Services from "../Services/Services";
 import type { DeathBarPayload, GameState, OwnedMesh } from "../globalType";
 import Player from "../Player";
-import DeathBar from "../DeathBar";
 import Ball from "../Ball";
 import Wall from "../Wall";
 import PredictionManager from "./PredictionManager";
@@ -18,8 +17,6 @@ import BlackScreenEffect from "../Effects/BlackScreenEffect";
 import RotateCameraAlphaEffect from "../Effects/RotateCameraAlphaEffect";
 import CameraShakeEffect from "../Effects/CameraShakeEffect";
 import LightUpEffect from "../Effects/LightUpEffect";
-import Paddle from "../Paddle";
-
 
 class PongOnline extends Game {
 
@@ -270,6 +267,9 @@ class PongOnline extends Game {
 
         if (payload.gameType) {
             this.gameType = payload.gameType;
+        }
+        if (payload.tournamentId) {
+            this.tournamentId = payload.tournamentId;
         }
         if (!this.gameJoined) {
             this.camera!.attachControl(Services.Canvas, true);
