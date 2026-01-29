@@ -65,6 +65,9 @@ export class BlockManagementService {
 	}
 
 	unblock_user(userId: number, otherId: number) {
+		if (userId === otherId) {
+			return { success: false, message: "You cannot unblock yourself" };
+		}
 		const result = this.statementUnblock.run({ userId, otherId });
 		if (result.changes > 0) {
 			// Émettre l'événement user_unblocked aux deux utilisateurs
