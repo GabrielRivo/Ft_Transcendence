@@ -111,7 +111,7 @@ Ce document détaille le plan de mise en œuvre du service de Matchmaking. La st
     * **Injection Mémoire :** Aucune variable sensible stockée en clair dans l'environnement (`process.env`).
 
 * **5.2 Logging Haute Performance (Pino)**
-    * **Remplacement de Console :** Migration de `console.log` vers **Pino** pour un logging JSON asynchrone et non-bloquant.
+    * **Remplacement de Console :** Migration de `// console.log` vers **Pino** pour un logging JSON asynchrone et non-bloquant.
     * **Structuration :** Logs enrichis (`traceId`, `matchId`, `durationMs`) pour ingestion par ELK/Loki.
 
 * **5.3 Métrologie (Prometheus)**

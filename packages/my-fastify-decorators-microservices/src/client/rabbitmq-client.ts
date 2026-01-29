@@ -49,9 +49,9 @@ export class RabbitMQClient {
                     }
                 );
                 this.exchangeAsserted = true;
-                console.log(`[Microservice] Producer Client connected with exchange "${this.options.exchange.name}" (${this.options.exchange.type})`);
+                // console.log(`[Microservice] Producer Client connected with exchange "${this.options.exchange.name}" (${this.options.exchange.type})`);
             } else {
-                console.log('[Microservice] Producer Client connected');
+                // console.log('[Microservice] Producer Client connected');
             }
         }
     }

@@ -195,12 +195,12 @@ class Ball {
         while (remainingDeltaT > Ball.EPSILON && this.moving) {
             loopCount++;
             if (loopCount > 50) {
-                //console.log("Ball move loop exceeded 50 iterations, breaking to avoid infinite loop.");
+                //// console.log("Ball move loop exceeded 50 iterations, breaking to avoid infinite loop.");
                 break;
             }
 
             deltaT = remainingDeltaT;
-            //console.log("Ball hit detected with mesh: " + hit.pickedMesh.name);
+            //// console.log("Ball hit detected with mesh: " + hit.pickedMesh.name);
             
             distance = this.speed * deltaT;
             displacement = this.direction.scale(distance);
@@ -239,9 +239,9 @@ class Ball {
                 this.setPos(newPos);
                 break;
             }
-            //console.log("Collision happened near the center of the paddle of : ", hit.pickedMesh.position.subtract(hit.pickedPoint!));
-            //console.log("DeltaT : ", deltaT, " RemainingDeltaT : ", remainingDeltaT, " Distance : ", distance, " Hit mesh : ", hit.pickedMesh.name);
-            //console.log("Paddle1Time: ", paddle1CollisionTime, " Paddle2Time: ", paddle2CollisionTime, " OtherTime: ", otherCollisionTime);
+            //// console.log("Collision happened near the center of the paddle of : ", hit.pickedMesh.position.subtract(hit.pickedPoint!));
+            //// console.log("DeltaT : ", deltaT, " RemainingDeltaT : ", remainingDeltaT, " Distance : ", distance, " Hit mesh : ", hit.pickedMesh.name);
+            //// console.log("Paddle1Time: ", paddle1CollisionTime, " Paddle2Time: ", paddle2CollisionTime, " OtherTime: ", otherCollisionTime);
 
             let traveledDistance = hit.distance - (this.diameter / 2);
             this.setPos(this.direction.scale(traveledDistance).add(this.position));
@@ -250,8 +250,8 @@ class Ball {
                 this.setPos(newPos);
                 //CollisionTime = deltaT;
             }
-            //console.log("Ball move loop  deltaT estimated to : ", deltaT);
-            //console.log("Ball collided with ", hit.pickedMesh.name, " at distance ", traveledDistance, " deltaT adjusted to ", deltaT);
+            //// console.log("Ball move loop  deltaT estimated to : ", deltaT);
+            //// console.log("Ball collided with ", hit.pickedMesh.name, " at distance ", traveledDistance, " deltaT adjusted to ", deltaT);
             if (hit.pickedMesh.name === "paddleTrigger")
                 excludedMeshes.push(hit.pickedMesh as OwnedMesh);
 
@@ -281,7 +281,7 @@ class Ball {
 
         if (hit && hit.pickedMesh /*&& hit.pickedMesh.name !== "paddle"*/) {
             const traveledDistance = hit.distance - (this.diameter / 2);
-            //console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + distance);
+            //// console.log("Collision detected at distance: " + traveledDistance + " initial distance: " + distance);
             const timeToCollision = (traveledDistance / distance) * deltaT;
             if (timeToCollision < 0 && hit.pickedMesh.name === "paddleTrigger")
             {
@@ -336,7 +336,7 @@ class Ball {
                     return false;
                 }
                 this.moving = false;
-               //  console.log("No radial impact found!");
+               //  // console.log("No radial impact found!");
             }
         }
         return false;
@@ -428,7 +428,7 @@ class Ball {
                 impact = pickingInfoClone(hit);
                 if (!impact)
                 {
-                   //  console.log("Failed to clone PickingInfo!");
+                   //  // console.log("Failed to clone PickingInfo!");
                     return null;
                 }
 
@@ -487,7 +487,7 @@ class Ball {
         let normal : Vector3 | null = hitInfo.getNormal(true);
         if (normal)
             
-        //  console.log("No normal found for bounce!");
+        //  // console.log("No normal found for bounce!");
         // else
         {
             this.setDir(MathUtils.reflectVector(this.direction, normal));
@@ -502,7 +502,7 @@ class Ball {
         
         const jump = previousPos.subtract(this.position);
 
-        //console.log("Ball reconcile. Server pos: ", serverPos, " Previous pos: ", previousPos, " New pos: ", this.position, " Jump: ", jump);
+        //// console.log("Ball reconcile. Server pos: ", serverPos, " Previous pos: ", previousPos, " New pos: ", this.position, " Jump: ", jump);
         
         this.visualOffset.addInPlace(jump);
 
@@ -523,7 +523,7 @@ class Ball {
         if (currentTime >= this.startMovingTime && currentTime - deltaT < this.startMovingTime) {
             this.moving = true;
             deltaT = currentTime - this.startMovingTime;
-            //console.log("Ball started at time:", currentTime, "startMovingTime:", this.startMovingTime, "deltaT:", deltaT);
+            //// console.log("Ball started at time:", currentTime, "startMovingTime:", this.startMovingTime, "deltaT:", deltaT);
         }
         return deltaT;
     }

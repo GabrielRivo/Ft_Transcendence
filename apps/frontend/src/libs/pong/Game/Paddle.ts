@@ -156,7 +156,7 @@ class Paddle {
         //ball.bounce(hitInfo);
         ball.speedUp();
         ball.owner = this.owner;
-        //console.log("Ball hit by paddle, new direction : ", newDir, " angle : ", angle);
+        //// console.log("Ball hit by paddle, new direction : ", newDir, " angle : ", angle);
         Services.EventBus!.emit("PaddleHitBall", {paddle: this, ball: ball});
     }
 
@@ -167,7 +167,7 @@ class Paddle {
         
         const jump = previousPos.subtract(this.position);
 
-        //console.log("Paddle reconcile. Server pos: ", serverPos, " Previous pos: ", previousPos, " New pos: ", this.position, " Jump: ", jump);
+        //// console.log("Paddle reconcile. Server pos: ", serverPos, " Previous pos: ", previousPos, " New pos: ", this.position, " Jump: ", jump);
         
         this.visualOffset.addInPlace(jump);
 

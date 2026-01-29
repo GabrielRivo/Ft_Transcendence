@@ -23,11 +23,11 @@ export class StartRoundUseCase {
 
         const currentRound = tournament.getCurrentRound();
         if (!currentRound) {
-            console.log(`[StartRoundUseCase] No active round for tournament ${tournamentId}`);
+            // console.log(`[StartRoundUseCase] No active round for tournament ${tournamentId}`);
             return;
         }
 
-        console.log(`[StartRoundUseCase] Starting Round ${currentRound} for tournament ${tournamentId}`);
+        // console.log(`[StartRoundUseCase] Starting Round ${currentRound} for tournament ${tournamentId}`);
 
         const matches = tournament.matches.filter(m => m.round === currentRound);
         const playableMatches = matches.filter(m => m.isReady() && m.status !== 'FINISHED');
@@ -37,7 +37,7 @@ export class StartRoundUseCase {
                 const totalRounds = Math.log2(tournament.size);
                 const isFinal = match.round === totalRounds;
 
-                console.log(`[StartRoundUseCase] Requesting game creation for match ${match.id} (isFinal: ${isFinal})`);
+                // console.log(`[StartRoundUseCase] Requesting game creation for match ${match.id} (isFinal: ${isFinal})`);
                 await this.gameGateway.createGame(match.id, match.playerA!.id, match.playerB!.id, tournamentId, isFinal);
 
                 // Notify frontend to redirect

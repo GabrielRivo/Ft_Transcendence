@@ -136,11 +136,6 @@ export class GameGateway {
 
 		const userId = String(user.id);
 		client.data.userId = userId;
-
-		console.log(
-			`[GameGateway] Client ${socketId} authenticated | UserId: ${userId} | Username: ${user.username || 'N/A'}`,
-		);
-
 		this.connectedCount++;
 
 		// =====================================================================
@@ -152,10 +147,6 @@ export class GameGateway {
 
 		const existingSocket = this.playerSockets.get(userId);
 		if (existingSocket) {
-			console.log(
-				`[GameGateway] Reconnection detected for userId ${userId}. ` +
-					`Disconnecting old socket ${existingSocket.id}`,
-			);
 			existingSocket.disconnect(true);
 		}
 
@@ -174,7 +165,7 @@ export class GameGateway {
 
 		if (result.success) {
 			// Player successfully connected to their game
-			console.log(`[GameGateway] Player ${userId} connected to game ${result.gameId}`);
+			// console.log(`[GameGateway] Player ${userId} connected to game ${result.gameId}`);
 
 			// IMPORTANT: Use 'game_connected' instead of 'connection' because
 			// 'connection' is a reserved Socket.IO event name and would not
@@ -186,7 +177,7 @@ export class GameGateway {
 			})
 		} else {
 			// No pending game - inform client and disconnect
-			console.log(`[GameGateway] Connection rejected for userId ${userId}: ${result.error}`);
+			// console.log(`[GameGateway] Connection rejected for userId ${userId}: ${result.error}`);
 
 			client.emit('error', {
 				code: result.error,
@@ -224,10 +215,6 @@ export class GameGateway {
 		}
 
 		this.connectedCount--;
-		console.log(
-			`[GameGateway] Client ${client.id} (userId: ${userId || 'unknown'}) disconnected. ` +
-				`Total connected: ${this.connectedCount}`,
-		);
 	}
 
 	// =========================================================================

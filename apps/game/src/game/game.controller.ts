@@ -87,16 +87,12 @@ export class GameController {
 		@Body() dto: CreateGameDto,
 		@Res() res: FastifyReply,
 	): Promise<CreateGameResponseDto | CreateGameErrorDto> {
-		console.log(
-			`[GameController] Received game creation request: gameId=${dto.gameId}, player1=${dto.player1Id}, player2=${dto.player2Id}`,
-		);
-
 		// Attempt to create the game
 		const result = this.gameService.createGame(dto.gameId, dto.player1Id, dto.player2Id, dto.type, dto.tournamentId, dto.isFinal);
 
 		// Handle success - return 201 Created
 		if (result.success) {
-			console.log(`[GameController] Game ${result.gameId} created successfully`);
+			// console.log(`[GameController] Game ${result.gameId} created successfully`);
 
 			res.status(201);
 			return {

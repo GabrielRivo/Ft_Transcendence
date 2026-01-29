@@ -29,7 +29,7 @@ export class TournamentEventsController {
 
     @EventPattern('game.finished')
     async handleGameFinished(@Payload() event: GameFinishedEvent) {
-        console.log(`[TournamentEventsController] Received game.finished event: ${event.gameId}`);
+        // console.log(`[TournamentEventsController] Received game.finished event: ${event.gameId}`);
 
         try {
             const tournament = await this.repository.findByMatchId(event.gameId);
@@ -38,7 +38,7 @@ export class TournamentEventsController {
                 return;
             }
 
-            console.log(`[TournamentEventsController] Updating match ${event.gameId} for tournament ${tournament.id}`);
+            // console.log(`[TournamentEventsController] Updating match ${event.gameId} for tournament ${tournament.id}`);
             tournament.updateMatchScore(event.gameId, event.score1, event.score2, event.winnerId);
             // tournament.onMatchFinished(event.gameId); // REMOVE: updateMatchScore already handles this
 
@@ -52,11 +52,11 @@ export class TournamentEventsController {
 
             if (match && tournament.isRoundFinished(match.round)) {
                 if (tournament.status === 'FINISHED') {
-                    console.log(`[TournamentEventsController] Tournament ${tournament.id} finished!`);
+                    // console.log(`[TournamentEventsController] Tournament ${tournament.id} finished!`);
                     return;
                 }
 
-                console.log(`[TournamentEventsController] Round ${match.round} finished. Starting timer for next round.`);
+                // console.log(`[TournamentEventsController] Round ${match.round} finished. Starting timer for next round.`);
                 this.socketPublisher.publishTimer(tournament.id, READY_TIME_SEC); // Notify frontend immediately
                 this.timer.start(tournament.id, READY_TIME_SEC, async () => {
                     await this.startRoundUseCase.execute(tournament.id);
@@ -69,7 +69,7 @@ export class TournamentEventsController {
 
     @EventPattern('game.score_updated')
     async handleScoreUpdated(@Payload() event: any) { // using any to avoid importing from game app directly if not shared
-        console.log(`[TournamentEventsController] Received score update for game ${event.gameId}`);
+        // console.log(`[TournamentEventsController] Received score update for game ${event.gameId}`);
         try {
             // We can use a lightweight lookup or cache if possible, but for now repository is fine 
             // assuming we don't want to add a direct mapping just for this. 

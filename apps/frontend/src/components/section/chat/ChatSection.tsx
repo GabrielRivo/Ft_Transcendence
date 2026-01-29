@@ -36,7 +36,7 @@ export function ChatSection() {
 				body: JSON.stringify({}),
 			});
 			if (response.ok && response.data) {
-				// console.log('Joined tournament successfully', response.data);
+				// // console.log('Joined tournament successfully', response.data);
 				const tournament = response.data as any;
 				const type = tournament.visibility.toLowerCase();
 				const size = tournament.size;

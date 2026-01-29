@@ -45,7 +45,7 @@ export function UserItem({
 	// 		closeAllUserContextMenus();
 	// 	}
 	// }, [mode]);
-	
+
 	const handleContextMenu = useCallback(
 		(e: MouseEvent) => {
 			if (!contextMenuCallbacks) return;
@@ -115,10 +115,9 @@ export function UserItem({
 			<div
 				ref={setRef}
 				onClick={onClick}
-				className={`flex cursor-pointer flex-col items-center gap-2 transition-colors ${
-					isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'hover:text-cyan-500`'
-				}${className}`}
-				
+				className={`flex cursor-pointer flex-col items-center gap-2 transition-colors ${isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'hover:text-cyan-500`'
+					}${className}`}
+
 			>
 				<div className="relative">
 					{avatar ? (
@@ -129,7 +128,7 @@ export function UserItem({
 						/>
 					) : (
 						<div className="flex size-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold">
-							{name.charAt(0).toUpperCase()}
+							{name?.charAt(0).toUpperCase()}
 						</div>
 					)}
 					{!isRightPanel && name !== 'Hub' && isOnline !== undefined && (

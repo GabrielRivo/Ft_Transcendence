@@ -62,7 +62,7 @@ export class RabbitMQServer {
 
             await this.setupQueueAndExchange(channel);
 
-            console.log(`[Microservice] Connected to RabbitMQ queue: "${this.actualQueueName}"`);
+            // console.log(`[Microservice] Connected to RabbitMQ queue: "${this.actualQueueName}"`);
 
             this.bindEvents();
 
@@ -108,7 +108,7 @@ export class RabbitMQServer {
             const bindingKey = exchange.type === 'fanout' ? '' : '#';
             await channel.bindQueue(this.actualQueueName, exchange.name, bindingKey);
             
-            console.log(`[Microservice] Bound queue "${this.actualQueueName}" to exchange "${exchange.name}" (${exchange.type})`);
+            // console.log(`[Microservice] Bound queue "${this.actualQueueName}" to exchange "${exchange.name}" (${exchange.type})`);
         } else {
             await channel.assertQueue(this.options.queue, {
                 durable: false,
@@ -135,7 +135,7 @@ export class RabbitMQServer {
                 const pattern = Reflect.getMetadata(MICROSERVICE_METADATA.eventPattern, prototype, methodName);
                 
                 if (pattern) {
-                    console.log(`[Microservice] Mapped event "${pattern}" to ${instance.constructor.name}.${methodName}`);
+                    // console.log(`[Microservice] Mapped event "${pattern}" to ${instance.constructor.name}.${methodName}`);
                     
                     const handlerWrapper = async (msg: ConsumeMessage | null, ch: Channel) => {
                         if (!msg) return;
@@ -180,7 +180,7 @@ export class RabbitMQServer {
                     if (this.isWildcardPattern(pattern)) {
                         const regex = this.patternToRegex(pattern);
                         this.patternMatchers.push({ pattern, regex, handler: handlerWrapper });
-                        console.log(`[Microservice] Registered wildcard pattern "${pattern}" -> ${regex}`);
+                        // console.log(`[Microservice] Registered wildcard pattern "${pattern}" -> ${regex}`);
                     } else {
                         this.handlers.set(pattern, handlerWrapper);
                     }
@@ -282,7 +282,7 @@ export class RabbitMQServer {
                         matchingHandlers[i](clonedMsg as any, channel);
                     }
                 } else {
-                    console.log(`[Microservice] No handler for pattern "${effectivePattern}"`);
+                    // console.log(`[Microservice] No handler for pattern "${effectivePattern}"`);
                     channel.ack(msg);
                 }
             } else {

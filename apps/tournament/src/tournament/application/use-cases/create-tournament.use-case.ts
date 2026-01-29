@@ -16,7 +16,7 @@ export class CreateTournamentUseCase {
     private publisher!: CompositeTournamentEventsPublisher;
 
     public async execute(command: CreateTournamentDto, ownerId: string, ownerDisplayName: string): Promise<string> {
-        console.log(`[CreateTournamentUseCase] Creating tournament '${command.name}' for owner '${ownerId}' (${ownerDisplayName})`);
+        // console.log(`[CreateTournamentUseCase] Creating tournament '${command.name}' for owner '${ownerId}' (${ownerDisplayName})`);
         const tournament = new Tournament(
             randomUUID(),
             command.name,
@@ -33,7 +33,7 @@ export class CreateTournamentUseCase {
         await this.publisher.publishAll(tournament.getRecordedEvents());
         tournament.clearRecordedEvents();
 
-        console.log(`[CreateTournamentUseCase] Tournament ${tournament.id} created and saved.`);
+        // console.log(`[CreateTournamentUseCase] Tournament ${tournament.id} created and saved.`);
         return tournament.id;
     }
 }

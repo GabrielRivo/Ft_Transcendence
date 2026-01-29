@@ -133,14 +133,14 @@ export function ChatSidebarPanel({
 											}).catch(() => {
 												toast('Network error', 'error', 3000)
 											})
-											// console.log('Défier', friend.username)
+											// // console.log('Défier', friend.username)
 										},
 										onStatistics: () => {
 											navigate(`/statistics/${friend.id}`)
 										},
 										onProfile: () => {
 											navigate(`/profile/${friend.id}`)
-											// console.log('Profil', friend.username)
+											// // console.log('Profil', friend.username)
 										},
 										onToggleFriend: async () => {
 											const success = await onRemoveFriend(friend.id);
@@ -149,7 +149,7 @@ export function ChatSidebarPanel({
 											} else {
 												toast('Failed to remove friend', 'error', 3000);
 											}
-											// console.log('Delete friend', friend.username)
+											// // console.log('Delete friend', friend.username)
 										},
 										onBlock: async () => {
 											const success = await blockUser(friend.id);

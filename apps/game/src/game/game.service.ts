@@ -50,7 +50,7 @@ export class GameService {
 			return { success: false, message: 'Opponent not found' };
 		}
 
-		console.log(`[GameService] Player ${userId} surrendered game ${game.id}. Winner: ${opponentId}`);
+		// console.log(`[GameService] Player ${userId} surrendered game ${game.id}. Winner: ${opponentId}`);
 		game.endGame('surrender', opponentId);
 		return { success: true, message: 'Game surrendered' };
 	}
@@ -72,10 +72,6 @@ export class GameService {
 		const game = this.gamesByPlayer.get(userId);
 
 		if (!game) {
-			console.log(
-				`[GameService] Connection rejected: No pending game for user ${userId}. ` +
-				'Player must use Matchmaking Service first.',
-			);
 			return {
 				success: false,
 				error: 'NO_PENDING_GAME',
@@ -85,7 +81,7 @@ export class GameService {
 
 		// Player has a valid game - connect them
 		game.playerConnected(client);
-		console.log(`[GameService] Player ${userId} connected to game ${game.id}`);
+		// console.log(`[GameService] Player ${userId} connected to game ${game.id}`);
 
 		return {
 			success: true,
@@ -97,7 +93,7 @@ export class GameService {
 		const userId = client.data.userId;
 
 		if (!userId) {
-			console.log(`[GameService] Disconnect ignored: No userId on socket ${client.id}`);
+			// console.log(`[GameService] Disconnect ignored: No userId on socket ${client.id}`);
 			return;
 		}
 
@@ -105,18 +101,15 @@ export class GameService {
 
 		if (game) {
 			game.playerDisconnected(client);
-			console.log(`[GameService] Player ${userId} disconnected from game ${game.id}`);
+			// console.log(`[GameService] Player ${userId} disconnected from game ${game.id}`);
 		} else {
-			console.log(`[GameService] Disconnect: Player ${userId} was not in any active game`);
+			// console.log(`[GameService] Disconnect: Player ${userId} was not in any active game`);
 		}
 	}
 
 	public createGame(id: string, player1Id: string, player2Id: string, type: GameType, tournamentId?: string, isFinal?: boolean): CreateGameResult {
 		// Validate that neither player is already in an active game
 		if (this.gamesByPlayer.has(player1Id)) {
-			console.log(
-				`[GameService] Cannot create game ${id}: Player ${player1Id} is already in a game.`,
-			);
 			return {
 				success: false,
 				error: 'PLAYER_ALREADY_IN_GAME',
@@ -125,9 +118,6 @@ export class GameService {
 		}
 
 		if (this.gamesByPlayer.has(player2Id)) {
-			console.log(
-				`[GameService] Cannot create game ${id}: Player ${player2Id} is already in a game.`,
-			);
 			return {
 				success: false,
 				error: 'PLAYER_ALREADY_IN_GAME',
@@ -137,7 +127,7 @@ export class GameService {
 
 		// Validate that game ID is unique
 		if (this.games.has(id)) {
-			console.log(`[GameService] Cannot create game ${id}: Game ID already exists.`);
+			// console.log(`[GameService] Cannot create game ${id}: Game ID already exists.`);
 			return {
 				success: false,
 				error: 'GAME_ALREADY_EXISTS',
@@ -159,7 +149,7 @@ export class GameService {
 		// Increment counter for metrics/debugging
 		this.gameCount++;
 
-		console.log(`[GameService] Game ${id} created with players ${player1Id} and ${player2Id}`);
+		// console.log(`[GameService] Game ${id} created with players ${player1Id} and ${player2Id}`);
 
 		return { success: true, gameId: id };
 	}
@@ -179,10 +169,6 @@ export class GameService {
 		this.gamesByPlayer.delete(player2Id);
 		this.games.delete(game.id);
 		this.gameCount--;
-
-		console.log(
-			`[GameService] Game ${game.id} removed. Players ${player1Id} and ${player2Id} are now free.`,
-		);
 
 		/*if (result) {
 			await this.eventsPublisher.publishGameFinished({
@@ -221,7 +207,7 @@ export class GameService {
 
 	public async onPlayerInput(client: Socket, data: any): Promise<void> {
 		const game = this.gamesByPlayer.get(client.data.userId);
-		//console.log(`[GameService] Received input from player ${client.data.userId} : `, data);
+		//// console.log(`[GameService] Received input from player ${client.data.userId} : `, data);
 		if (game && game.inputManager) {
 			game.inputManager.recordInput(client, data);
 		}

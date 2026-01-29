@@ -77,7 +77,7 @@ const CreateGameErrorSchema = {
  * const response = await gameService.createGame(input);
  * if (response.success) {
  *   // TypeScript knows this is CreateGameSuccessDto
- *   console.log(response.gameId);
+ *   // console.log(response.gameId);
  * } else {
  *   // TypeScript knows this is CreateGameErrorDto
  *   console.error(response.error, response.message);
@@ -171,7 +171,7 @@ export interface CreateGameInput {
  *
  * if (result.success) {
  *   // TypeScript narrows to CreateGameSuccessDto
- *   console.log(`Game ${result.gameId} created!`);
+ *   // console.log(`Game ${result.gameId} created!`);
  * } else {
  *   // TypeScript narrows to CreateGameErrorDto
  *   console.error(`Error: ${result.error} - ${result.message}`);
@@ -218,7 +218,7 @@ export class GameService {
 	 * });
 	 *
 	 * if (result.success) {
-	 *   console.log(`Game ${result.gameId} created!`);
+	 *   // console.log(`Game ${result.gameId} created!`);
 	 * } else {
 	 *   console.error(`Failed: ${result.error} - ${result.message}`);
 	 * }
@@ -334,7 +334,7 @@ export class GameService {
 	 * @example
 	 * ```typescript
 	 * const isHealthy = await gameService.isHealthy();
-	 * console.log(`Game Service status: ${isHealthy ? 'UP' : 'DOWN'}`);
+	 * // console.log(`Game Service status: ${isHealthy ? 'UP' : 'DOWN'}`);
 	 * ```
 	 */
 	public async isHealthy(): Promise<boolean> {

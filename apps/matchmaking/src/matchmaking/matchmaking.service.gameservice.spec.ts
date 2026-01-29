@@ -162,7 +162,7 @@ describe('MatchmakingService - GameService Integration', () => {
 
 			if (!proposalEvent) {
 				// Debug: print what events were emitted
-				console.log('Emitted events:', Object.fromEntries(emittedEvents));
+				// console.log('Emitted events:', Object.fromEntries(emittedEvents));
 				throw new Error('Match proposal not emitted');
 			}
 

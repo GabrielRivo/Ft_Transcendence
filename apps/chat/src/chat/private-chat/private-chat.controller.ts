@@ -32,7 +32,7 @@ export class PrivateChatController {
 				const data = await res.json() as { isBlocked: boolean };
 
 			if (data.isBlocked === true) {
-				console.log("Deleted history");
+				// console.log("Deleted history");
 				this.chatService.removePrivateChat(Number(user.id), Number(userId2));
 				return [];
 			}
@@ -50,7 +50,7 @@ export class PrivateChatController {
 			);
 		}
 		catch(e) {
-			console.log(e);
+			// console.log(e);
 		}
 		return { ok : true};
 	}

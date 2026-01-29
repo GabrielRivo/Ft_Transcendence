@@ -48,6 +48,6 @@ export async function bootstrapStandalone(rootModule: Type, globals: Record<stri
             await instance.onModuleInit();
         }
     }
-    console.log('[Standalone] Dependency Injection initialized.');
+    // console.log('[Standalone] Dependency Injection initialized.');
     return context;
 }

@@ -41,15 +41,15 @@ class EventBus {
         if (this.events.has(event)) {
             let actualListener = onceWrapper ? onceWrapper : listener;
             if (this.events.get(event)!.delete(actualListener)) {
-                console.log("Listener " + actualListener.name + " removed from event " + event);
+                // console.log("Listener " + actualListener.name + " removed from event " + event);
             }
             else {
-                console.log("Listener " + actualListener.name + " not found for event " + event);
+                // console.log("Listener " + actualListener.name + " not found for event " + event);
 
                 //print every listener for the event
-                // console.log("Current listeners for event " + event + " : ");
+                // // console.log("Current listeners for event " + event + " : ");
                 // this.events.get(event)!.forEach((l) => {
-                //     console.log("- " + l.name);
+                //     // console.log("- " + l.name);
                 // });
             }
             if (this.events.get(event)!.size === 0) {
@@ -57,7 +57,7 @@ class EventBus {
             }
             if (onceWrapper) {
                 this.onceWrappers.get(event)!.delete(listener);
-                console.log("Once wrapper for listener " + listener.name + " removed from event " + event);
+                // console.log("Once wrapper for listener " + listener.name + " removed from event " + event);
                 if (this.onceWrappers.get(event)!.size === 0) {
                     this.onceWrappers.delete(event);
                 }
@@ -69,14 +69,14 @@ class EventBus {
         if (this.events.has(event)) {
             let listeners = this.events.get(event) as Set<Function>;
     
-            //console.log("Emitting event : " + event + " to " + listeners.size + " listeners.");
+            //// console.log("Emitting event : " + event + " to " + listeners.size + " listeners.");
             listeners.forEach((listener) => {
                 try {
                     listener(payload)
                 }
                 catch(err: any)
                 {
-                    console.log("Error in handler : " + listener.name + " event : " + event);
+                    // console.log("Error in handler : " + listener.name + " event : " + event);
                 }
             });
         }
@@ -92,7 +92,7 @@ class EventBus {
                 }
                 catch(err: any)
                 {
-                    console.log("Error in handler : " + listener.name + " event : " + event);
+                    // console.log("Error in handler : " + listener.name + " event : " + event);
                 }
             }));
         }

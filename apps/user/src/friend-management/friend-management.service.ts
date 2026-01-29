@@ -220,8 +220,7 @@ export class FriendManagementService {
 						'Content-Type': 'application/json',
 					},
 					body: JSON.stringify(data)
-				}).then(data => data.json()).then(data => console.log(data))
-				.catch(e => console.log(e))
+				});
 
 			// Notify the other user that they have been removed
 			this.emitToUser(otherId, 'friend_removed', { friendId: userId });
@@ -232,10 +231,10 @@ export class FriendManagementService {
 	}
 
 	private emitToUser(userId: number, event: string, data: any): void {
-		// console.log('[AAA]',userId, event);
+		// // console.log('[AAA]',userId, event);
 		for (const [, socket] of this.io.sockets.sockets) {
 			if (socket.data.userId === userId) {
-				// console.log('[BBB]',Number(socket.data.userId), Number(userId));
+				// // console.log('[BBB]',Number(socket.data.userId), Number(userId));
 				socket.emit(event, data);
 			}
 		}
@@ -307,7 +306,7 @@ export class FriendManagementService {
 		});
 		//WARN donner le gameTYPE
 
-		console.log(response);
+		// console.log(response);
 
 		if (response.status === 201 || response.status === 409) {
 			const data = (await response.json()) as CreateGameResponseDto;

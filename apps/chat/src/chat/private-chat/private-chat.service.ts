@@ -63,7 +63,6 @@ export class PrivateChatService {
 		return history;
 	}
 	async removePrivateChat(userId1: number, userId2: number): Promise<void> {
-		const test = this.statementDeleteConversation.run({ user1: userId1, user2: userId2 });
-		console.log(test);
+		this.statementDeleteConversation.run({ user1: userId1, user2: userId2 });
 	}
 }

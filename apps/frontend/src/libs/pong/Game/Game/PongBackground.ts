@@ -128,7 +128,7 @@ class PongBackground extends Game {
 	 * set up user input handlers (AI controls both paddles).
 	 */
 	initialize(): void {
-		// console.log('[PongBackground] Initializing background game');
+		// // console.log('[PongBackground] Initializing background game');
 		// Initialize time service for delta time calculations
 
 		Services.TimeService!.initialize();
@@ -356,7 +356,7 @@ class PongBackground extends Game {
 			// Note: Assure-toi que player1.paddle existe avant d'y accéder !
 			if (this.player1.paddle && this.player2.paddle) {
 				this.ball.update(Services.TimeService!.getTimestamp(), Services.TimeService!.getDeltaTime(), this.player1.paddle, this.player2.paddle);
-				// console.log("Ball speed : ", this.ball.speed); // Décommente pour debug
+				// // console.log("Ball speed : ", this.ball.speed); // Décommente pour debug
 				this.ball.render(Services.TimeService!.getDeltaTime());
 				this.player1.paddle.render();
 				this.player2.paddle.render();
@@ -387,7 +387,7 @@ class PongBackground extends Game {
 	 */
 	dispose(): void {
 		this.isDisposed = true;
-		// console.log('[PongBackground] Disposing background game');
+		// // console.log('[PongBackground] Disposing background game');
 
 		// Stop render loop
 		Services.Engine!.stopRenderLoop(this.renderLoop);

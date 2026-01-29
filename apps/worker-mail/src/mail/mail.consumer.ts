@@ -10,18 +10,18 @@ export class MailController {
 
     // @EventPattern('user_created')
     // async handleUserCreated(@Payload() data: { email: string }) {
-    //     console.log('Worker received task: Send mail to', data.email);
+    //     // console.log('Worker received task: Send mail to', data.email);
     //     await this.mailService.sendWelcomeEmail(data.email);
-    //     console.log('Task completed.', data);
+    //     // console.log('Task completed.', data);
     // }
 
     @EventPattern('send_otp')
     async handleSendOtp(@Payload() data: { mail: string; otp: string }, @Ctx() context: any) {
-        console.log('Worker received task: Send OTP to', data.mail);
+        // console.log('Worker received task: Send OTP to', data.mail);
         
         try {
             await this.mailService.sendOtpEmail(data.mail, data.otp);
-            console.log('OTP Task completed.', data);
+            // console.log('OTP Task completed.', data);
         } catch (error: any) {
             console.error('Error processing OTP email:', error);
 
@@ -32,7 +32,7 @@ export class MailController {
                 return;
             }
 
-            console.log('Scheduling retry...');
+            // console.log('Scheduling retry...');
             const channel = context.channel;
             const originalMessage = context.originalMessage;
 
@@ -46,7 +46,7 @@ export class MailController {
             channel.sendToQueue('mail_queue_wait', originalMessage.content, {
                 persistent: true
             });
-            console.log('Message sent to wait queue for retry in 60s.');
+            // console.log('Message sent to wait queue for retry in 60s.');
         }
     }
 }

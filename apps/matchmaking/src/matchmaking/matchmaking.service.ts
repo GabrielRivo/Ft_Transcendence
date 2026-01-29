@@ -532,7 +532,7 @@ export class MatchmakingService implements OnModuleInit, OnModuleDestroy {
 
 	/**
 	 * Déclenche le processus de proposition de match.
-	 * PERFORMANCE: Ne doit pas contenir de console.log bloquants.
+	 * PERFORMANCE: Ne doit pas contenir de // console.log bloquants.
 	 */
 	private handleMatchFound(p1: QueuedPlayer, p2: QueuedPlayer): void {
 		const matchId = randomUUID();

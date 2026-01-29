@@ -128,12 +128,12 @@ export function ProfileSlugPage() {
 	}, [username, friends, pendingInvitations]);
 
 	// useEffect(() => {
-	// 	console.log(user, profile);
+	// 	// console.log(user, profile);
 	// }, [profile]);
 
 	const handleAddFriend = async () => {
 		if (!profile) return;
-		// console.log('add friend', profile.id);
+		// // console.log('add friend', profile.id);
 		sendFriendInvite(profile.id);
 	};
 

@@ -58,7 +58,7 @@ describeIntegration('GameService Integration Tests (Real HTTP)', () => {
 			);
 		}
 
-		console.log(`[Integration Test] Using Game Service URL: ${gameServiceUrl}`);
+		// console.log(`[Integration Test] Using Game Service URL: ${gameServiceUrl}`);
 
 		gameService = new GameService();
 	});
@@ -106,7 +106,7 @@ describeIntegration('GameService Integration Tests (Real HTTP)', () => {
 				player2Id: generateUniquePlayerId(),
 			};
 
-			console.log(`[Integration Test] Creating game with ID: ${input.gameId}`);
+			// console.log(`[Integration Test] Creating game with ID: ${input.gameId}`);
 
 			// Act
 			const result = await gameService.createGame(input);
@@ -285,10 +285,10 @@ describeIntegration('GameService Integration Tests (Real HTTP)', () => {
 				elo: 1520,
 			};
 
-			console.log(`[Matchmaking Simulation] Match found!`);
-			console.log(`  Match ID: ${matchId}`);
-			console.log(`  Player 1: ${player1.userId} (ELO: ${player1.elo})`);
-			console.log(`  Player 2: ${player2.userId} (ELO: ${player2.elo})`);
+			// console.log(`[Matchmaking Simulation] Match found!`);
+			// console.log(`  Match ID: ${matchId}`);
+			// console.log(`  Player 1: ${player1.userId} (ELO: ${player1.elo})`);
+			// console.log(`  Player 2: ${player2.userId} (ELO: ${player2.elo})`);
 
 			// Step 2: Create game via Game Service
 			const result = await gameService.createGame({
@@ -301,8 +301,8 @@ describeIntegration('GameService Integration Tests (Real HTTP)', () => {
 			expect(result.success).toBe(true);
 			if (result.success) {
 				expect(result.gameId).toBe(matchId);
-				console.log(`[Matchmaking Simulation] Game created successfully!`);
-				console.log(`  Response: ${JSON.stringify(result)}`);
+				// console.log(`[Matchmaking Simulation] Game created successfully!`);
+				// console.log(`  Response: ${JSON.stringify(result)}`);
 			}
 
 			// Step 4: In real flow, Matchmaking would now emit 'match_confirmed'

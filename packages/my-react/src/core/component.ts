@@ -78,7 +78,7 @@ export function createElement(
   props: Props | null,
   ...children: any[]
 ): Element {
-  // console.log('createElement', type, props, children);
+  // // console.log('createElement', type, props, children);
 
   // essayer de voir pour le retirer car lourd
   // .filter(child => child != null && child !== false && child !== true)
@@ -116,7 +116,7 @@ function isInSvg(fiber: Fiber | null): boolean {
 
 // Création de nœuds DOM
 export function createDom(fiber: Fiber): Node {
-  // console.log('createDom', fiber);
+  // // console.log('createDom', fiber);
 
   // Détection SVG
   const isSvg = fiber.type === "svg" || isInSvg(fiber.parent || null);
@@ -156,7 +156,7 @@ export function updateDom(
 
   const isSvg = dom instanceof SVGElement;
 
-  // console.log('updateDom', prevProps, nextProps);
+  // // console.log('updateDom', prevProps, nextProps);
   // Supprimer les anciens event listeners
   Object.keys(prevProps)
     .filter(isEvent)
@@ -187,7 +187,7 @@ export function updateDom(
     .filter(isProperty)
     .filter(isNew(prevProps, nextProps))
     .forEach((name) => {
-      // console.log('TEST-A', name, nextProps[name]);
+      // // console.log('TEST-A', name, nextProps[name]);
 
       const value = nextProps[name];
 

@@ -200,7 +200,7 @@ class TruthManager {
 
             this.serverGameStateHistory.addState(this.getGameState(game));
 
-            //console.log("Gamestate at time ", time, ": ", this.getGameState(game));
+            //// console.log("Gamestate at time ", time, ": ", this.getGameState(game));
 
             this.lastFrameTime = time;
 
@@ -227,7 +227,7 @@ class TruthManager {
             let state = this.gameStateHistory.getClosestState(time);
             if (!state)
             {
-                console.log("No state found at time ", time);
+                // console.log("No state found at time ", time);
                 return;
             }
             this.setGameState(game, state);

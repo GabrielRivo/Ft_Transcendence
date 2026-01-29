@@ -76,7 +76,7 @@ function useActiveTournamentRedirect() {
 	useEffect(() => {
 		if (!user || !router.path.startsWith('/play')) return;
 
-		// console.log('[DashboardLayout] Checking for active tournament...');
+		// // console.log('[DashboardLayout] Checking for active tournament...');
 		fetch('/api/tournament/active', {
 			method: 'GET',
 			credentials: 'include',

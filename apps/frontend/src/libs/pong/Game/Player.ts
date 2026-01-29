@@ -77,15 +77,15 @@ class Player {
 
     scoreUp(value ?: number) {
         this.score += value ?? 1;
-        //console.log("Player " + this.id + " score: " + this.score);
+        //// console.log("Player " + this.id + " score: " + this.score);
     }
     scoreDown(value ?: number) {
         this.score -= value ?? 1;
-        //console.log("Player " + this.id + " score: " + this.score);
+        //// console.log("Player " + this.id + " score: " + this.score);
     }
     scoreReset() {
         this.score = 0;
-        //console.log("Player " + this.id + " score: " + this.score);
+        //// console.log("Player " + this.id + " score: " + this.score);
     }
     getScore() : number {
         return this.score;

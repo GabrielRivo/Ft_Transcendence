@@ -7,7 +7,7 @@ export class MailService {
 	private resend!: Resend;
 
 	// sendWelcomeEmail(email: string) {
-	//     console.log(`[EMAIL SENT] Welcome to ${email} !`);
+	//     // console.log(`[EMAIL SENT] Welcome to ${email} !`);
 	//     return new Promise(resolve => setTimeout(resolve, 500));
 	// }
 

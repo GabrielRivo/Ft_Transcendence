@@ -314,7 +314,7 @@ export class AuthService {
 			throw new UnauthorizedException(`${providers[provider].id} login failed 1`);
 
 		let userRes: Response | null = null;
-		console.log(tokenData);
+		// console.log(tokenData);
 		if (tokenData.token_type.toLowerCase() == 'bearer') {
 			userRes = await fetch(providers[provider].userInfoUrl, {
 				headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -325,10 +325,10 @@ export class AuthService {
 
 		if (!userRes.ok) throw new BadGatewayException(`${providers[provider].id} login failed`);
 
-		console.log(userRes);
+		// console.log(userRes);
 		const userData: UserData = (await userRes.json()) as UserData;
 		let user = await this.dbExchange.getUserByProviderId(provider, String(userData.id));
-		console.log(user, userData, provider);
+		// console.log(user, userData, provider);
 
 		// Extraire le username suggéré du provider (login pour GitHub, username pour Discord)
 		const suggestedUsername = userData.login || userData.username || '';
@@ -380,7 +380,7 @@ export class AuthService {
 			throw new BadRequestException('Username must be at least 3 characters long');
 		}
 		
-		// console.log(userId, username);
+		// // console.log(userId, username);
 
 		if (await this.dbExchange.getUserByUsername(username)) {
 			throw new UnauthorizedException('Username already exists');

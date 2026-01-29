@@ -25,7 +25,7 @@ export class TournamentConsumer {
 
     @EventPattern('tournament.created')
     async handleTournamentCreated(@Payload() data: TournamentCreatedPayload) {
-        console.log('[TournamentConsumer] Received tournament.created event:', data);
+        // console.log('[TournamentConsumer] Received tournament.created event:', data);
 
         // The payload 'data' is the TournamentCreatedEvent object.
         const { name, ownerId, visibility, aggregateId } = data;
@@ -37,13 +37,13 @@ export class TournamentConsumer {
                 return;
             }
 
-            console.log(`[TournamentConsumer] Creating group for tournament: ${name}, creator: ${ownerIdNum}`);
+            // console.log(`[TournamentConsumer] Creating group for tournament: ${name}, creator: ${ownerIdNum}`);
             // Use tournament name as group name, maybe prefix it? 
             // The user implies linking them. Same name is good for finding it.
             const result = this.groupService.createGroup(ownerIdNum, name);
 
             if (result.success) {
-                console.log(`[TournamentConsumer] Group created successfully. GroupId: ${result.groupId}`);
+                // console.log(`[TournamentConsumer] Group created successfully. GroupId: ${result.groupId}`);
             } else {
                 console.error(`[TournamentConsumer] Failed to create group: ${result.message}`);
             }
@@ -52,7 +52,7 @@ export class TournamentConsumer {
         }
 
         if (visibility === 'PUBLIC' && name && aggregateId) {
-            console.log(`[TournamentConsumer] Broadcasting public tournament creation: ${name}`);
+            // console.log(`[TournamentConsumer] Broadcasting public tournament creation: ${name}`);
             const messageContent = `🏆 A new public tournament '${name}' has been created! [JOIN_TOURNAMENT:${aggregateId}]`;
             const systemId = -1;
             const systemName = 'System';
@@ -73,14 +73,14 @@ export class TournamentConsumer {
 
     @EventPattern('tournament.cancelled')
     async handleTournamentCancelled(@Payload() data: { aggregateId: string, name: string, ownerId: string }) {
-        console.log('[TournamentConsumer] Received tournament.cancelled event:', data);
+        // console.log('[TournamentConsumer] Received tournament.cancelled event:', data);
         const { aggregateId, name, ownerId } = data;
 
         if (name && ownerId) {
             const ownerIdNum = Number(ownerId);
             const group = this.groupService.findGroupByNameAndOwner(ownerIdNum, name);
             if (group) {
-                console.log(`[TournamentConsumer] Deleting group ${group.groupId} for cancelled tournament`);
+                // console.log(`[TournamentConsumer] Deleting group ${group.groupId} for cancelled tournament`);
                 this.groupService.deleteGroup(group.groupId, ownerIdNum);
 
                 // Notify users in the group (optional, but good practice if still connected)
@@ -91,20 +91,13 @@ export class TournamentConsumer {
         }
 
         if (aggregateId) {
-            console.log(`[TournamentConsumer] Deleting system message for tournament ${aggregateId}`);
-            const result = await this.generalChatService.deleteTournamentSystemMessage(aggregateId);
-            console.log(`[TournamentConsumer] Deletion result:`, result);
-
-            // Emit to hub to refresh chat or remove message (if client supports removing specific message)
-            // Since we don't have a 'message_deleted' event yet in general chat, we might just rely on reload or next fetch.
-            // But we can trigger a refresh if needed.
             this.io.to('hub').emit('invalidate_history');
         }
     }
 
     @EventPattern('tournament.player_joined')
     async handlePlayerJoined(@Payload() data: { aggregateId: string, playerId: string, name: string, ownerId: string }) {
-        console.log('[TournamentConsumer] Received tournament.player_joined event:', data);
+        // console.log('[TournamentConsumer] Received tournament.player_joined event:', data);
         const { playerId, name, ownerId } = data;
 
         if (name && ownerId) {
@@ -126,7 +119,7 @@ export class TournamentConsumer {
                 const result = this.groupService.addMember(group.groupId, ownerIdNum, playerIdNum);
 
                 if (result.success) {
-                    console.log(`[TournamentConsumer] Added player ${playerId} to group ${group.groupId}`);
+                    // console.log(`[TournamentConsumer] Added player ${playerId} to group ${group.groupId}`);
                 } else {
                     console.error(`[TournamentConsumer] Failed to add player to group: ${result.message}`);
                 }
@@ -138,7 +131,7 @@ export class TournamentConsumer {
 
     @EventPattern('tournament.player_left')
     async handlePlayerLeft(@Payload() data: { aggregateId: string, playerId: string, name: string, ownerId: string }) {
-        console.log('[TournamentConsumer] Received tournament.player_left event:', data);
+        // console.log('[TournamentConsumer] Received tournament.player_left event:', data);
         const { playerId, name, ownerId } = data;
 
         if (name && ownerId) {
@@ -150,7 +143,7 @@ export class TournamentConsumer {
                 const result = this.groupService.removeMember(group.groupId, playerIdNum, playerIdNum);
 
                 if (result.success) {
-                    console.log(`[TournamentConsumer] Removed player ${playerId} from group ${group.groupId}`);
+                    // console.log(`[TournamentConsumer] Removed player ${playerId} from group ${group.groupId}`);
                 } else {
                     console.error(`[TournamentConsumer] Failed to remove player from group: ${result.message}`);
                 }
@@ -162,7 +155,7 @@ export class TournamentConsumer {
 
     @EventPattern('tournament.finished')
     async handleTournamentFinished(@Payload() data: { aggregateId: string, winnerId: string, name: string, ownerId: string }) {
-        console.log('[TournamentConsumer] Received tournament.finished event:', data);
+        // console.log('[TournamentConsumer] Received tournament.finished event:', data);
         const { name, ownerId } = data;
 
         if (name && ownerId) {
@@ -170,7 +163,7 @@ export class TournamentConsumer {
             const group = this.groupService.findGroupByNameAndOwner(ownerIdNum, name);
 
             if (group) {
-                console.log(`[TournamentConsumer] Deleting group ${group.groupId} for finished tournament`);
+                // console.log(`[TournamentConsumer] Deleting group ${group.groupId} for finished tournament`);
                 this.groupService.deleteGroup(group.groupId, ownerIdNum);
             } else {
                 console.warn(`[TournamentConsumer] Group not found for finished tournament: ${name}`);

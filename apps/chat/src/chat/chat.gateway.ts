@@ -54,7 +54,7 @@ export class ChatGateway {
 
 	@SubscribeConnection()
 	async handleConnection(@ConnectedSocket() client: Socket, @JWTBody() user: any) {
-		console.log("[connect]");
+		// console.log("[connect]");
 		if (!user?.id) {
 			// Disconnect le client car ne doit pas etre connecte...
 			console.warn(`[ChatGateway] Connection rejected: Missing JWT | SocketId: ${client.id}`);
@@ -70,23 +70,14 @@ export class ChatGateway {
 
 		client.join('hub');
 
-		console.log(`[ChatGateway] Client connected | UserId: ${user.id} | Username: ${user.username} | SocketId: ${client.id}`);
+		// console.log(`[ChatGateway] Client connected | UserId: ${user.id} | Username: ${user.username} | SocketId: ${client.id}`);
 
 		await this.broadcastRoomUsers(client, 'hub');
 	}
 
 	@SubscribeDisconnection()
 	async handleDisconnect(@ConnectedSocket() client: Socket) {
-		console.log("[disconnect]");
-		console.log(`Client disconnected: ${client.id}`);
-
-		const userId = client.data.userId;
-		const username = client.data.username;
 		const currentRoom = client.data.currentRoom;
-
-		console.log(`[ChatGateway] Client disconnected | UserId: ${userId} | Username: ${username} | SocketId: ${client.id}`);
-
-		// retirer des rooms...
 		setTimeout(async () => {
 			if (currentRoom && currentRoom !== 'hub') {
 				await this.broadcastRoomUsers(client, currentRoom);
@@ -97,7 +88,7 @@ export class ChatGateway {
 
 	@SubscribeMessage('get_hub_history')
 	async handleGetHubHistory(@ConnectedSocket() client: Socket, @JWTBody() user: any) {
-		console.log("[get_hub_history]");
+		// console.log("[get_hub_history]");
 		if (!user?.id) return;
 
 		const history = await this.generalChatService.getGeneralHistory();
@@ -108,20 +99,20 @@ export class ChatGateway {
 			roomId: 'hub',
 			created_at: msg.created_at,
 		}));
-		console.log(`[ChatGateway] Sending hub history. Count: ${formattedHistory.length}`);
+		// console.log(`[ChatGateway] Sending hub history. Count: ${formattedHistory.length}`);
 		client.emit('hub_history', formattedHistory);
 	}
 
 	@SubscribeMessage('get_room_users')
 	async handleGetRoomUsers(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }) {
-		console.log("[get_room_users]");
+		// console.log("[get_room_users]");
 		const users = await this.getUsersInRoom(client, data.roomId);
 		client.emit('room_users', { roomId: data.roomId, users });
 	}
 
 	@SubscribeMessage('join_room')
 	async handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }, @JWTBody() user: any) {
-		console.log("[join_room]");
+		// console.log("[join_room]");
 		if (!user?.id) return;
 
 		const { roomId } = data;
@@ -144,11 +135,11 @@ export class ChatGateway {
 		}
 
 		if (roomId.startsWith("group")) {
-			console.log("[join_group]");
+			// console.log("[join_group]");
 			const groupId = parseInt(roomId.slice(6));
 			const messages = await this.groupChatServie.getGroupHistory(groupId, user.id);
 			client.emit('group_history', messages);
-			console.log("messges : ", messages)
+			// console.log("messges : ", messages)
 		}
 
 		// Envoyer la liste des utilisateurs
@@ -158,7 +149,7 @@ export class ChatGateway {
 
 	@SubscribeMessage('leave_room')
 	async handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }, @JWTBody() user: any) {
-		console.log("[leave_room]");
+		// console.log("[leave_room]");
 		if (!user?.id) return;
 
 		const { roomId } = data;
@@ -180,7 +171,7 @@ export class ChatGateway {
 		@MessageBody() data: { friendId: number },
 		@JWTBody() user: any
 	) {
-		console.log("[join_private_room]");
+		// console.log("[join_private_room]");
 		if (!user?.id) return;
 
 		const userId = user.id;
@@ -205,8 +196,8 @@ export class ChatGateway {
 
 		// Envoyer l'historique privé
 		const history = await this.privateChatService.getPrivateHistory(userId, friendId);
-		console.log("here");
-		console.log("History :", history[0]);
+		// console.log("here");
+		// console.log("History :", history[0]);
 		const formattedHistory = history.map((msg: any) => ({
 			userId: msg.senderId,
 			username: msg.senderId === userId ? user.username : 'Friend',
@@ -261,10 +252,6 @@ export class ChatGateway {
 		const { content, roomId } = body;
 		const targetRoom = roomId || 'hub';
 
-		console.log(
-			content, roomId
-		)
-
 		if (roomId.startsWith("room")) {
 			const users = roomId.slice(5).split("_").map((i) => !Number.isNaN(parseInt(i)) && parseInt(i));
 			if (users.length != 2) {
@@ -277,7 +264,7 @@ export class ChatGateway {
 			if (user1 == user2) {
 				client.emit('error', { message: 'same id!' });
 			}
-			console.log(user1, user2);
+			// console.log(user1, user2);
 			await this.privateChatService.savePrivateMessage(user1, user2, content, user?.id);
 		}
 
@@ -288,20 +275,20 @@ export class ChatGateway {
 			roomId: targetRoom,
 			created_at: new Date().toISOString(),
 		};
-		console.log("sender : ", user.id)
+		// console.log("sender : ", user.id)
 		if (roomId.startsWith("group")) {
 			const groupId = parseInt(roomId.slice(6));
-			console.log("room id : ", groupId);
-			console.log("here room: ", roomId);
+			// console.log("room id : ", groupId);
+			// console.log("here room: ", roomId);
 			if (!groupId)
 				client.emit('error', { message: 'invalid group name' });
 			if (groupId < 0)
 				client.emit('error', { message: 'invalid group id' });
-			console.log("group");
+			// console.log("group");
 			this.groupChatServie.saveGroupMessage(groupId, user?.id, content);
-			console.log("here@ room", roomId);
+			// console.log("here@ room", roomId);
 		}
-		console.log("room : ", roomId);
+		// console.log("room : ", roomId);
 
 
 		// Sauvegarder le message si c'est le hub 

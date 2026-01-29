@@ -13,7 +13,7 @@ export class HttpGameGateway implements GameGateway {
     // Assuming simple fetch for now as Resilient usage might require setup
     public async createGame(matchId: string, player1Id: string, player2Id: string, tournamentId?: string, isFinal?: boolean): Promise<string> {
         const url = `${this.gameServiceUrl}/games`;
-        console.log(`[HttpGameGateway] Creating game at ${url} for match ${matchId}`);
+        // console.log(`[HttpGameGateway] Creating game at ${url} for match ${matchId}`);
 
         try {
             const response = await fetch(url, {
