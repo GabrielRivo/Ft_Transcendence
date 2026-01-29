@@ -101,13 +101,13 @@ export class FriendManagementController {
 		return this.blockService.unblock_user(user.id, data.otherId);
 	}
 
-	@Get('/block')
-	// @QuerySchema(FriendManagementSchema) //obliger car demande interne sans jwt
-	async is_blocked(@Query() data: { userId: number, otherId: number }) {
-		return {
-			isBlocked: await this.blockService.is_blocked(data.userId, data.otherId)
-		}
-	}
+	// @Get('/block')
+	// // @QuerySchema(FriendManagementSchema) //obliger car demande interne sans jwt
+	// async is_blocked(@Query() data: { userId: number, otherId: number }) {
+	// 	return {
+	// 		isBlocked: await this.blockService.is_blocked(data.userId, data.otherId)
+	// 	}
+	// }
 
 	@Get('/blocked-list')
 	async get_blocked_list(@JWTBody() user: { id: number }) {
