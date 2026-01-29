@@ -236,8 +236,9 @@ class PongOnline extends Game {
             measuringTime = performance.now() - measuringTime;
             Services.TimeService!.initialize();
             Services.TimeService!.setTimestamp(serverTimestamp + (latency / 2) + measuringTime + timeAheadOfServ);
-        } catch (error) { }
-        this.onServerLostConnection();
+        } catch (error) {
+            this.onServerLostConnection();
+        }
         socket.once("latencyTest", (payload: any) => {
             Services.TimeService!.update();
         });

@@ -47,6 +47,9 @@ class EventBus {
             onceWrapper = this.onceWrappers.get(event)!.get(listener);
 
         if (this.events.has(event)) {
+            let actualListener = onceWrapper ? onceWrapper : listener;
+            this.events.get(event)!.delete(actualListener);
+
             if (this.events.get(event)!.size === 0) {
                 this.events.delete(event);
             }

@@ -31,14 +31,17 @@ class EventBus {
         this.on(event, wrapper);
 
         return () => this.off(event, listener);
-    }   
+    }
 
     off(event: string, listener: Function): void {
-        let onceWrapper : Function | undefined;
+        let onceWrapper: Function | undefined;
         if (this.onceWrappers.has(event))
             onceWrapper = this.onceWrappers.get(event)!.get(listener);
 
         if (this.events.has(event)) {
+            let actualListener = onceWrapper ? onceWrapper : listener;
+            this.events.get(event)!.delete(actualListener);
+
             if (this.events.get(event)!.size === 0) {
                 this.events.delete(event);
             }
@@ -54,7 +57,7 @@ class EventBus {
     emit(event: string, payload: any): void {
         if (this.events.has(event)) {
             let listeners = this.events.get(event) as Set<Function>;
-    
+
             listeners.forEach((listener) => {
                 try {
                     listener(payload)
@@ -67,7 +70,7 @@ class EventBus {
     async emitAsync(event: string, payload: any): Promise<void> {
         if (this.events.has(event)) {
             let listeners = Array.from(this.events.get(event) as Set<Function>);
-    
+
             await Promise.all(listeners.map(async (listener) => {
                 try {
                     await listener(payload)
