@@ -7,7 +7,10 @@ FROM node:24-alpine AS builder
 RUN apk add --no-cache python3 make g++ git
 
 # Installation pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY ../../pnpm /usr/bin/pnpm
+RUN chmod +x /usr/bin/pnpm
 
 WORKDIR /app
 
