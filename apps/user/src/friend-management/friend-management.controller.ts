@@ -90,7 +90,7 @@ export class FriendManagementController {
 	}
 
 	@Post('/block')
-	@BodySchema(FriendManagementSchema) 
+	@BodySchema(FriendManagementSchema)
 	async block_user(@Body() data: FriendManagementDto, @JWTBody() user: { id: number }) {
 		return this.blockService.block_user(user.id, data.otherId);
 	}
@@ -102,10 +102,10 @@ export class FriendManagementController {
 	}
 
 	@Get('/block')
-	@QuerySchema(FriendManagementSchema)
-	async is_blocked(@Query() data: FriendManagementDto, @JWTBody() user: { id: number }) {
+	// @QuerySchema(FriendManagementSchema) //obliger car demande interne sans jwt
+	async is_blocked(@Query() data: { userId: number, otherId: number }) {
 		return {
-			isBlocked: await this.blockService.is_blocked(user.id, data.otherId)
+			isBlocked: await this.blockService.is_blocked(data.userId, data.otherId)
 		}
 	}
 

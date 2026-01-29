@@ -12,7 +12,7 @@ const PRIVATE_CHAT_URL = 'http://chat:3000';
 
 @Service()
 export class BlockManagementService {
-	@InjectPlugin('db') 
+	@InjectPlugin('db')
 	private db !: Database.Database;
 
 	@InjectPlugin('io')
@@ -45,7 +45,7 @@ export class BlockManagementService {
 
 			};
 
-			fetch(`${PRIVATE_CHAT_URL}/private/private_history`, 
+			fetch(`${PRIVATE_CHAT_URL}/private/private_history`,
 			{
 				method: 'DELETE',
 				headers : {
@@ -56,7 +56,7 @@ export class BlockManagementService {
 
 			// Émettre l'événement user_blocked aux deux utilisateurs
 			this.emitToUser(userId, 'user_blocked', { blockedUserId: otherId });
-			this.emitToUser(otherId, 'user_blocked', { blockedUserId: userId });
+			// this.emitToUser(otherId, 'user_blocked', { blockedUserId: userId });
 
 			return { success: true, message: "Block user" };
 		} catch (e) {
@@ -72,7 +72,7 @@ export class BlockManagementService {
 		if (result.changes > 0) {
 			// Émettre l'événement user_unblocked aux deux utilisateurs
 			this.emitToUser(userId, 'user_unblocked', { unblockedUserId: otherId });
-			this.emitToUser(otherId, 'user_unblocked', { unblockedUserId: userId });
+			// this.emitToUser(otherId, 'user_unblocked', { unblockedUserId: userId });
 
 			return { success: true, message: "Unblocked user" };
 		} else {
