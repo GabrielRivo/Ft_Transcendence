@@ -207,6 +207,7 @@ export class UserHistoryService {
 		const newElo = p1Stats.elo + kfactor * (( 0.5 + diffScore / 10)- hope);
 		const res = newElo - p1Stats.elo
 		let result = Math.round(res)
+		console.log("res =", result)
 		if (result == 0)
 		{
 			if (winner_id == player_id)

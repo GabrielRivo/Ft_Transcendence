@@ -27,9 +27,9 @@ export class UserHistoryController {
 	async handleGameFinished(@Payload() event: GameFinishedEvent) {
 		let gain1 = null
 		let gain2 = null
+	console.log("type : ", event.gameType)
 		if (event.gameType == "ranked")
 		{
-			
 			gain1 = await this.userHistoryService.calcElo(parseInt(event.player1Id), parseInt(event.player1Id), 
 						event.score1, event.score2, parseInt(event.winnerId ?? '0'));
 			gain2 = await this.userHistoryService.calcElo(parseInt(event.player2Id), parseInt(event.player1Id), 
