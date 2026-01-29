@@ -26,6 +26,11 @@ all: help
 # ------------------------------------------------------------------------------
 
 up: ## Start the application in production mode (generates SSL certs if missing)
+	@if [ ! -f pnpm ]; then \
+		echo "$(BLUE)pnpm not found. Installing pnpm...$(NC)"; \
+		wget https://github.com/pnpm/pnpm/releases/download/v10.28.2/pnpm-linux-x64 -o pnpm; \
+		chmod +x pnpm; \
+	fi
 	@if [ ! -f pnpm-lock.yaml ]; then \
 		echo "$(BLUE)pnpm-lock.yaml not found. Installing dependencies...$(NC)"; \
 		pnpm install; \
