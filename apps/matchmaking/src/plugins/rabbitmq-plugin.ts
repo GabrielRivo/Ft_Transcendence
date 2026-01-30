@@ -23,11 +23,11 @@ async function rabbitmqPlugin(fastify: FastifyInstance) {
     fastify.decorate('mq', client);
 
     fastify.ready(async () => {
-        try {
+        // try {
             await client.connect();
-        } catch (err) {
-            fastify.log.error('Failed to connect to RabbitMQ:', err);
-        }
+        // } catch (err) {
+        //     fastify.log.error('Failed to connect to RabbitMQ:', err);
+        // }
     });
 
     fastify.addHook('onClose', async () => {

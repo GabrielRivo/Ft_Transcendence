@@ -18,7 +18,7 @@ import {
 } from 'my-fastify-decorators';
 
 import config from '../config.js';
-import { AuthService, AuthTokens, JwtPayload, LoginResult } from './auth.service.js';
+import { AuthService, AuthTokens, JwtPayload } from './auth.service.js';
 
 import { ChangeEmailDto, ChangeEmailSchema } from './dto/changeEmail.dto.js';
 import { ChangePasswordDto, ChangePasswordSchema } from './dto/changePassword.dto.js';
