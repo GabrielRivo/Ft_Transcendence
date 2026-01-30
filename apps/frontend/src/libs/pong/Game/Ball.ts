@@ -6,7 +6,6 @@ import MathUtils from "./MathUtils";
 import Services from "./Services/Services";
 
 import {OwnedMesh} from "./globalType";
-import DeathBar from "./DeathBar";
 import Paddle from "./Paddle";
 import GenerateEffect from "./Effects/GenerateEffect";
 
