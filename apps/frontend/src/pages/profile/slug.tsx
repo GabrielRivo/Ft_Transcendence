@@ -179,7 +179,7 @@ export function ProfileSlugPage() {
 									<img src={profile.avatarUrl} alt={profile.username} className="h-full w-full object-cover" />
 								) : (
 									<div className="flex h-full w-full items-center justify-center bg-slate-800 text-4xl text-cyan-400">
-										{profile.username[0].toUpperCase()}
+										{profile?.username?.charAt(0)?.toUpperCase() || 'U'}
 									</div>
 								)}
 							</div>
@@ -188,7 +188,7 @@ export function ProfileSlugPage() {
 						{/* Info */}
 						<div className="flex-1 text-center md:text-left">
 							<div className="flex flex-col items-center gap-2 md:flex-row md:items-center md:gap-4">
-								<h1 className="font-pirulen text-2xl tracking-widest">{profile.username}</h1>
+								<h1 className="font-pirulen text-2xl tracking-widest">{profile.username || 'Unknown'}</h1>
 							</div>
 							{profile.bio && <p className="mt-4 text-sm text-gray-400">{profile.bio}</p>}
 
