@@ -10,7 +10,7 @@ export function TwoFASetupModal({ onClose, qrCodeUrl, secret, onVerify }: TwoFAS
 
 	const handleVerify = () => {
 		if (totpCode.length !== 6) {
-			toast('The code must contain 6 digits', 'warning');
+			toast('The code must contain 6 digits', 'warning', 1000);
 			return;
 		}
 		onVerify(totpCode);
@@ -18,7 +18,7 @@ export function TwoFASetupModal({ onClose, qrCodeUrl, secret, onVerify }: TwoFAS
 
 	const handleCopySecret = () => {
 		navigator.clipboard.writeText(secret);
-		toast('Copied!', 'success');
+		toast('Copied!', 'success', 1000);
 	};
 
 	return (

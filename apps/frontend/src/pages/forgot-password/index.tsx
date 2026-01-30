@@ -60,7 +60,7 @@ export function ForgotPassword() {
 		const result = validateEmail({ email });
 		if (!result.valid) {
 			setErrors(result.errors);
-			toast('Please fix errors', 'warning', 3000);
+			toast('Please fix errors', 'warning', 1000);
 			return;
 		}
 
@@ -74,14 +74,14 @@ export function ForgotPassword() {
 			});
 
 			if (response.ok) {
-				toast('Reset code sent to your email', 'success', 3000);
+				toast('Reset code sent to your email', 'success', 1000);
 				setShowOTPModal(true);
 			} else {
 				const data = await response.json();
-				toast(data.message || 'Failed to send reset code', 'error', 3000);
+				toast(data.message || 'Failed to send reset code', 'error', 1000);
 			}
 		} catch {
-			toast('An error has occurred', 'error', 3000);
+			toast('An error has occurred', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}
@@ -95,7 +95,7 @@ export function ForgotPassword() {
 		const result = validateOtp({ email, otp });
 		if (!result.valid) {
 			setErrors(result.errors);
-			toast('Please fix errors', 'warning');
+			toast('Please fix errors', 'warning', 1000);
 			return;
 		}
 
@@ -109,15 +109,15 @@ export function ForgotPassword() {
 			});
 
 			if (response.ok) {
-				toast('OTP verified successfully', 'success');
+				toast('OTP verified successfully', 'success', 1000);
 				setShowOTPModal(false);
 				setShowResetModal(true);
 			} else {
 				const data = await response.json();
-				toast(data.message || 'Invalid OTP', 'error');
+				toast(data.message || 'Invalid OTP', 'error', 1000);
 			}
 		} catch {
-			toast('An error has occurred', 'error');
+			toast('An error has occurred', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}
@@ -129,14 +129,14 @@ export function ForgotPassword() {
 		setErrors([]);
 
 		if (newPassword !== confirmPassword) {
-			toast('Passwords do not match', 'error');
+			toast('Passwords do not match', 'error', 1000);
 			return;
 		}
 
 		const result = validateReset({ email, otp, newPassword });
 		if (!result.valid) {
 			setErrors(result.errors);
-			toast('Please fix errors', 'warning');
+			toast('Please fix errors', 'warning', 1000);
 			return;
 		}
 
@@ -150,15 +150,15 @@ export function ForgotPassword() {
 			});
 
 			if (response.ok) {
-				toast('Password reset successfully', 'success');
+				toast('Password reset successfully', 'success', 1000);
 				setShowResetModal(false);
 				navigate('/login');
 			} else {
 				const data = await response.json();
-				toast(data.message || 'Failed to reset password', 'error');
+				toast(data.message || 'Failed to reset password', 'error', 1000);
 			}
 		} catch {
-			toast('An error has occurred', 'error');
+			toast('An error has occurred', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}

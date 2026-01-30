@@ -129,9 +129,9 @@ export function ChatSidebarPanel({
 													otherId: friend.id
 												}),																	
 											}).then(data => data.json()).then(data => {
-												toast(data.message, data.success ? 'success' : 'error', 3000)
+												toast(data.message, data.success ? 'success' : 'error', 1000)
 											}).catch(() => {
-												toast('Network error', 'error', 3000)
+												toast('Network error', 'error', 1000)
 											})
 										},
 										onStatistics: () => {
@@ -143,9 +143,9 @@ export function ChatSidebarPanel({
 										onToggleFriend: async () => {
 											const success = await onRemoveFriend(friend.id);
 											if (success) {
-												toast('Friend removed successfully', 'success', 3000);
+												toast('Friend removed successfully', 'success', 1000);
 											} else {
-												toast('Failed to remove friend', 'error', 3000);
+												toast('Failed to remove friend', 'error', 1000);
 											}
 										},
 										onBlock: async () => {

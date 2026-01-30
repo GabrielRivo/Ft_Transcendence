@@ -46,7 +46,7 @@ export function TournamentPlayersPage() {
 	useEffect(() => {
 		if (!isValidType || !isValidSize) {
 			navigate('/play');
-			toast('Tournament settings not found', 'error');
+			toast('Tournament settings not found', 'error', 1000);
 		}
 	}, [isValidType, isValidSize, navigate, toast]);
 

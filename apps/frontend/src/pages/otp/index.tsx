@@ -34,13 +34,13 @@ export function OTP() {
 			const success = await verify2FA(code);
 
 			if (success) {
-				toast('2FA verification successful!', 'success');
+				toast('2FA verification successful!', 'success', 1000);
 				navigate('/play');
 			} else {
-				toast('Invalid code, please try again', 'error');
+				toast('Invalid code, please try again', 'error', 1000);
 			}
 		} catch {
-			toast('An error has occurred', 'error');
+			toast('An error has occurred', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}

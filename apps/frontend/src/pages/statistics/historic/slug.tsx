@@ -98,7 +98,7 @@ export function StatisticsHistoryPageSlug() {
 
 	useEffect(() => {
 		if (user?.isGuest) {
-			toast('Please have an account to use all features', 'error');
+			toast('Please have an account to use all features', 'error', 1000);
 			navigate('/play');
 		}
 	}, [user?.isGuest]);

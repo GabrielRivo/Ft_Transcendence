@@ -53,7 +53,7 @@ export function ProfileSlugPage() {
 	
 	useEffect(() => {
 		if (user?.isGuest) {
-			toast('Please have an account to use all features', 'error');
+			toast('Please have an account to use all features', 'error', 1000);
 			navigate('/play');
 		}
 	}, [user?.isGuest]);
@@ -131,9 +131,9 @@ export function ProfileSlugPage() {
 		if (!profile) return;
 		const result = await sendFriendInvite(profile.id);
 		if (result.success) {
-			toast('Friend request sent!', 'success');
+			toast('Friend request sent!', 'success', 1000);
 		} else {
-			toast(result.message || 'Failed to send friend request', 'error');
+			toast(result.message || 'Failed to send friend request', 'error', 1000);
 		}
 	};
 
@@ -141,9 +141,9 @@ export function ProfileSlugPage() {
 		if (!profile) return;
 		const success = await removeFriend(profile.id);
 		if (success) {
-			toast('Friend removed', 'success');
+			toast('Friend removed', 'success', 1000);
 		} else {
-			toast('Failed to remove friend', 'error');
+			toast('Failed to remove friend', 'error', 1000);
 		}
 	};
 

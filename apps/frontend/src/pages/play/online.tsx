@@ -27,7 +27,7 @@ export function OnlinePlayPage() {
 		e.preventDefault();
 
 		if (inviteCode.length !== 6 || !/^\d+$/.test(inviteCode)) {
-			toast('Please enter a valid 6-digit code', 'error');
+			toast('Please enter a valid 6-digit code', 'error', 1000);
 			return;
 		}
 
@@ -54,10 +54,10 @@ export function OnlinePlayPage() {
 				navigate(`/play/tournament/${tournamentType}/${playersCount}?id=${data.id}`);
 			} else {
 				const errorData = await response.json().catch(() => ({}));
-				toast(errorData.message || 'Failed to join tournament', 'error');
+				toast(errorData.message || 'Failed to join tournament', 'error', 1000);
 			}
 		} catch {
-			toast('An error occurred while joining', 'error');
+			toast('An error occurred while joining', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}

@@ -28,7 +28,7 @@ export function Login() {
 		const result = validate({ email, password });
 		if (!result.valid) {
 			setErrors(result.errors);
-			toast('Please fix errors', 'warning');
+			toast('Please fix errors', 'warning', 1000);
 			return;
 		}
 
@@ -38,7 +38,7 @@ export function Login() {
 			const {success, twoFAEnabled} = await login(email, password);
 
 			if (success) {
-				toast('Connection success', 'success');
+				toast('Connection success', 'success', 1000);
 				if (twoFAEnabled) {
 					navigate('/otp');
 				}
@@ -46,10 +46,10 @@ export function Login() {
 					navigate('/play');
 				}
 			} else {
-				toast('Mail or password incorrect', 'error');
+				toast('Mail or password incorrect', 'error', 1000);
 			}
 		} catch {
-			toast('An error has occurred', 'error');
+			toast('An error has occurred', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}

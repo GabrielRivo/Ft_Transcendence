@@ -15,14 +15,14 @@ export function OTPGuard({ children }: OTPGuardProps) {
 	useEffect(() => {
 		if (!loading) {
 			if (!isAuthenticated) {
-				toast('You must be logged in!', 'error', 3000);
+				toast('You must be logged in!', 'error', 1000);
 				navigate('/login');
 				return;
 			}
 
 			// Si 2FA non activee ou deja verifiee, rediriger vers /play
 			if (!user?.twoFA || user?.twoFAVerified) {
-				toast('2FA verification not required', 'info', 3000);
+				toast('2FA verification not required', 'info', 1000);
 				navigate('/play');
 			}
 		}

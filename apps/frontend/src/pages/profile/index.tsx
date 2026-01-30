@@ -61,7 +61,7 @@ export function ProfilePage() {
 
 	useEffect(() => {
 		if (user?.isGuest) {
-			toast('Please have an account to use all features', 'error');
+			toast('Please have an account to use all features', 'error', 1000);
 			navigate('/play');
 		}
 	}, [user?.isGuest]);
@@ -111,11 +111,11 @@ export function ProfilePage() {
 		});
 
 		if (response.ok) {
-			toast('Avatar updated', 'success');
+			toast('Avatar updated', 'success', 1000);
 			setSelfHosted(true);
 		} else {
 			const errorData = await response.json().catch(() => ({}));
-			toast(errorData.message || errorData.error || 'Error while downloading', 'error');
+			toast(errorData.message || errorData.error || 'Error while downloading', 'error', 1000);
 			setAvatarPreview(null);
 		}
 		setIsUploadingAvatar(false);
@@ -131,11 +131,11 @@ export function ProfilePage() {
 		});
 
 		if (result.ok && result.data) {
-			toast('Avatar deleted', 'success');
+			toast('Avatar deleted', 'success', 1000);
 			setAvatarPreview(result.data.avatarUrl);
 			setSelfHosted(false);
 		} else {
-			toast(result.error || 'Error during deletion', 'error');
+			toast(result.error || 'Error during deletion', 'error', 1000);
 		}
 		setIsDeletingAvatar(false);
 	}, [toast]);
@@ -157,9 +157,9 @@ export function ProfilePage() {
 		});
 
 		if (result.ok) {
-			toast('Bio updated', 'success');
+			toast('Bio updated', 'success', 1000);
 		} else {
-			toast(result.error || 'Error during backup', 'error');
+			toast(result.error || 'Error during backup', 'error', 1000);
 		}
 		setIsSavingBio(false);
 	}, [bio, validateProfile, getFieldError, toast]);
@@ -180,10 +180,10 @@ export function ProfilePage() {
 		});
 
 		if (result.ok) {
-			toast('Username updated', 'success');
+			toast('Username updated', 'success', 1000);
 			await checkAuth();
 		} else {
-			toast(result.error || 'Error during update', 'error');
+			toast(result.error || 'Error during update', 'error', 1000);
 		}
 	}, [validateProfile, getFieldError, toast, checkAuth]);
 
@@ -201,9 +201,9 @@ export function ProfilePage() {
 		});
 
 		if (result.ok) {
-			toast('Email updated', 'success');
+			toast('Email updated', 'success', 1000);
 		} else {
-			toast(result.error || 'Error during update', 'error');
+			toast(result.error || 'Error during update', 'error', 1000);
 		}
 	}, [validateProfile, getFieldError, toast]);
 
@@ -217,7 +217,7 @@ export function ProfilePage() {
 
 		// faire politique de mot de passe
 		if (newPassword.length < 8) {
-			toast('The password must be at least 8 characters long.', 'warning');
+			toast('The password must be at least 8 characters long.', 'warning', 1000);
 			return;
 		}
 
@@ -230,9 +230,9 @@ export function ProfilePage() {
 		});
 
 		if (result.ok) {
-			toast('Password updated', 'success');
+			toast('Password updated', 'success', 1000);
 		} else {
-			toast(result.error || 'Error during update', 'error');
+			toast(result.error || 'Error during update', 'error', 1000);
 		}
 	}, [validateProfile, getFieldError, toast]);
 
@@ -249,7 +249,7 @@ export function ProfilePage() {
 			setSecret(result.data.secret);
 			setShow2FAModal(true);
 		} else {
-			toast(result.error || 'Error during 2FA setup', 'error');
+			toast(result.error || 'Error during 2FA setup', 'error', 1000);
 		}
 		setIsSettingUp2FA(false);
 	}, [toast]);
@@ -267,13 +267,13 @@ export function ProfilePage() {
 		});
 
 		if (result.ok) {
-			toast('2FA activated successfully', 'success');
+			toast('2FA activated successfully', 'success', 1000);
 			await checkAuth();
 			setShow2FAModal(false);
 			setSecret('');
 			setQrCodeUrl('');
 		} else {
-			toast(result.error || 'Invalid code', 'error');
+			toast(result.error || 'Invalid code', 'error', 1000);
 		}
 	}, [validateProfile, getFieldError, toast, checkAuth]);
 
@@ -284,10 +284,10 @@ export function ProfilePage() {
 		});
 
 		if (result.ok) {
-			toast('2FA disabled', 'success');
+			toast('2FA disabled', 'success', 1000);
 			await checkAuth();
 		} else {
-			toast(result.error || 'Error during deactivation', 'error');
+			toast(result.error || 'Error during deactivation', 'error', 1000);
 		}
 	}, [toast, checkAuth]);
 
@@ -300,10 +300,10 @@ export function ProfilePage() {
 		});
 
 		if (result.ok) {
-			toast('Account deleted', 'success');
+			toast('Account deleted', 'success', 1000);
 			window.location.href = '/';
 		} else {
-			toast(result.error || 'Error during deletion', 'error');
+			toast(result.error || 'Error during deletion', 'error', 1000);
 		}
 		setIsDeleting(false);
 	}, [toast]);

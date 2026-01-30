@@ -57,10 +57,10 @@ export function SetUsername() {
 				// toast('Username successfully set!', 'success');
 				navigate('/play');
 			} else {
-				toast('This username is already in use or invalid', 'error');
+				toast('This username is already in use or invalid', 'error', 1000);
 			}
 		} catch {
-			toast('An error has occurred', 'error');
+			toast('An error has occurred', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}

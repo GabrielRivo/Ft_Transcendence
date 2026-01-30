@@ -9,7 +9,7 @@ export function DeleteAccountModal({ onClose, onConfirmDelete, isDeleting }: Del
 
 	const handleDelete = async () => {
 		if (deleteConfirmText !== 'DELETE') {
-			toast('Please type DELETE to confirm', 'warning');
+			toast('Please type DELETE to confirm', 'warning', 1000);
 			return;
 		}
 		await onConfirmDelete();

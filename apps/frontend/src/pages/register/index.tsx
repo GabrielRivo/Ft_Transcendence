@@ -35,7 +35,7 @@ export function Register() {
 
 		if (password !== confirmPassword) {
 			setConfirmError(`Passwords doesn't match`);
-			toast(`Passwords doesn't match`, 'error');
+			toast(`Passwords doesn't match`, 'error', 1000);
 			return;
 		}
 
@@ -45,13 +45,13 @@ export function Register() {
 			const success = await register(email, password);
 
 			if (success) {
-				toast('Registered!', 'success');
+				toast('Registered!', 'success', 1000);
 				navigate('/set-username');
 			} else {
-				toast("Register failed, the mail may be already used", 'error');
+				toast("Register failed, the mail may be already used", 'error', 1000);
 			}
 		} catch {
-			toast('An error has occurred', 'error');
+			toast('An error has occurred', 'error', 1000);
 		} finally {
 			setIsLoading(false);
 		}

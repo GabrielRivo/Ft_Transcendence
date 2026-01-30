@@ -69,9 +69,9 @@ export function OnlineUsersPanel() {
 												otherId: onlineUser.userId
 											}),
 										}).then(data => data.json()).then(data => {
-											toast(data.message, data.success ? 'success' : 'error', 3000)
+											toast(data.message, data.success ? 'success' : 'error', 1000)
 										}).catch(() => {
-											toast('Network error', 'error', 3000)
+											toast('Network error', 'error', 1000)
 										})
 									},
 									onStatistics: () => {
@@ -91,12 +91,12 @@ export function OnlineUsersPanel() {
 													otherId: onlineUser.userId
 												}),
 											}).then(data => data.json()).then(data => {
-												toast(data.message, data.success ? 'success' : 'error')
+												toast(data.message, data.success ? 'success' : 'error', 1000)
 												if (data.success) {
 													refreshFriends();
 												}
 											}).catch(() => {
-												toast('Network error', 'error')
+												toast('Network error', 'error', 1000)
 											})
 										} else {
 											fetchWithAuth(`/api/user/friend-management/invite`, {
@@ -108,9 +108,9 @@ export function OnlineUsersPanel() {
 													otherId: onlineUser.userId
 												}),
 											}).then(data => data.json()).then(data => {
-												toast(data.message, data.success ? 'success' : 'error', 3000)
+												toast(data.message, data.success ? 'success' : 'error', 1000)
 											}).catch(() => {
-												toast('Network error', 'error', 3000)
+												toast('Network error', 'error', 1000)
 											})
 										}
 									},

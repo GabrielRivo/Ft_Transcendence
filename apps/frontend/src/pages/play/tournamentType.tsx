@@ -18,7 +18,7 @@ export function TournamentTypePage() {
 	useEffect(() => {
 		if (!['public', 'private'].includes(params.tournamentType)) {
 			navigate(`/play`);
-			toast('Tournament type not found', 'error');
+			toast('Tournament type not found', 'error', 1000);
 		}
 	}, [params]);
 
