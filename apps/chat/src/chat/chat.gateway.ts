@@ -175,7 +175,7 @@ export class ChatGateway {
 		}
 
 		const previousRoom = client.data.currentRoom;
-		if (previousRoom && previousRoom !== 'hub' && previousRoom !== roomId) {
+		if (previousRoom && previousRoom !== roomId) {
 			client.leave(previousRoom);
 			await this.broadcastRoomUsers(client, previousRoom);
 		}
