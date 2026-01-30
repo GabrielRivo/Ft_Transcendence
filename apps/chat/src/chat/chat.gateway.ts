@@ -15,6 +15,14 @@ import { GeneralChatService } from './general-chat/general-chat.service.js';
 import { PrivateChatService } from './private-chat/private-chat.service.js';
 import { GroupChatService } from './group-chat/group-chat.service.js'
 import { ChatSchema, ChatDto } from './dto/chat.dto.js';
+import {
+	RoomIdDto,
+	RoomIdSchema,
+	JoinPrivateRoomDto,
+	JoinPrivateRoomSchema,
+	SendPrivateMessageDto,
+	SendPrivateMessageSchema,
+} from './dto/socket-messages.dto.js';
 
 
 
@@ -97,13 +105,15 @@ export class ChatGateway {
 	}
 
 	@SubscribeMessage('get_room_users')
-	async handleGetRoomUsers(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }) {
+	@SocketSchema(RoomIdSchema)
+	async handleGetRoomUsers(@ConnectedSocket() client: Socket, @MessageBody() data: RoomIdDto) {
 		const users = await this.getUsersInRoom(client, data.roomId);
 		client.emit('room_users', { roomId: data.roomId, users });
 	}
 
 	@SubscribeMessage('join_room')
-	async handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }, @JWTBody() user: any) {
+	@SocketSchema(RoomIdSchema)
+	async handleJoinRoom(@ConnectedSocket() client: Socket, @MessageBody() data: RoomIdDto, @JWTBody() user: any) {
 		if (!user?.id) return;
 
 		const { roomId } = data;
@@ -131,7 +141,8 @@ export class ChatGateway {
 	}
 
 	@SubscribeMessage('leave_room')
-	async handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: { roomId: string }, @JWTBody() user: any) {
+	@SocketSchema(RoomIdSchema)
+	async handleLeaveRoom(@ConnectedSocket() client: Socket, @MessageBody() data: RoomIdDto, @JWTBody() user: any) {
 		if (!user?.id) return;
 
 		const { roomId } = data;
@@ -146,9 +157,10 @@ export class ChatGateway {
 	}
 
 	@SubscribeMessage('join_private_room')
+	@SocketSchema(JoinPrivateRoomSchema)
 	async handleJoinPrivateRoom(
 		@ConnectedSocket() client: Socket,
-		@MessageBody() data: { friendId: number },
+		@MessageBody() data: JoinPrivateRoomDto,
 		@JWTBody() user: any
 	) {
 		if (!user?.id) return;
@@ -187,9 +199,10 @@ export class ChatGateway {
 	}
 
 	@SubscribeMessage('send_private_message')
+	@SocketSchema(SendPrivateMessageSchema)
 	async handleSendPrivateMessage(
 		@ConnectedSocket() client: Socket,
-		@MessageBody() data: { friendId: number; content: string },
+		@MessageBody() data: SendPrivateMessageDto,
 		@JWTBody() user: any
 	) {
 		if (!user?.id) return;
