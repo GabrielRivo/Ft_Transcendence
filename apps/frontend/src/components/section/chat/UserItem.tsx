@@ -69,7 +69,6 @@ export function UserItem({
 		[contextMenuCallbacks],
 	);
 
-	// Utiliser un callback ref pour s'assurer que l'élément est capturé
 	const setRef = useCallback(
 		(element: HTMLDivElement | null) => {
 			// Nettoyer l'ancien listener si présent
@@ -115,7 +114,7 @@ export function UserItem({
 			<div
 				ref={setRef}
 				onClick={onClick}
-				className={`flex cursor-pointer flex-col items-center gap-2 transition-colors ${isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'hover:text-cyan-500`'
+				className={`flex cursor-pointer flex-col items-center gap-2 transition-colors ${isRightPanel ? 'text-red-400' : isSelected ? 'text-cyan-400' : 'text-cyan-500`'
 					}${className}`}
 
 			>
@@ -124,11 +123,11 @@ export function UserItem({
 						<img
 							src={avatar}
 							alt={name}
-							className="size-12 rounded-full object-cover"
+							className="size-12 rounded-full object-cover border-2 border-transparent hover:border-fuchsia-600 transition-all duration-200"
 						/>
 					) : (
 
-						<div className="flex size-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold border-2 border-transparent dark:md:hover:border-fuchsia-600">
+						<div className="flex size-12 items-center justify-center rounded-full bg-slate-800 text-lg font-bold border-2 border-transparent hover:border-fuchsia-600 transition-all duration-200">
 							{name?.charAt(0).toUpperCase()}
 						</div>
 					)}

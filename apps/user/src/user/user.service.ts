@@ -203,6 +203,13 @@ export class UserService {
 					await new Promise<void>(resolve => writeStream.once('drain', () => resolve()));
 				}
 			}
+			
+			if (!isChecked || bytesRead === 0) {
+				writeStream.destroy();
+				try { fs.unlinkSync(filepath); } catch {}
+				throw new BadRequestException('Empty file is not allowed');
+			}
+
 			writeStream.end();
 		} catch (err: any) {
 			// S'assurer que le stream est fermé et le fichier supprimé en cas d'erreur
