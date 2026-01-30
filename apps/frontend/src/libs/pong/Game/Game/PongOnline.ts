@@ -234,7 +234,7 @@ class PongOnline extends Game {
 
     public async synchronizeTimeWithServer(serverTimestamp: number): Promise<void> {
         try {
-            const timeAheadOfServ = 75;
+            const timeAheadOfServ = 100;
             let measuringTime = performance.now();
             const latency: number = await this.measureLatency();
             measuringTime = performance.now() - measuringTime;
