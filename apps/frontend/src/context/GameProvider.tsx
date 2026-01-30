@@ -127,6 +127,9 @@ export function GameProvider({ children }: GameProviderProps) {
 				const eventTournamentId = event?.tournamentId;
 				const metadata = gameMetadataRef.current;
 
+				// Clear metadata after use
+				gameMetadataRef.current = null;
+
 				if (gameType === 'tournament' && eventTournamentId) {
 					// Tournament: Direct redirect using stored metadata
 					const tournamentType = metadata?.tournamentType || 'private';
@@ -134,7 +137,7 @@ export function GameProvider({ children }: GameProviderProps) {
 					const targetUrl = `/play/tournament/${tournamentType}/${playersCount}?id=${eventTournamentId}`;
 					navigate(targetUrl);
 				} else if (gameType === 'ranked') {
-					// Ranked: Show result modal with player IDs
+					// Ranked: Set result for modal and navigate to /play
 					setGameResult({
 						gameId: metadata?.tournamentId || 'unknown',
 						winnerId: event.winnerId ?? null,
@@ -144,13 +147,12 @@ export function GameProvider({ children }: GameProviderProps) {
 						player2Score: event.player2Score ?? 0,
 						gameType: 'ranked',
 					});
+					// Navigate to /play - the modal will be shown there
+					navigate('/play');
 				} else {
-					// Fallback
+					// Fallback: always navigate away from game page
 					navigate('/play');
 				}
-
-				// Clear metadata after use
-				gameMetadataRef.current = null;
 			});
 
 			Game.Services.GameService!.launchGame('PongBackground');
