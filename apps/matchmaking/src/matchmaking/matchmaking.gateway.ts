@@ -1,5 +1,3 @@
-import Ajv from 'ajv';
-import ajvFormats from 'ajv-formats';
 import {
 	Inject,
 	WebSocketGateway,
@@ -9,43 +7,18 @@ import {
 	ConnectedSocket,
 	MessageBody,
 	JWTBody,
+	SocketSchema,
 } from 'my-fastify-decorators';
 import { Server, Socket } from 'socket.io';
 import { MatchmakingService } from './matchmaking.service.js';
 import { UserService } from './user.service.js';
 import type { JwtPayload } from './types.js';
-
-// Instance AJV pour la validation des payloads WebSocket
-const ajv = new Ajv.default({ allErrors: true, coerceTypes: false });
-ajvFormats.default(ajv);
-
-/**
- * Schéma de validation pour la demande de rejoindre la file.
- */
-const JoinQueueSchema = {
-	type: 'object',
-	properties: {
-		elo: { type: 'integer', minimum: 0 },
-	},
-	additionalProperties: true,
-};
-
-/**
- * Schéma de validation pour la réponse à une proposition de match.
- * On attend simplement l'ID du match concerné.
- */
-const MatchDecisionSchema = {
-	type: 'object',
-	properties: {
-		matchId: { type: 'string', format: 'uuid' },
-	},
-	required: ['matchId'],
-	additionalProperties: true,
-};
-
-// Compilation des schémas pour de meilleures performances
-const validateJoinQueue = ajv.compile<{ elo?: number }>(JoinQueueSchema);
-const validateMatchDecision = ajv.compile<{ matchId: string }>(MatchDecisionSchema);
+import {
+	JoinQueueDto,
+	JoinQueueSchema,
+	MatchDecisionDto,
+	MatchDecisionSchema,
+} from './dto/matchmaking.dto.js';
 
 /**
  * Extension du type Socket pour inclure nos données de session.
@@ -150,9 +123,10 @@ export class MatchmakingGateway {
 	 * Demande pour rejoindre la file de matchmaking.
 	 */
 	@SubscribeMessage('join_queue')
+	@SocketSchema(JoinQueueSchema)
 	public async handleJoinQueue(
 		@ConnectedSocket() socket: AuthenticatedSocket,
-		@MessageBody() payload: unknown,
+		@MessageBody() payload: JoinQueueDto,
 	): Promise<void> {
 		const userId = socket.data.userId;
 		const sessionElo = socket.data.elo;
@@ -162,19 +136,8 @@ export class MatchmakingGateway {
 			return;
 		}
 
-		const payloadData = (payload || {}) as { elo?: number };
-		const isValid = validateJoinQueue(payloadData);
-
-		if (!isValid) {
-			socket.emit('error', {
-				message: 'Invalid payload',
-				details: validateJoinQueue.errors,
-			});
-			return;
-		}
-
 		try {
-			const effectiveElo = payloadData.elo ?? sessionElo;
+			const effectiveElo = payload.elo ?? sessionElo;
 
 			// Note: Le paramètre priority est false par défaut lors d'un join manuel
 			await this.matchmakingService.addPlayer(userId, socket.id, effectiveElo);
@@ -206,21 +169,16 @@ export class MatchmakingGateway {
 	 * Acceptation d'une proposition de match.
 	 */
 	@SubscribeMessage('accept_match')
+	@SocketSchema(MatchDecisionSchema)
 	public async handleAcceptMatch(
 		@ConnectedSocket() socket: AuthenticatedSocket,
-		@MessageBody() payload: unknown,
+		@MessageBody() payload: MatchDecisionDto,
 	): Promise<void> {
 		const userId = socket.data.userId;
 		if (!userId) return;
 
-		const payloadData = (payload || {}) as { matchId: string };
-		if (!validateMatchDecision(payloadData)) {
-			socket.emit('error', { message: 'Invalid payload for accept_match' });
-			return;
-		}
-
 		try {
-			await this.matchmakingService.acceptMatch(userId, payloadData.matchId);
+			await this.matchmakingService.acceptMatch(userId, payload.matchId);
 		} catch (error: any) {
 			socket.emit('error', { message: error.message });
 		}
@@ -230,21 +188,16 @@ export class MatchmakingGateway {
 	 * Refus d'une proposition de match.
 	 */
 	@SubscribeMessage('decline_match')
+	@SocketSchema(MatchDecisionSchema)
 	public async handleDeclineMatch(
 		@ConnectedSocket() socket: AuthenticatedSocket,
-		@MessageBody() payload: unknown,
+		@MessageBody() payload: MatchDecisionDto,
 	): Promise<void> {
 		const userId = socket.data.userId;
 		if (!userId) return;
 
-		const payloadData = (payload || {}) as { matchId: string };
-		if (!validateMatchDecision(payloadData)) {
-			socket.emit('error', { message: 'Invalid payload for decline_match' });
-			return;
-		}
-
 		try {
-			await this.matchmakingService.declineMatch(userId, payloadData.matchId);
+			await this.matchmakingService.declineMatch(userId, payload.matchId);
 		} catch (error: any) {
 			socket.emit('error', { message: error.message });
 		}
