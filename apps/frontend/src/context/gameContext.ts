@@ -20,6 +20,18 @@ export interface GameResult {
 	tournamentId?: string;
 }
 
+export interface PlayerInfo {
+	id: string;
+	username: string;
+	avatar: string | null;
+}
+
+export interface GamePlayers {
+	player1: PlayerInfo | null;
+	player2: PlayerInfo | null;
+	currentPlayer: 1 | 2 | null;
+}
+
 export interface GameContextType {
 	mode: GameMode;
 	setMode: (mode: GameMode, gameId?: string | null, metadata?: { type?: string; tournamentId?: string; tournamentType?: string; playersCount?: string }) => void;
@@ -33,6 +45,7 @@ export interface GameContextType {
 	clearGameResult: () => void;
 	isPaused: boolean;
 	pauseMessage: string | null;
+	players: GamePlayers;
 }
 
 export const GameContext = createContext<GameContextType | null>(null);

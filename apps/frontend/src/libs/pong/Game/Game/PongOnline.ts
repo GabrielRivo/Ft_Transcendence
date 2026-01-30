@@ -309,6 +309,13 @@ class PongOnline extends Game {
 
             Services.EventBus!.emit("Game:ScoreUpdated", { player1Score: payload.player1Score, player2Score: payload.player2Score, scoreToWin: 5 });
 
+            // Emit player info for UI (avatars, usernames)
+            Services.EventBus!.emit("Game:PlayersInfo", {
+                player1Id: payload.player1Id,
+                player2Id: payload.player2Id,
+                currentPlayer: payload.player
+            });
+
             this.gameJoined = true;
         }
         this.processGameState();

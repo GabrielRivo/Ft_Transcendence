@@ -1,7 +1,7 @@
 import { createElement, useState, useEffect, useRef, useCallback, useMemo } from 'my-react';
 import { useNavigate } from 'my-react-router';
 import type { Element } from 'my-react';
-import { GameContext, GameMode, GameScores, GameResult } from './gameContext';
+import { GameContext, GameMode, GameScores, GameResult, GamePlayers, PlayerInfo } from './gameContext';
 import Game from '../libs/pong/Game/index';
 import Services from '../libs/pong/Game/Services/Services';
 import { useToast } from '@/hook/useToast';
@@ -33,6 +33,13 @@ export function GameProvider({ children }: GameProviderProps) {
 	// Pause state for opponent disconnection overlay
 	const [isPaused, setIsPaused] = useState(false);
 	const [pauseMessage, setPauseMessage] = useState<string | null>(null);
+
+	// Players info for score overlay
+	const [players, setPlayers] = useState<GamePlayers>({
+		player1: null,
+		player2: null,
+		currentPlayer: null,
+	});
 
 	const currentModeRef = useRef<GameMode>('background');
 	
@@ -76,6 +83,33 @@ export function GameProvider({ children }: GameProviderProps) {
 			Services.EventBus?.on('Game:Paused', (event: { paused: boolean; message?: string }) => {
 				setIsPaused(event.paused);
 				setPauseMessage(event.paused ? (event.message || 'Waiting for opponent...') : null);
+			});
+
+			Services.EventBus?.on('Game:PlayersInfo', async (event: { player1Id: string; player2Id: string; currentPlayer: 1 | 2 }) => {
+				// Fetch player profiles
+				const fetchProfile = async (userId: string): Promise<PlayerInfo | null> => {
+					try {
+						const response = await fetch(`/api/user/profile/${userId}`, { credentials: 'include' });
+						if (response.ok) {
+							const data = await response.json();
+							return { id: String(data.id), username: data.username, avatar: data.avatar };
+						}
+					} catch (e) {
+						// console.error('Failed to fetch player profile:', e);
+					}
+					return null;
+				};
+
+				const [p1, p2] = await Promise.all([
+					fetchProfile(event.player1Id),
+					fetchProfile(event.player2Id),
+				]);
+
+				setPlayers({
+					player1: p1,
+					player2: p2,
+					currentPlayer: event.currentPlayer,
+				});
 			});
 
 			Services.EventBus?.on('Game:Ended', (event: { 
@@ -159,6 +193,13 @@ export function GameProvider({ children }: GameProviderProps) {
 			scoreToWin: 5,
 		});
 
+		// Reset players info when switching modes
+		setPlayers({
+			player1: null,
+			player2: null,
+			currentPlayer: null,
+		});
+
 		setIsLoading(true);
 		setError(null);
 
@@ -205,7 +246,8 @@ export function GameProvider({ children }: GameProviderProps) {
 		clearGameResult,
 		isPaused,
 		pauseMessage,
-	}), [mode, setMode, isLoading, error, gameId, scores, isInitialized, gameResult, clearGameResult, isPaused, pauseMessage]);
+		players,
+	}), [mode, setMode, isLoading, error, gameId, scores, isInitialized, gameResult, clearGameResult, isPaused, pauseMessage, players]);
 
 	return (
 		<GameContext.Provider value={contextValue}>

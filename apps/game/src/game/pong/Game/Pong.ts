@@ -143,6 +143,8 @@ class Pong extends Game {
 
         client.emit("gameJoined", {
             gameId: this.id,
+            player1Id: this.p1Id,
+            player2Id: this.p2Id,
             player1Score: this.player1!.score,
             player2Score: this.player2!.score,
             message: `Joined game ${this.id} successfully!`,

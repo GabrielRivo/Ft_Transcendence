@@ -59,7 +59,7 @@ export function GameResultModal({ result, onClose }: GameResultModalProps) {
 					setPlayer2Profile(p2Data);
 				}
 			} catch (error) {
-				console.error('Failed to fetch player profiles:', error);
+				// console.error('Failed to fetch player profiles:', error);
 			}
 		};
 
@@ -91,7 +91,7 @@ export function GameResultModal({ result, onClose }: GameResultModalProps) {
 					}
 				}
 			} catch (error) {
-				console.error('Failed to fetch ELO changes:', error);
+				// console.error('Failed to fetch ELO changes:', error);
 			} finally {
 				setIsLoading(false);
 			}
