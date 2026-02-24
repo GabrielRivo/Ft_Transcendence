@@ -18,7 +18,9 @@ The project was completed on 31/01/2026 by a team of 4 developers, over a span o
 
 ## Demo Video
 
-[![Watch the video](https://img.youtube.com/vi/7qPfisuVZOc/maxresdefault.jpg)](https://youtu.be/7qPfisuVZOc)
+<a href="https://youtu.be/7qPfisuVZOc">
+   <img src="https://img.youtube.com/vi/7qPfisuVZOc/maxresdefault.jpg" width="400" alt="Watch the video">
+</a>
 
 <br>
 
