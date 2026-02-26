@@ -2,12 +2,16 @@
 
 > Last project of the 42 School common core, featuring a Single Page Application allowing users to play a Pong game. This project is completed by a large selection of optional features and modules chosen by the team members.
 
-![Badge](https://img.shields.io/badge/Status-Completed-success)
+![Status](https://img.shields.io/badge/Status-Completed-success)
+&emsp;
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)
 ![React](https://img.shields.io/badge/React-61DAFB?logo=react&logoColor=000)
-![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=fff)
-![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)
+![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
 ![Babylon3D](https://img.shields.io/badge/Babylon3D-F37021?logo=babylondotjs&logoColor=fff)
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=fff)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=fff)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)
+![Nginx](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white)
 
 ## Introduction
 
@@ -16,13 +20,9 @@ This project is a heavily enhanced and complete implementation of a **Pong game 
 **Note:** Some frameworks and tools had to be recoded from scratch to comply with the school's subject (e.g., React / NestJS architectures).
 The project was completed on 31/01/2026 by a team of 4 developers, over a span of 2 months.
 
-## Demo Video
-
-<a href="https://youtu.be/7qPfisuVZOc">
-   <img src="https://img.youtube.com/vi/7qPfisuVZOc/maxresdefault.jpg" width="400" alt="Watch the video">
-</a>
-
-<br>
+<div align="center">
+  <img src="https://github.com/user-attachments/assets/b1d15514-f25b-4995-862f-08b41f0dfac5" alt="Gameplay">
+</div>
 
 ## Features
 
@@ -67,8 +67,15 @@ cp .env.example .env
 ```bash
 make up
 ```
+<br><br>
 
-<br>
+## Demo Video
+
+<a href="https://youtu.be/7qPfisuVZOc">
+   <img src="https://img.youtube.com/vi/7qPfisuVZOc/maxresdefault.jpg" width="400" alt="Watch the video">
+</a>
+
+<br><br>
 
 ## The team
 
