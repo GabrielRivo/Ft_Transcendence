@@ -10,6 +10,7 @@
 ![Babylon3D](https://img.shields.io/badge/Babylon3D-F37021?logo=babylondotjs&logoColor=fff)
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=fff)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=fff)
+![RabbitMQ](https://img.shields.io/badge/Rabbitmq-FF6600?logo=rabbitmq&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)
 ![Nginx](https://img.shields.io/badge/Nginx-009639?logo=nginx&logoColor=white)
 
@@ -27,7 +28,7 @@ The project was completed on 31/01/2026 by a team of 4 developers, over a span o
 ## Features
 
 #### Core & Major Modules
-- **Microservices Architecture:** Designing the backend as a suite of independent, scalable services.
+- **Microservices Architecture:** Designing the backend as a suite of independent, scalable services. Integrating RabbitMQ for asynchronous, event-driven communication.
 - **Server-Side Pong & API:** Implementing a server-side game engine and a dedicated API to ensure game integrity.
 - **Advanced Security (2FA & JWT):** Full implementation of Two-Factor Authentication and JSON Web Tokens for secure sessions.
 - **Remote Authentication:** Integration of external authentication systems (Discord/GitHub).
@@ -52,7 +53,7 @@ To ensure a smooth multiplayer experience, I implemented client prediction and s
 ## Install project
 
 ```bash
-git clone git@github.com:thetranscendence/ft_transcendence.git
+git clone git@github.com:GabrielRivo/Ft_Transcendence.git
 cd ft_transcendence
 ```
 
