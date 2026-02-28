@@ -53,7 +53,7 @@ To ensure a smooth multiplayer experience, I implemented client prediction and s
 ## Install project
 
 ```bash
-git clone git@github.com:GabrielRivo/Ft_Transcendence.git
+git clone https://github.com/GabrielRivo/ft_transcendence.git
 cd ft_transcendence
 ```
 
