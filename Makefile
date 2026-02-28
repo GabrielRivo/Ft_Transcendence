@@ -79,7 +79,7 @@ dev-up: ## Start the application in detached mode (dev)
 	@echo "$(BLUE)Starting development environment...$(NC)"
 	@$(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up -d
 	@echo "$(GREEN)Development environment started!$(NC)"
-	@echo "App available at http://localhost"
+	@echo "App available at https://localhost:8443 by default"
 
 dev-down: ## Stop the application (dev)
 	@echo "$(BLUE)Stopping development environment...$(NC)"
