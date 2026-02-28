@@ -1,4 +1,4 @@
-# Ft_Transcendence
+# ft_transcendence
 
 > Final project of the 42 School common core. A group project featuring a heavily enhanced and complete implementation of a Pong SPA.
 
