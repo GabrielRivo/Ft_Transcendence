@@ -18,7 +18,7 @@
 
 ## Introduction
 
-This project consists of a **Pong game SPA (Single Page Application)** including tournaments, built under strict technical constraints. It is expanded with by a large selection of optional features and modules chosen by the team members.
+This project consists of a **Pong game SPA (Single Page Application)** including tournaments, built under strict technical constraints. It is expanded by a large selection of optional features and modules chosen by the team members.
 
 **Note:** Some frameworks and tools had to be recoded from scratch to comply with the school's subject (e.g., React / NestJS architectures).
 The project was completed on 31/01/2026 by a team of 4 developers, over a span of 2 months.
