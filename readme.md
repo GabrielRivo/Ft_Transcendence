@@ -57,14 +57,14 @@ I implemented a continuous collision detection (CCD) system using raycasting for
 
 To ensure a smooth and competitive online experience, I developed a dedicated backend using WebSockets, featuring client-side prediction and server reconciliation. This architecture relies on strict determinism to provide a lag-free, secure, and synchronized gameplay for all clients, while greatly increasing server performances.
 
-## Install project
+## Installation
 
 ```bash
 git clone https://github.com/GabrielRivo/ft_transcendence.git
 cd ft_transcendence
 ```
 
-## Start the project
+## Quick start
 
 #### 1 - Setup your own .env file using .env.example
 ```bash
